@@ -14,6 +14,7 @@ import (
 	"time"
 
 	authpb "github.com/datifyy/backend/gen/auth/v1"
+	commonpb "github.com/datifyy/backend/gen/common/v1"
 	"github.com/datifyy/backend/internal/service"
 	_ "github.com/lib/pq"
 	"github.com/redis/go-redis/v9"
@@ -177,7 +178,7 @@ func createRegisterHandler(authService *service.AuthService) http.HandlerFunc {
 
 		if reqBody.DeviceInfo != nil {
 			grpcReq.Credentials.DeviceInfo = &authpb.DeviceInfo{
-				Platform:   reqBody.DeviceInfo.Platform,
+				Platform:   commonpb.DevicePlatform(reqBody.DeviceInfo.Platform),
 				DeviceName: reqBody.DeviceInfo.DeviceName,
 				OsVersion:  reqBody.DeviceInfo.OSVersion,
 				DeviceId:   reqBody.DeviceInfo.DeviceID,

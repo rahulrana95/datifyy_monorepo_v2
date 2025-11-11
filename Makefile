@@ -117,9 +117,40 @@ prune: ## Remove unused Docker resources
 status: ## Check service health status
 	@echo "Checking service status..."
 	@curl -s http://localhost:8080/health > /dev/null && echo "✓ Backend is healthy" || echo "✗ Backend is not responding"
-	@curl -s http://localhost:3000 > /dev/null && echo "✓ Frontend is healthy" || echo "✗ Frontend is not responding"
-	@docker-compose exec postgres pg_isready > /dev/null 2>&1 && echo "✓ PostgreSQL is ready" || echo "✗ PostgreSQL is not ready"
-	@docker-compose exec redis redis-cli ping > /dev/null 2>&1 && echo "✓ Redis is ready" || echo "✗ Redis is not ready"
+
+# gRPC Testing Commands
+grpc-ui: ## Launch gRPC web UI for interactive testing
+	@echo "🚀 Launching gRPC UI..."
+	@echo "Opening browser to test gRPC endpoints interactively"
+	@echo "Press Ctrl+C to stop"
+	grpcui -plaintext localhost:9090
+
+grpc-list: ## List all available gRPC services
+	@echo "📋 Available gRPC Services:"
+	@grpcurl -plaintext localhost:9090 list
+
+grpc-list-auth: ## List all AuthService methods
+	@echo "🔐 AuthService Methods:"
+	@grpcurl -plaintext localhost:9090 list datifyy.auth.v1.AuthService
+
+grpc-describe: ## Describe RegisterWithEmail method
+	@echo "📖 Method Description:"
+	@grpcurl -plaintext localhost:9090 describe datifyy.auth.v1.AuthService.RegisterWithEmail
+
+grpc-test-register: ## Test registration endpoint via gRPC
+	@echo "Testing RegisterWithEmail via gRPC..."
+	@echo '{"credentials":{"email":"makefile@example.com","password":"TestPass123*","name":"Makefile Test"}}' | \
+		grpcurl -plaintext -d @ localhost:9090 datifyy.auth.v1.AuthService/RegisterWithEmail
+
+rest-test-register: ## Test registration endpoint via REST
+	@echo "Testing RegisterWithEmail via REST..."
+	@curl -X POST http://localhost:8080/api/v1/auth/register/email \
+		-H "Content-Type: application/json" \
+		-d '{"email":"makefile-rest@example.com","password":"TestPass123*","name":"Makefile REST Test"}'
+
+grpc-test-page: ## Open browser test page
+	@echo "Opening test page in browser..."
+	open grpc-test.html
 
 dev: ## Start development environment and watch logs
 	docker-compose up -d postgres redis

@@ -51,9 +51,22 @@ A production-ready containerized monorepo with React frontend, Go backend, Postg
 
 5. **Access the applications:**
    - 🌐 Frontend: http://localhost:3000
-   - 🔧 Backend API: http://localhost:8080
+   - 🔧 Backend HTTP API: http://localhost:8080
+   - 🚀 Backend gRPC API: localhost:9090
    - 🗄️ PostgreSQL: localhost:5432 (user: devuser, pass: devpass, db: monorepo_dev)
    - 📦 Redis: localhost:6379
+
+6. **Test the APIs:**
+   ```bash
+   # REST API
+   curl http://localhost:8080/health
+
+   # gRPC UI (interactive web interface)
+   grpcui -plaintext localhost:9090
+
+   # Or use the test page
+   open grpc-test.html
+   ```
 
 ## 🏗️ Project Structure
 
@@ -83,14 +96,43 @@ A production-ready containerized monorepo with React frontend, Go backend, Postg
 └── .dockerignore           # Docker ignore rules
 ```
 
-## 📡 API Endpoints
+## 📡 API Architecture
 
-### Backend Health Endpoints
+### Dual Server Design
+The backend runs **two servers simultaneously**:
+
+1. **HTTP/REST Server** (Port 8080)
+   - RESTful endpoints with JSON
+   - CORS enabled for browser access
+   - Manual REST wrappers for gRPC services
+
+2. **gRPC Server** (Port 9090)
+   - High-performance RPC protocol
+   - Server reflection enabled
+   - Type-safe Protocol Buffers
+
+### API Endpoints
+
+#### Health Endpoints (HTTP)
 - `GET /health` - Basic health check
 - `GET /ready` - Readiness check (validates DB and Redis connections)
 - `GET /` - Service information with connection status
 - `GET /api/test-db` - Test PostgreSQL connection
 - `GET /api/test-redis` - Test Redis connection
+
+#### Authentication (HTTP REST)
+- `POST /api/v1/auth/register/email` - Register with email and password
+- `POST /api/v1/auth/login/email` - Login with email (coming soon)
+
+#### Authentication (gRPC)
+All gRPC services available at `localhost:9090` with 26 methods:
+- `datifyy.auth.v1.AuthService/RegisterWithEmail`
+- `datifyy.auth.v1.AuthService/LoginWithEmail`
+- `datifyy.auth.v1.AuthService/RefreshToken`
+- `datifyy.auth.v1.AuthService/VerifyEmail`
+- ... and 22 more methods
+
+See [GRPC_TESTING.md](./docs/GRPC_TESTING.md) for testing gRPC endpoints.
 
 ## 🗄️ Database & Cache
 
@@ -344,6 +386,15 @@ make test-frontend      # Run frontend tests
 make test-integration   # Run integration tests
 make test-db            # Start test database
 make test-db-down       # Stop test database
+
+# gRPC Testing (New!)
+make grpc-ui            # Launch gRPC web UI for interactive testing
+make grpc-list          # List all available gRPC services
+make grpc-list-auth     # List all AuthService methods
+make grpc-describe      # Describe RegisterWithEmail method
+make grpc-test-register # Test registration via gRPC
+make rest-test-register # Test registration via REST
+make grpc-test-page     # Open browser test page
 
 # Development
 make generate           # Generate proto types
@@ -735,13 +786,36 @@ make logs
 docker-compose logs -f <service-name>
 ```
 
+## 📚 Documentation
+
+Comprehensive guides for development and testing:
+
+- **[DEVELOPMENT.md](./docs/DEVELOPMENT.md)** - Complete guide for adding new services and RPC methods
+  - Architecture overview
+  - Step-by-step RPC implementation
+  - Code organization patterns
+  - Best practices and conventions
+
+- **[TESTING.md](./docs/TESTING.md)** - Testing guidelines and examples
+  - Unit testing guide with examples
+  - Integration testing workflows
+  - Code coverage requirements
+  - Test-driven development practices
+
+- **[GRPC_TESTING.md](./docs/GRPC_TESTING.md)** - gRPC testing tools and usage
+  - grpcui web interface
+  - grpcurl command-line testing
+  - Buf CLI usage
+  - Postman integration
+
 ## 🤝 Contributing
 
 1. Create a feature branch
-2. Make your changes
-3. Run tests: `make test`
-4. Ensure code quality
-5. Submit a pull request
+2. Make your changes following [DEVELOPMENT.md](./docs/DEVELOPMENT.md)
+3. Write tests following [TESTING.md](./docs/TESTING.md)
+4. Run tests: `make test`
+5. Ensure code quality
+6. Submit a pull request
 
 ## 📝 License
 
