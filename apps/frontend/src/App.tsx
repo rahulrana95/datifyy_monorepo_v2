@@ -3,7 +3,7 @@
  * Following TypeScript and React best practices
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import './App.css';
 import { useApi } from './hooks/useApi';
 import { apiService } from './services/api.service';
@@ -11,8 +11,11 @@ import { ApiResponse } from './types';
 import { StatusIndicator } from './components/StatusIndicator';
 import { ErrorDisplay } from './components/ErrorDisplay';
 import { LoadingSpinner } from './components/LoadingSpinner';
+import { ProtoDemo } from './components/ProtoDemo';
 
 const App: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<'api' | 'proto'>('api');
+  
   const { state, execute: refresh } = useApi<ApiResponse>(
     () => apiService.getApiStatus(),
     {
@@ -40,7 +43,25 @@ const App: React.FC = () => {
       </header>
       
       <main className="App-main">
-        <section className="App-section">
+        {/* Tab Navigation */}
+        <div className="tab-navigation">
+          <button 
+            className={`tab-button ${activeTab === 'api' ? 'active' : ''}`}
+            onClick={() => setActiveTab('api')}
+          >
+            REST API Demo
+          </button>
+          <button 
+            className={`tab-button ${activeTab === 'proto' ? 'active' : ''}`}
+            onClick={() => setActiveTab('proto')}
+          >
+            Proto Types Demo
+          </button>
+        </div>
+
+        {/* API Tab Content */}
+        {activeTab === 'api' && (
+          <section className="App-section">
           <div className="section-header">
             <h2>API Response</h2>
             <button 
@@ -92,7 +113,15 @@ const App: React.FC = () => {
               </div>
             </>
           )}
-        </section>
+          </section>
+        )}
+
+        {/* Proto Tab Content */}
+        {activeTab === 'proto' && (
+          <section className="App-section">
+            <ProtoDemo />
+          </section>
+        )}
       </main>
     </div>
   );

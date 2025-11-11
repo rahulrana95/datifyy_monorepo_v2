@@ -28,7 +28,13 @@ A production-ready containerized monorepo with React frontend, Go backend, Postg
 
 2. **Start Docker Desktop** if not already running
 
-3. **Start all services:**
+3. **Generate proto types** (first time after clone):
+   ```bash
+   make generate
+   ```
+   Note: Generated files are not committed to git and need to be created locally.
+
+4. **Start all services:**
    ```bash
    make up
    ```
@@ -38,7 +44,7 @@ A production-ready containerized monorepo with React frontend, Go backend, Postg
    docker-compose up -d
    ```
 
-4. **Check service status:**
+5. **Check service status:**
    ```bash
    make status
    ```
@@ -223,12 +229,21 @@ make redis-cli
 
 #### Protocol Buffer Changes
 
+**Important**: Generated code (`apps/backend/gen/` and `apps/frontend/src/gen/`) is **NOT committed** to version control. These files are automatically generated from `.proto` sources.
+
+##### Initial Setup
+When cloning the repository or after pulling changes with proto updates:
+```bash
+# Generate types from proto files
+make generate
+```
+
 ##### Manual Generation
 1. Edit `.proto` files in `proto/`
 2. Generate types: `make generate`
 3. Types are generated in:
-   - Backend: `apps/backend/gen/`
-   - Frontend: `apps/frontend/src/gen/`
+   - Backend: `apps/backend/gen/` (Go)
+   - Frontend: `apps/frontend/src/gen/` (TypeScript)
 
 ##### Automatic Generation (Recommended for Development)
 The proto watcher service automatically regenerates types when `.proto` files change:
