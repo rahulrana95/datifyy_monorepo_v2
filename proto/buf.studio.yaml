@@ -1,0 +1,23 @@
+version: v1
+# Buf Studio Agent Configuration
+# This file configures how Buf Studio connects to your services
+
+agents:
+  # Auth Service
+  - name: datifyy-auth-service
+    description: Datifyy Authentication Service
+    # When gRPC is implemented, use this:
+    address: localhost:9090
+    # protocol: grpc
+    # For now, the backend uses HTTP REST
+    # You can still explore proto definitions in Buf Studio
+
+  # User Service
+  - name: datifyy-user-service
+    description: Datifyy User Profile Service
+    address: localhost:9090
+    # protocol: grpc
+
+# Alternative: Use Buf Studio web interface
+# Visit: https://studio.buf.build
+# And load your proto files from the local filesystem

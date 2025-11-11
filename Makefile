@@ -126,3 +126,87 @@ dev: ## Start development environment and watch logs
 	@echo "Waiting for database and Redis to be ready..."
 	@sleep 5
 	docker-compose up backend frontend
+
+# ==============================================================================
+# Proto & API Development Tools
+# ==============================================================================
+
+studio: ## Launch Buf Studio for interactive API testing
+	@echo "🚀 Launching Buf Studio..."
+	@echo ""
+	@echo "Buf Studio will open in your browser at:"
+	@echo "https://studio.buf.build"
+	@echo ""
+	@echo "To explore your proto files:"
+	@echo "1. Click 'Load Schema' in Buf Studio"
+	@echo "2. Select 'From Local Files'"
+	@echo "3. Navigate to: $(PWD)/proto"
+	@echo ""
+	@echo "Available services:"
+	@echo "  • datifyy.auth.v1.AuthService   - Authentication & Authorization"
+	@echo "  • datifyy.user.v1.UserService   - User Profile Management"
+	@echo ""
+	@echo "NOTE: Your backend currently uses REST (HTTP)."
+	@echo "To test with Buf Studio, you'll need to implement gRPC server."
+	@echo ""
+	@echo "Press Ctrl+C to return to terminal"
+	@open "https://studio.buf.build"
+
+studio-local: ## Run Buf Studio locally (requires buf CLI)
+	@echo "🚀 Starting local Buf Studio server..."
+	@cd proto && buf beta studio --listen 127.0.0.1:8081
+	@echo "Studio running at http://localhost:8081"
+
+proto-lint: ## Lint proto files
+	@echo "🔍 Linting proto files..."
+	docker-compose run --rm proto-gen "cd proto && buf lint"
+	@echo "✓ Proto files linted!"
+
+proto-breaking: ## Check for breaking changes in proto files
+	@echo "🔍 Checking for breaking changes..."
+	docker-compose run --rm proto-gen "cd proto && buf breaking --against '.git#branch=main'"
+	@echo "✓ No breaking changes detected!"
+
+proto-format: ## Format proto files
+	@echo "✨ Formatting proto files..."
+	docker-compose run --rm proto-gen "cd proto && buf format -w"
+	@echo "✓ Proto files formatted!"
+
+proto-docs: ## Generate proto documentation
+	@echo "📚 Generating proto documentation..."
+	@mkdir -p docs/proto
+	docker-compose run --rm proto-gen "cd proto && buf generate --template buf.gen.docs.yaml"
+	@echo "✓ Documentation generated in docs/proto/"
+	@echo "Open docs/proto/index.html to view"
+
+proto-status: ## Show proto file statistics
+	@echo "📊 Proto File Statistics:"
+	@echo ""
+	@echo "Services:"
+	@grep -r "^service" proto --include="*.proto" | wc -l | xargs echo "  Services defined:"
+	@echo ""
+	@echo "Messages:"
+	@grep -r "^message" proto --include="*.proto" | wc -l | xargs echo "  Messages defined:"
+	@echo ""
+	@echo "Enums:"
+	@grep -r "^enum" proto --include="*.proto" | wc -l | xargs echo "  Enums defined:"
+	@echo ""
+	@echo "RPCs:"
+	@grep -r "rpc " proto --include="*.proto" | wc -l | xargs echo "  RPC methods defined:"
+	@echo ""
+	@echo "Files:"
+	@find proto -name "*.proto" -not -path "*/buf/*" | wc -l | xargs echo "  Proto files:"
+
+grpcurl-health: ## Test gRPC health check (when gRPC is implemented)
+	@echo "Testing gRPC server health..."
+	@grpcurl -plaintext localhost:9090 grpc.health.v1.Health/Check || echo "⚠️  gRPC server not running yet"
+
+grpcurl-list: ## List available gRPC services (when gRPC is implemented)
+	@echo "Available gRPC services:"
+	@grpcurl -plaintext localhost:9090 list || echo "⚠️  gRPC server not running yet"
+
+grpcurl-auth: ## Example: Test auth service with grpcurl
+	@echo "Example: Register with email"
+	@echo '{"credentials": {"email": "test@example.com", "password": "password123", "name": "Test User"}}' | \
+		grpcurl -plaintext -d @ localhost:9090 datifyy.auth.v1.AuthService/RegisterWithEmail || \
+		echo "⚠️  gRPC server not running yet"

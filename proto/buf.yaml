@@ -4,4 +4,11 @@ breaking:
     - FILE
 lint:
   use:
-    - DEFAULT
+    - STANDARD
+  except:
+    # Allow simpler directory structure (auth/v1 instead of datifyy/auth/v1)
+    - PACKAGE_DIRECTORY_MATCH
+    # Allow shorter enum value names (OCCUPATION_DOCTOR instead of OCCUPATION_CATEGORY_DOCTOR)
+    - ENUM_VALUE_PREFIX
+    # More flexible naming for dating app context
+    - ENUM_ZERO_VALUE_SUFFIX
