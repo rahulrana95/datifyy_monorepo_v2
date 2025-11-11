@@ -1,0 +1,85 @@
+version: '3.8'
+
+services:
+  # Test database - separate from development
+  postgres-test:
+    image: postgres:15-alpine
+    ports:
+      - "5433:5432"  # Different port to avoid conflicts
+    environment:
+      - POSTGRES_USER=testuser
+      - POSTGRES_PASSWORD=testpass
+      - POSTGRES_DB=monorepo_test
+    networks:
+      - test-network
+    tmpfs:
+      - /var/lib/postgresql/data  # Use memory for faster tests
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U testuser"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # Test Redis - separate instance
+  redis-test:
+    image: redis:7-alpine
+    ports:
+      - "6380:6379"  # Different port to avoid conflicts
+    networks:
+      - test-network
+    command: redis-server --save ""  # Disable persistence for tests
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+
+  # Backend test runner
+  backend-test:
+    build:
+      context: .
+      dockerfile: docker/backend/Dockerfile.dev
+    volumes:
+      - ./apps/backend:/app
+      - backend-test-cache:/go/pkg/mod
+    environment:
+      - ENV=test
+      - DATABASE_URL=postgres://testuser:testpass@postgres-test:5432/monorepo_test?sslmode=disable
+      - REDIS_URL=redis://redis-test:6379
+      - DB_HOST=postgres-test
+      - DB_PORT=5432
+      - DB_USER=testuser
+      - DB_PASSWORD=testpass
+      - DB_NAME=monorepo_test
+      - REDIS_HOST=redis-test
+      - REDIS_PORT=6379
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+      redis-test:
+        condition: service_healthy
+    networks:
+      - test-network
+    command: go test -v ./...
+
+  # Frontend test runner
+  frontend-test:
+    build:
+      context: .
+      dockerfile: docker/frontend/Dockerfile.dev
+    volumes:
+      - ./apps/frontend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=test
+      - CI=true
+    networks:
+      - test-network
+    command: npm test -- --watchAll=false
+
+networks:
+  test-network:
+    driver: bridge
+
+volumes:
+  backend-test-cache:

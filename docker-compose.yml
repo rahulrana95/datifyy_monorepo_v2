@@ -1,0 +1,113 @@
+version: '3.8'
+
+services:
+  # Proto generation service
+  proto-gen:
+    build:
+      context: .
+      dockerfile: docker/proto/Dockerfile
+    volumes:
+      - ./proto:/workspace/proto:ro
+      - ./apps/backend/gen:/workspace/apps/backend/gen
+      - ./apps/frontend/src/gen:/workspace/apps/frontend/src/gen
+    command: buf generate proto
+    profiles:
+      - tools
+
+  # Backend service
+  backend:
+    build:
+      context: .
+      dockerfile: docker/backend/Dockerfile.dev
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./apps/backend:/app
+      - backend-cache:/go/pkg/mod
+    environment:
+      - ENV=development
+      - PORT=8080
+      - DATABASE_URL=postgres://devuser:devpass@postgres:5432/monorepo_dev?sslmode=disable
+      - REDIS_URL=redis://redis:6379
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=devuser
+      - DB_PASSWORD=devpass
+      - DB_NAME=monorepo_dev
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # Frontend service
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend/Dockerfile.dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./apps/frontend:/app
+      - /app/node_modules
+    environment:
+      - REACT_APP_API_URL=http://backend:8080
+      - CHOKIDAR_USEPOLLING=true
+    depends_on:
+      - backend
+    networks:
+      - app-network
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+
+  # PostgreSQL database
+  postgres:
+    image: postgres:15-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=devuser
+      - POSTGRES_PASSWORD=devpass
+      - POSTGRES_DB=monorepo_dev
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - app-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U devuser"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis for caching (optional)
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - app-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  backend-cache:
+  postgres-data:
+  redis-data:

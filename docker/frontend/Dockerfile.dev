@@ -1,0 +1,24 @@
+FROM node:18-alpine AS development
+
+# Install bash for scripts
+RUN apk add --no-cache bash
+
+WORKDIR /app
+
+# Copy package files first (for caching)
+COPY apps/frontend/package*.json ./
+RUN npm install
+
+# Copy the rest of the code
+COPY apps/frontend/ ./
+
+# Expose port
+EXPOSE 3000
+
+# Set environment
+ENV NODE_ENV=development
+ENV CHOKIDAR_USEPOLLING=true
+ENV WATCHPACK_POLLING=true
+
+# Start dev server
+CMD ["npm", "start"]
