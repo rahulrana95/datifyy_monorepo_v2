@@ -9,6 +9,7 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { ChakraProvider } from './providers/ChakraProvider';
 
 // Ensure root element exists
 const rootElement = document.getElementById('root');
@@ -20,9 +21,11 @@ const root = ReactDOM.createRoot(rootElement);
 
 root.render(
   <React.StrictMode>
-    <ErrorBoundary>
-      <App />
-    </ErrorBoundary>
+    <ChakraProvider>
+      <ErrorBoundary>
+        <App />
+      </ErrorBoundary>
+    </ChakraProvider>
   </React.StrictMode>
 );
 

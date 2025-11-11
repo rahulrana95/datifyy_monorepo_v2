@@ -12,9 +12,11 @@ import { StatusIndicator } from './components/StatusIndicator';
 import { ErrorDisplay } from './components/ErrorDisplay';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { ProtoDemo } from './components/ProtoDemo';
+import { ChakraV3Demo } from './components/chakra/ChakraV3Demo';
+import { Box } from '@chakra-ui/react';
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'api' | 'proto'>('api');
+  const [activeTab, setActiveTab] = useState<'api' | 'proto' | 'chakra'>('api');
   
   const { state, execute: refresh } = useApi<ApiResponse>(
     () => apiService.getApiStatus(),
@@ -56,6 +58,12 @@ const App: React.FC = () => {
             onClick={() => setActiveTab('proto')}
           >
             Proto Types Demo
+          </button>
+          <button 
+            className={`tab-button ${activeTab === 'chakra' ? 'active' : ''}`}
+            onClick={() => setActiveTab('chakra')}
+          >
+            Chakra UI + Emotion
           </button>
         </div>
 
@@ -121,6 +129,13 @@ const App: React.FC = () => {
           <section className="App-section">
             <ProtoDemo />
           </section>
+        )}
+
+        {/* Chakra UI Tab Content */}
+        {activeTab === 'chakra' && (
+          <Box>
+            <ChakraV3Demo />
+          </Box>
         )}
       </main>
     </div>
