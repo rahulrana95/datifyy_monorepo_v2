@@ -522,6 +522,84 @@ make build
 make up
 ```
 
+### Docker build errors
+
+#### Go version incompatibility with Air
+```bash
+# Error: Air requires go >= 1.22
+# Solution: Use compatible Air version in docker/backend/Dockerfile.dev
+RUN go install github.com/cosmtrek/air@v1.45.0
+```
+
+#### npm ci failures
+```bash
+# Error: package-lock.json out of sync
+# Solution: Use npm install instead of npm ci in development
+# Update docker/frontend/Dockerfile.dev:
+RUN npm install
+```
+
+### Docker permissions error
+```bash
+# Error: permission denied on ~/.docker/buildx/activity/desktop-linux
+# Fix ownership of Docker buildx directory
+sudo chown -R $(whoami):staff ~/.docker/buildx/
+
+# Or remove and recreate
+rm -rf ~/.docker/buildx/
+docker buildx prune -a
+```
+
+### Frontend can't connect to backend
+
+#### CORS Issues
+```bash
+# Error: net::ERR_NAME_NOT_RESOLVED or CORS blocked
+# The frontend is trying to reach http://backend:8080
+
+# Solution 1: Update docker-compose.yml
+# Change REACT_APP_API_URL from http://backend:8080 to http://localhost:8080
+
+# Solution 2: Rebuild frontend container to pick up new env variables
+docker-compose down frontend
+docker-compose build frontend
+docker-compose up -d frontend
+
+# Solution 3: Force hard refresh in browser
+# Mac: Cmd+Shift+R
+# Windows/Linux: Ctrl+Shift+R
+
+# Solution 4: Check environment variables
+docker-compose exec frontend printenv | grep REACT_APP
+```
+
+#### Backend not accessible
+```bash
+# Verify backend is running and healthy
+curl http://localhost:8080/health
+
+# Check backend logs for errors
+docker-compose logs backend
+
+# Ensure CORS is enabled in backend
+# The backend should have CORS middleware allowing requests from localhost:3000
+```
+
+### Services not starting
+```bash
+# Check all services status
+docker-compose ps
+
+# View logs for specific service
+docker-compose logs <service-name>
+
+# Restart specific service
+docker-compose restart <service-name>
+
+# Rebuild and restart a service
+docker-compose build <service-name> && docker-compose up -d <service-name>
+```
+
 ## 📈 Monitoring
 
 ### Check Service Health

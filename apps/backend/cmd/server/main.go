@@ -70,11 +70,31 @@ func main() {
 	mux.HandleFunc("/api/test-db", server.testDBHandler)
 	mux.HandleFunc("/api/test-redis", server.testRedisHandler)
 
+	// Add CORS middleware
+	handler := enableCORS(mux)
+
 	// Start server
 	log.Printf("Server starting on port %s", port)
-	if err := http.ListenAndServe(fmt.Sprintf(":%s", port), mux); err != nil {
+	if err := http.ListenAndServe(fmt.Sprintf(":%s", port), handler); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func enableCORS(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Set CORS headers
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+		// Handle preflight requests
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }
 
 func connectPostgres(dbURL string) (*sql.DB, error) {
