@@ -152,6 +152,20 @@ grpc-test-page: ## Open browser test page
 	@echo "Opening test page in browser..."
 	open grpc-test.html
 
+buf-studio-agent: ## Start Buf Studio Agent (proxy for web-based Buf Studio)
+	@echo "🚀 Starting Buf Studio Agent on port 8081..."
+	@echo "Then opening https://studio.buf.build in browser"
+	@echo "In Buf Studio, connect to: http://localhost:8081"
+	@echo ""
+	@echo "Press Ctrl+C to stop the agent"
+	@buf beta studio-agent --port 8081 --private-network
+
+buf-studio: ## Open Buf Studio web app (requires agent running)
+	@echo "Opening Buf Studio..."
+	@echo "Make sure to run 'make buf-studio-agent' in another terminal first!"
+	@echo "Then connect to: http://localhost:8081"
+	@open "https://studio.buf.build"
+
 dev: ## Start development environment and watch logs
 	docker-compose up -d postgres redis
 	@echo "Waiting for database and Redis to be ready..."

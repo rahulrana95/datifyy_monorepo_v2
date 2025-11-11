@@ -61,10 +61,16 @@ A production-ready containerized monorepo with React frontend, Go backend, Postg
    # REST API
    curl http://localhost:8080/health
 
-   # gRPC UI (interactive web interface)
-   grpcui -plaintext localhost:9090
+   # Buf Studio (recommended - official modern UI)
+   # Terminal 1: Start the agent
+   make buf-studio-agent
+   # Terminal 2: Open Buf Studio and connect to http://localhost:8081
+   make buf-studio
 
-   # Or use the test page
+   # Or use grpcui
+   make grpc-ui
+
+   # Or use the browser test page
    open grpc-test.html
    ```
 
@@ -388,7 +394,9 @@ make test-db            # Start test database
 make test-db-down       # Stop test database
 
 # gRPC Testing (New!)
-make grpc-ui            # Launch gRPC web UI for interactive testing
+make buf-studio-agent   # Start Buf Studio Agent (official Buf web UI)
+make buf-studio         # Open Buf Studio web app
+make grpc-ui            # Launch grpcui web interface
 make grpc-list          # List all available gRPC services
 make grpc-list-auth     # List all AuthService methods
 make grpc-describe      # Describe RegisterWithEmail method

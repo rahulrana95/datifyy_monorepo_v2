@@ -31,11 +31,116 @@ All testing tools connect to the gRPC server which has **server reflection enabl
 
 | Tool | Type | Best For | Installation |
 |------|------|----------|--------------|
+| **Buf Studio** | Web | Official Buf web UI, modern interface | `brew install bufbuild/buf/buf` |
 | **grpcui** | Web UI | Interactive testing, exploration | `brew install grpcui` |
 | **grpcurl** | CLI | Automation, scripts, CI/CD | `brew install grpcurl` |
 | **Buf CLI** | CLI | Schema-first development | `brew install bufbuild/buf/buf` |
 | **Postman** | GUI | Complex workflows, collections | Download from postman.com |
 | **Browser** | Web | Quick REST testing | No install (built-in) |
+
+---
+
+## Buf Studio - Official Web UI
+
+**Best for**: Modern, official Buf interface with excellent UX
+
+### How It Works
+
+Buf Studio is a web application that requires a local agent to connect to your gRPC server:
+
+```
+Web Browser (https://studio.buf.build)
+         ↓
+Buf Studio Agent (localhost:8081) ← Proxy
+         ↓
+Your gRPC Server (localhost:9090)
+```
+
+### Quick Start
+
+**Terminal 1** - Start the agent:
+```bash
+make buf-studio-agent
+```
+
+**Terminal 2** - Open Buf Studio:
+```bash
+make buf-studio
+```
+
+Or manually:
+```bash
+# Start agent
+buf beta studio-agent --port 8081 --private-network
+
+# Open Buf Studio
+open https://studio.buf.build
+```
+
+### Using Buf Studio
+
+#### 1. Connect to Agent
+
+In the Buf Studio web interface:
+- Look for the **"Target"** input at the top
+- Enter: `http://localhost:8081`
+- Click **"Connect"**
+
+#### 2. Select Service
+
+- Left sidebar shows all available services
+- Expand `datifyy.auth.v1.AuthService`
+- You'll see all 26 methods
+
+#### 3. Test an Endpoint
+
+Click on `RegisterWithEmail`:
+
+**Request**:
+```json
+{
+  "credentials": {
+    "email": "bufstudio@example.com",
+    "password": "TestPass123*",
+    "name": "Buf Studio User"
+  }
+}
+```
+
+Click **"Send"** → See formatted response below
+
+### Features
+
+✅ **Modern UI** - Clean, intuitive interface
+✅ **Real-time validation** - Proto-aware autocomplete
+✅ **Request history** - Save and replay requests
+✅ **Error handling** - Clear error messages
+✅ **Metadata support** - Add headers easily
+✅ **Streaming support** - Handle streaming RPCs
+
+### Troubleshooting
+
+**Connection refused**:
+```bash
+# Verify agent is running
+lsof -ti:8081
+
+# Restart agent
+make buf-studio-agent
+```
+
+**CORS errors**:
+Make sure you used `--private-network` flag (already in Makefile command)
+
+**Can't see services**:
+Check that your gRPC server has reflection enabled (it does!)
+
+### Stop the Agent
+
+```bash
+# Find and kill the agent process
+lsof -ti:8081 | xargs kill
+```
 
 ---
 
