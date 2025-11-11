@@ -1,0 +1,105 @@
+syntax = "proto3";
+
+package datifyy.common.v1;
+
+option go_package = "github.com/datifyy/backend/gen/common/v1";
+
+// Common timestamp message for consistent time handling across services
+message Timestamp {
+  // Seconds since Unix epoch (1970-01-01T00:00:00Z)
+  int64 seconds = 1;
+
+  // Nanoseconds component of the timestamp (0-999,999,999)
+  int32 nanos = 2;
+}
+
+// Common error response for API errors
+message Error {
+  // Error code (e.g., "INVALID_EMAIL", "USER_NOT_FOUND")
+  string code = 1;
+
+  // Human-readable error message
+  string message = 2;
+
+  // Additional error details (field-specific errors)
+  map<string, string> details = 3;
+}
+
+// Pagination request parameters
+message PaginationRequest {
+  // Page number (1-indexed)
+  int32 page = 1;
+
+  // Number of items per page (max 100)
+  int32 page_size = 2;
+
+  // Optional cursor for cursor-based pagination
+  string cursor = 3;
+}
+
+// Pagination response metadata
+message PaginationResponse {
+  // Current page number
+  int32 page = 1;
+
+  // Items per page
+  int32 page_size = 2;
+
+  // Total number of items
+  int64 total_count = 3;
+
+  // Total number of pages
+  int32 total_pages = 4;
+
+  // Cursor for next page (cursor-based pagination)
+  string next_cursor = 5;
+
+  // Whether there are more items
+  bool has_more = 6;
+}
+
+// Common user account status enum
+enum AccountStatus {
+  ACCOUNT_STATUS_UNSPECIFIED = 0;
+  ACCOUNT_STATUS_ACTIVE = 1;          // Active and verified
+  ACCOUNT_STATUS_PENDING = 2;         // Created but email not verified
+  ACCOUNT_STATUS_SUSPENDED = 3;       // Temporarily suspended
+  ACCOUNT_STATUS_BANNED = 4;          // Permanently banned
+  ACCOUNT_STATUS_DELETED = 5;         // Soft deleted
+}
+
+// Verification status for email/phone
+enum VerificationStatus {
+  VERIFICATION_STATUS_UNSPECIFIED = 0;
+  VERIFICATION_STATUS_UNVERIFIED = 1;
+  VERIFICATION_STATUS_PENDING = 2;     // Code sent, awaiting verification
+  VERIFICATION_STATUS_VERIFIED = 3;
+  VERIFICATION_STATUS_EXPIRED = 4;     // Verification code expired
+}
+
+// Common device platform types
+enum DevicePlatform {
+  DEVICE_PLATFORM_UNSPECIFIED = 0;
+  DEVICE_PLATFORM_WEB = 1;
+  DEVICE_PLATFORM_IOS = 2;
+  DEVICE_PLATFORM_ANDROID = 3;
+  DEVICE_PLATFORM_DESKTOP = 4;
+}
+
+// Geographic location information
+message Location {
+  // Country code (ISO 3166-1 alpha-2)
+  string country_code = 1;
+
+  // Country name
+  string country = 2;
+
+  // City name
+  string city = 3;
+
+  // Latitude
+  double latitude = 4;
+
+  // Longitude
+  double longitude = 5;
+}

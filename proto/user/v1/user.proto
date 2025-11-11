@@ -1,0 +1,1184 @@
+syntax = "proto3";
+
+package datifyy.user.v1;
+
+import "common/v1/types.proto";
+
+option go_package = "github.com/datifyy/backend/gen/user/v1";
+
+// UserService handles user profile management and discovery
+service UserService {
+  // ============================================================================
+  // Profile Management
+  // ============================================================================
+
+  // Get user profile by ID
+  rpc GetUserProfile(GetUserProfileRequest) returns (GetUserProfileResponse);
+
+  // Get current authenticated user's profile
+  rpc GetMyProfile(GetMyProfileRequest) returns (GetMyProfileResponse);
+
+  // Update user profile
+  rpc UpdateProfile(UpdateProfileRequest) returns (UpdateProfileResponse);
+
+  // Delete user account
+  rpc DeleteAccount(DeleteAccountRequest) returns (DeleteAccountResponse);
+
+  // Upload profile photo
+  rpc UploadProfilePhoto(UploadProfilePhotoRequest) returns (UploadProfilePhotoResponse);
+
+  // Delete profile photo
+  rpc DeleteProfilePhoto(DeleteProfilePhotoRequest) returns (DeleteProfilePhotoResponse);
+
+  // ============================================================================
+  // User Discovery
+  // ============================================================================
+
+  // Search users (for matching)
+  rpc SearchUsers(SearchUsersRequest) returns (SearchUsersResponse);
+
+  // Get user recommendations
+  rpc GetRecommendations(GetRecommendationsRequest) returns (GetRecommendationsResponse);
+
+  // ============================================================================
+  // Partner Preferences
+  // ============================================================================
+
+  // Get partner preferences
+  rpc GetPartnerPreferences(GetPartnerPreferencesRequest) returns (GetPartnerPreferencesResponse);
+
+  // Update partner preferences
+  rpc UpdatePartnerPreferences(UpdatePartnerPreferencesRequest) returns (UpdatePartnerPreferencesResponse);
+
+  // ============================================================================
+  // User Preferences (App Settings)
+  // ============================================================================
+
+  // Get user app preferences
+  rpc GetUserPreferences(GetUserPreferencesRequest) returns (GetUserPreferencesResponse);
+
+  // Update user app preferences
+  rpc UpdateUserPreferences(UpdateUserPreferencesRequest) returns (UpdateUserPreferencesResponse);
+
+  // ============================================================================
+  // Blocking & Reporting
+  // ============================================================================
+
+  // Block a user
+  rpc BlockUser(BlockUserRequest) returns (BlockUserResponse);
+
+  // Unblock a user
+  rpc UnblockUser(UnblockUserRequest) returns (UnblockUserResponse);
+
+  // List blocked users
+  rpc ListBlockedUsers(ListBlockedUsersRequest) returns (ListBlockedUsersResponse);
+
+  // Report a user
+  rpc ReportUser(ReportUserRequest) returns (ReportUserResponse);
+}
+
+// ============================================================================
+// User Profile Messages
+// ============================================================================
+
+// Complete user profile
+message UserProfile {
+  // User ID
+  string user_id = 1;
+
+  // Basic information
+  BasicInfo basic_info = 2;
+
+  // Profile details
+  ProfileDetails profile_details = 3;
+
+  // Lifestyle information
+  LifestyleInfo lifestyle_info = 4;
+
+  // Profile prompts (user's answered prompts)
+  repeated ProfilePrompt prompts = 5;
+
+  // Profile photos
+  repeated ProfilePhoto photos = 6;
+
+  // Account metadata
+  AccountMetadata metadata = 7;
+
+  // Partner preferences (what they're looking for)
+  PartnerPreferences partner_preferences = 8;
+
+  // User app preferences (notifications, privacy, etc.)
+  UserPreferences user_preferences = 9;
+
+  // Profile completion percentage (0-100)
+  int32 completion_percentage = 10;
+
+  // Whether profile is public
+  bool is_public = 11;
+
+  // Whether user is online
+  bool is_online = 12;
+
+  // Last seen timestamp
+  common.v1.Timestamp last_seen_at = 13;
+
+  // Profile verification status
+  bool is_verified = 14;
+
+  // Compatibility score (when viewing from another profile)
+  int32 compatibility_score = 15;
+}
+
+// Basic user information
+message BasicInfo {
+  // Display name
+  string name = 1;
+
+  // Email address
+  string email = 2;
+
+  // Phone number
+  string phone_number = 3;
+
+  // Date of birth
+  common.v1.Timestamp date_of_birth = 4;
+
+  // Age (calculated from DOB)
+  int32 age = 5;
+
+  // Gender
+  Gender gender = 6;
+
+  // Pronouns
+  string pronouns = 7;
+
+  // Zodiac sign
+  ZodiacSign zodiac_sign = 8;
+}
+
+// Detailed profile information
+message ProfileDetails {
+  // Bio/About me (max 500 chars)
+  string bio = 1;
+
+  // Occupation (can select multiple)
+  repeated OccupationInfo occupations = 2;
+
+  // Company name
+  string company = 3;
+
+  // Job title
+  string job_title = 4;
+
+  // Education (can have multiple degrees)
+  repeated EducationInfo education = 5;
+
+  // School/University name
+  string school = 6;
+
+  // Height in cm
+  int32 height = 7;
+
+  // Location
+  common.v1.Location location = 8;
+
+  // Hometown
+  string hometown = 9;
+
+  // Interests/hobbies (select from predefined list)
+  repeated InterestInfo interests = 10;
+
+  // Languages spoken
+  repeated LanguageInfo languages = 11;
+
+  // Relationship goals
+  repeated RelationshipGoal relationship_goals = 12;
+}
+
+// Lifestyle information (key for dating compatibility)
+message LifestyleInfo {
+  // Drinking habits
+  DrinkingHabit drinking = 1;
+
+  // Smoking habits
+  SmokingHabit smoking = 2;
+
+  // Workout/Exercise frequency
+  WorkoutFrequency workout = 3;
+
+  // Dietary preferences
+  DietaryPreference dietary_preference = 4;
+
+  // Religion
+  Religion religion = 5;
+
+  // How important is religion
+  Importance religion_importance = 6;
+
+  // Political views
+  PoliticalView political_view = 7;
+
+  // Pets
+  PetPreference pets = 8;
+
+  // Want children
+  ChildrenPreference children = 9;
+
+  // Personality type (MBTI)
+  string personality_type = 10;
+
+  // Communication style
+  CommunicationStyle communication_style = 11;
+
+  // Love language
+  LoveLanguage love_language = 12;
+
+  // Sleep schedule
+  SleepSchedule sleep_schedule = 13;
+}
+
+// Occupation information
+message OccupationInfo {
+  // Occupation category
+  OccupationCategory category = 1;
+
+  // Display label
+  string label = 2;
+
+  // Custom occupation (if category is OTHER)
+  string custom_occupation = 3;
+}
+
+// Education information
+message EducationInfo {
+  // Education level
+  EducationLevel level = 1;
+
+  // Display label
+  string label = 2;
+
+  // Field of study
+  string field_of_study = 3;
+}
+
+// Interest information
+message InterestInfo {
+  // Interest category
+  InterestCategory category = 1;
+
+  // Display label
+  string label = 2;
+}
+
+// Language information
+message LanguageInfo {
+  // Language code
+  LanguageCode code = 1;
+
+  // Display label
+  string label = 2;
+
+  // Proficiency level
+  LanguageProficiency proficiency = 3;
+}
+
+// Profile prompt (like Hinge prompts)
+message ProfilePrompt {
+  // Prompt ID
+  string prompt_id = 1;
+
+  // Prompt question
+  PromptQuestion question = 2;
+
+  // User's answer (text)
+  string answer_text = 3;
+
+  // User's answer (photo/video URL if applicable)
+  string answer_media_url = 4;
+
+  // Display order
+  int32 order = 5;
+}
+
+// Profile photo
+message ProfilePhoto {
+  // Photo ID
+  string photo_id = 1;
+
+  // Photo URL
+  string url = 2;
+
+  // Thumbnail URL
+  string thumbnail_url = 3;
+
+  // Display order
+  int32 order = 4;
+
+  // Whether this is the primary photo
+  bool is_primary = 5;
+
+  // Upload timestamp
+  common.v1.Timestamp uploaded_at = 6;
+
+  // Photo caption/description
+  string caption = 7;
+}
+
+// Account metadata
+message AccountMetadata {
+  // Account status
+  common.v1.AccountStatus status = 1;
+
+  // Email verification status
+  common.v1.VerificationStatus email_verified = 2;
+
+  // Phone verification status
+  common.v1.VerificationStatus phone_verified = 3;
+
+  // Account creation timestamp
+  common.v1.Timestamp created_at = 4;
+
+  // Last profile update timestamp
+  common.v1.Timestamp updated_at = 5;
+
+  // Last login timestamp
+  common.v1.Timestamp last_login_at = 6;
+
+  // Profile verification badge
+  bool is_verified = 7;
+
+  // Premium/subscription status
+  bool is_premium = 8;
+}
+
+// Partner preferences (what user is looking for in a match)
+message PartnerPreferences {
+  // Looking for (gender preference)
+  repeated Gender looking_for_gender = 1;
+
+  // Age range preference
+  AgeRange age_range = 2;
+
+  // Distance preference in km
+  int32 distance_preference = 3;
+
+  // Height range preference (cm)
+  HeightRange height_range = 4;
+
+  // Relationship goals
+  repeated RelationshipGoal relationship_goals = 5;
+
+  // Education level preference
+  repeated EducationLevel education_levels = 6;
+
+  // Occupation preferences
+  repeated OccupationCategory occupations = 7;
+
+  // Religion preferences
+  repeated Religion religions = 8;
+
+  // Children preference
+  repeated ChildrenPreference children_preferences = 9;
+
+  // Drinking preference
+  repeated DrinkingHabit drinking_preferences = 10;
+
+  // Smoking preference
+  repeated SmokingHabit smoking_preferences = 11;
+
+  // Dietary preferences
+  repeated DietaryPreference dietary_preferences = 12;
+
+  // Pet preferences
+  repeated PetPreference pet_preferences = 13;
+
+  // Only show verified profiles
+  bool verified_only = 14;
+
+  // Dealbreakers (things that are must-haves or must-not-haves)
+  repeated string dealbreakers = 15;
+}
+
+// User app preferences (settings)
+message UserPreferences {
+  // Notification preferences
+  NotificationPreferences notifications = 1;
+
+  // Privacy preferences
+  PrivacyPreferences privacy = 2;
+
+  // Discovery preferences
+  DiscoveryPreferences discovery = 3;
+
+  // Language preference for app
+  string app_language = 4;
+
+  // Theme preference (light/dark)
+  string theme = 5;
+}
+
+// Notification preferences
+message NotificationPreferences {
+  // Push notifications enabled
+  bool push_enabled = 1;
+
+  // Email notifications enabled
+  bool email_enabled = 2;
+
+  // SMS notifications enabled
+  bool sms_enabled = 3;
+
+  // New match notifications
+  bool notify_matches = 4;
+
+  // New message notifications
+  bool notify_messages = 5;
+
+  // Like notifications
+  bool notify_likes = 6;
+
+  // Super like notifications
+  bool notify_super_likes = 7;
+
+  // Profile view notifications
+  bool notify_profile_views = 8;
+}
+
+// Privacy preferences
+message PrivacyPreferences {
+  // Show profile to everyone
+  bool public_profile = 1;
+
+  // Show online status
+  bool show_online_status = 2;
+
+  // Show distance
+  bool show_distance = 3;
+
+  // Show age
+  bool show_age = 4;
+
+  // Allow profile indexing
+  bool allow_search_engines = 5;
+
+  // Incognito mode (don't show in discovery)
+  bool incognito_mode = 6;
+
+  // Read receipts
+  bool read_receipts = 7;
+}
+
+// Discovery preferences
+message DiscoveryPreferences {
+  // Show me in discovery
+  bool discoverable = 1;
+
+  // Global mode (show me worldwide)
+  bool global_mode = 2;
+
+  // Only show verified users
+  bool verified_only = 3;
+
+  // Distance radius in km
+  int32 distance_radius = 4;
+
+  // Recently active (only show users active in last X days)
+  int32 recently_active_days = 5;
+}
+
+// Age range
+message AgeRange {
+  // Minimum age
+  int32 min_age = 1;
+
+  // Maximum age
+  int32 max_age = 2;
+}
+
+// Height range
+message HeightRange {
+  // Minimum height in cm
+  int32 min_height = 1;
+
+  // Maximum height in cm
+  int32 max_height = 2;
+}
+
+// ============================================================================
+// Enums
+// ============================================================================
+
+// Gender enum
+enum Gender {
+  GENDER_UNSPECIFIED = 0;
+  GENDER_MALE = 1;
+  GENDER_FEMALE = 2;
+  GENDER_NON_BINARY = 3;
+  GENDER_TRANSGENDER_MALE = 4;
+  GENDER_TRANSGENDER_FEMALE = 5;
+  GENDER_GENDERQUEER = 6;
+  GENDER_OTHER = 7;
+  GENDER_PREFER_NOT_TO_SAY = 8;
+}
+
+// Zodiac signs
+enum ZodiacSign {
+  ZODIAC_SIGN_UNSPECIFIED = 0;
+  ZODIAC_SIGN_ARIES = 1;           // March 21 - April 19
+  ZODIAC_SIGN_TAURUS = 2;          // April 20 - May 20
+  ZODIAC_SIGN_GEMINI = 3;          // May 21 - June 20
+  ZODIAC_SIGN_CANCER = 4;          // June 21 - July 22
+  ZODIAC_SIGN_LEO = 5;             // July 23 - August 22
+  ZODIAC_SIGN_VIRGO = 6;           // August 23 - September 22
+  ZODIAC_SIGN_LIBRA = 7;           // September 23 - October 22
+  ZODIAC_SIGN_SCORPIO = 8;         // October 23 - November 21
+  ZODIAC_SIGN_SAGITTARIUS = 9;     // November 22 - December 21
+  ZODIAC_SIGN_CAPRICORN = 10;      // December 22 - January 19
+  ZODIAC_SIGN_AQUARIUS = 11;       // January 20 - February 18
+  ZODIAC_SIGN_PISCES = 12;         // February 19 - March 20
+}
+
+// Occupation categories (worldwide + India-specific)
+enum OccupationCategory {
+  OCCUPATION_UNSPECIFIED = 0;
+  // Tech & IT
+  OCCUPATION_SOFTWARE_ENGINEER = 1;
+  OCCUPATION_DATA_SCIENTIST = 2;
+  OCCUPATION_PRODUCT_MANAGER = 3;
+  OCCUPATION_UI_UX_DESIGNER = 4;
+  OCCUPATION_CYBERSECURITY = 5;
+  // Healthcare
+  OCCUPATION_DOCTOR = 6;
+  OCCUPATION_NURSE = 7;
+  OCCUPATION_PHARMACIST = 8;
+  OCCUPATION_THERAPIST = 9;
+  // Business & Finance
+  OCCUPATION_ACCOUNTANT = 10;
+  OCCUPATION_FINANCIAL_ANALYST = 11;
+  OCCUPATION_BANKER = 12;
+  OCCUPATION_CONSULTANT = 13;
+  OCCUPATION_ENTREPRENEUR = 14;
+  // Education
+  OCCUPATION_TEACHER = 15;
+  OCCUPATION_PROFESSOR = 16;
+  OCCUPATION_RESEARCHER = 17;
+  // Creative & Arts
+  OCCUPATION_ARTIST = 18;
+  OCCUPATION_DESIGNER = 19;
+  OCCUPATION_PHOTOGRAPHER = 20;
+  OCCUPATION_MUSICIAN = 21;
+  OCCUPATION_WRITER = 22;
+  OCCUPATION_ACTOR = 23;
+  // Engineering (India-specific popular)
+  OCCUPATION_CIVIL_ENGINEER = 24;
+  OCCUPATION_MECHANICAL_ENGINEER = 25;
+  OCCUPATION_ELECTRICAL_ENGINEER = 26;
+  // Legal
+  OCCUPATION_LAWYER = 27;
+  OCCUPATION_LEGAL_ADVISOR = 28;
+  // Government & Defense (India-specific)
+  OCCUPATION_GOVERNMENT_EMPLOYEE = 29;
+  OCCUPATION_CIVIL_SERVANT = 30;
+  OCCUPATION_MILITARY = 31;
+  OCCUPATION_POLICE = 32;
+  // Sales & Marketing
+  OCCUPATION_SALES_EXECUTIVE = 33;
+  OCCUPATION_MARKETING_MANAGER = 34;
+  // Aviation
+  OCCUPATION_PILOT = 35;
+  OCCUPATION_FLIGHT_ATTENDANT = 36;
+  // Hospitality
+  OCCUPATION_CHEF = 37;
+  OCCUPATION_HOTEL_MANAGER = 38;
+  // Real Estate
+  OCCUPATION_REALTOR = 39;
+  // Other
+  OCCUPATION_ARCHITECT = 40;
+  OCCUPATION_SCIENTIST = 41;
+  OCCUPATION_ATHLETE = 42;
+  OCCUPATION_STUDENT = 43;
+  OCCUPATION_HOMEMAKER = 44;
+  OCCUPATION_RETIRED = 45;
+  OCCUPATION_SELF_EMPLOYED = 46;
+  OCCUPATION_FREELANCER = 47;
+  OCCUPATION_OTHER = 48;
+}
+
+// Education levels (worldwide standards)
+enum EducationLevel {
+  EDUCATION_LEVEL_UNSPECIFIED = 0;
+  EDUCATION_LEVEL_HIGH_SCHOOL = 1;              // Secondary education
+  EDUCATION_LEVEL_SOME_COLLEGE = 2;             // Some college, no degree
+  EDUCATION_LEVEL_ASSOCIATE_DEGREE = 3;         // 2-year degree
+  EDUCATION_LEVEL_BACHELORS = 4;                // Undergraduate degree
+  EDUCATION_LEVEL_MASTERS = 5;                  // Graduate degree
+  EDUCATION_LEVEL_MBA = 6;                      // Business degree
+  EDUCATION_LEVEL_PHD = 7;                      // Doctorate
+  EDUCATION_LEVEL_PROFESSIONAL_DEGREE = 8;      // JD, MD, etc.
+  EDUCATION_LEVEL_DIPLOMA = 9;                  // Vocational/Technical diploma
+  EDUCATION_LEVEL_TRADE_SCHOOL = 10;            // Trade certification
+  EDUCATION_LEVEL_OTHER = 11;
+}
+
+// Top 20 interests for dating apps
+enum InterestCategory {
+  INTEREST_UNSPECIFIED = 0;
+  INTEREST_TRAVEL = 1;                  // Travel & Exploration
+  INTEREST_PHOTOGRAPHY = 2;             // Photography
+  INTEREST_MUSIC = 3;                   // Music
+  INTEREST_MOVIES_TV = 4;               // Movies & TV Shows
+  INTEREST_COOKING = 5;                 // Cooking & Food
+  INTEREST_FITNESS = 6;                 // Fitness & Gym
+  INTEREST_YOGA = 7;                    // Yoga & Meditation
+  INTEREST_READING = 8;                 // Reading & Books
+  INTEREST_WRITING = 9;                 // Writing & Blogging
+  INTEREST_ART = 10;                    // Art & Museums
+  INTEREST_DANCING = 11;                // Dancing
+  INTEREST_SPORTS = 12;                 // Sports & Athletics
+  INTEREST_GAMING = 13;                 // Gaming & Esports
+  INTEREST_HIKING = 14;                 // Hiking & Outdoors
+  INTEREST_PETS = 15;                   // Pets & Animals
+  INTEREST_FASHION = 16;                // Fashion & Style
+  INTEREST_VOLUNTEERING = 17;           // Volunteering & Activism
+  INTEREST_ENTREPRENEURSHIP = 18;       // Entrepreneurship & Startups
+  INTEREST_WINE_TASTING = 19;           // Wine & Cocktails
+  INTEREST_ASTROLOGY = 20;              // Astrology & Spirituality
+  INTEREST_OTHER = 21;
+}
+
+// Language codes (popular worldwide + Indian languages)
+enum LanguageCode {
+  LANGUAGE_UNSPECIFIED = 0;
+  // Global
+  LANGUAGE_ENGLISH = 1;
+  LANGUAGE_SPANISH = 2;
+  LANGUAGE_FRENCH = 3;
+  LANGUAGE_GERMAN = 4;
+  LANGUAGE_ITALIAN = 5;
+  LANGUAGE_PORTUGUESE = 6;
+  LANGUAGE_RUSSIAN = 7;
+  LANGUAGE_CHINESE_MANDARIN = 8;
+  LANGUAGE_JAPANESE = 9;
+  LANGUAGE_KOREAN = 10;
+  LANGUAGE_ARABIC = 11;
+  // Indian languages
+  LANGUAGE_HINDI = 12;
+  LANGUAGE_BENGALI = 13;
+  LANGUAGE_TELUGU = 14;
+  LANGUAGE_MARATHI = 15;
+  LANGUAGE_TAMIL = 16;
+  LANGUAGE_GUJARATI = 17;
+  LANGUAGE_KANNADA = 18;
+  LANGUAGE_MALAYALAM = 19;
+  LANGUAGE_PUNJABI = 20;
+  LANGUAGE_URDU = 21;
+  LANGUAGE_ODIA = 22;
+  // Other
+  LANGUAGE_DUTCH = 23;
+  LANGUAGE_POLISH = 24;
+  LANGUAGE_TURKISH = 25;
+  LANGUAGE_GREEK = 26;
+  LANGUAGE_HEBREW = 27;
+  LANGUAGE_THAI = 28;
+  LANGUAGE_VIETNAMESE = 29;
+  LANGUAGE_INDONESIAN = 30;
+  LANGUAGE_SWEDISH = 31;
+  LANGUAGE_OTHER = 32;
+}
+
+// Language proficiency
+enum LanguageProficiency {
+  PROFICIENCY_UNSPECIFIED = 0;
+  PROFICIENCY_BASIC = 1;         // Basic/Beginner
+  PROFICIENCY_CONVERSATIONAL = 2; // Conversational
+  PROFICIENCY_FLUENT = 3;        // Fluent
+  PROFICIENCY_NATIVE = 4;        // Native speaker
+}
+
+// Relationship goals
+enum RelationshipGoal {
+  RELATIONSHIP_GOAL_UNSPECIFIED = 0;
+  RELATIONSHIP_GOAL_LONG_TERM = 1;           // Long-term relationship
+  RELATIONSHIP_GOAL_MARRIAGE = 2;            // Looking for marriage
+  RELATIONSHIP_GOAL_SHORT_TERM = 3;          // Short-term relationship
+  RELATIONSHIP_GOAL_FRIENDSHIP = 4;          // New friends
+  RELATIONSHIP_GOAL_CASUAL = 5;              // Casual dating/Hookups
+  RELATIONSHIP_GOAL_FIGURING_IT_OUT = 6;     // Still figuring it out
+  RELATIONSHIP_GOAL_OPEN_TO_EVERYTHING = 7;  // Open to everything
+}
+
+// Drinking habits
+enum DrinkingHabit {
+  DRINKING_UNSPECIFIED = 0;
+  DRINKING_NEVER = 1;              // Never
+  DRINKING_RARELY = 2;             // Rarely
+  DRINKING_SOCIALLY = 3;           // Socially
+  DRINKING_REGULARLY = 4;          // Regularly
+  DRINKING_PREFER_NOT_TO_SAY = 5;
+}
+
+// Smoking habits
+enum SmokingHabit {
+  SMOKING_UNSPECIFIED = 0;
+  SMOKING_NEVER = 1;               // Never
+  SMOKING_SOCIALLY = 2;            // Socially
+  SMOKING_REGULARLY = 3;           // Regularly
+  SMOKING_TRYING_TO_QUIT = 4;      // Trying to quit
+  SMOKING_PREFER_NOT_TO_SAY = 5;
+}
+
+// Workout frequency
+enum WorkoutFrequency {
+  WORKOUT_UNSPECIFIED = 0;
+  WORKOUT_NEVER = 1;               // Never
+  WORKOUT_RARELY = 2;              // Rarely
+  WORKOUT_SOMETIMES = 3;           // Sometimes (1-2 times/week)
+  WORKOUT_OFTEN = 4;               // Often (3-4 times/week)
+  WORKOUT_DAILY = 5;               // Daily/Almost daily
+  WORKOUT_ATHLETE = 6;             // Athlete/Professional
+}
+
+// Dietary preferences
+enum DietaryPreference {
+  DIETARY_UNSPECIFIED = 0;
+  DIETARY_ANYTHING = 1;            // Eat anything
+  DIETARY_VEGETARIAN = 2;          // Vegetarian
+  DIETARY_VEGAN = 3;               // Vegan
+  DIETARY_PESCATARIAN = 4;         // Pescatarian
+  DIETARY_KOSHER = 5;              // Kosher
+  DIETARY_HALAL = 6;               // Halal
+  DIETARY_JAIN = 7;                // Jain (India-specific)
+  DIETARY_GLUTEN_FREE = 8;         // Gluten-free
+  DIETARY_KETO = 9;                // Keto
+  DIETARY_PALEO = 10;              // Paleo
+  DIETARY_OTHER = 11;
+}
+
+// Religion
+enum Religion {
+  RELIGION_UNSPECIFIED = 0;
+  RELIGION_AGNOSTIC = 1;
+  RELIGION_ATHEIST = 2;
+  RELIGION_BUDDHIST = 3;
+  RELIGION_CHRISTIAN = 4;
+  RELIGION_CATHOLIC = 5;
+  RELIGION_HINDU = 6;
+  RELIGION_JEWISH = 7;
+  RELIGION_MUSLIM = 8;
+  RELIGION_SIKH = 9;
+  RELIGION_JAIN = 10;
+  RELIGION_SPIRITUAL = 11;
+  RELIGION_OTHER = 12;
+  RELIGION_PREFER_NOT_TO_SAY = 13;
+}
+
+// Importance level (for religion, politics, etc.)
+enum Importance {
+  IMPORTANCE_UNSPECIFIED = 0;
+  IMPORTANCE_NOT_IMPORTANT = 1;
+  IMPORTANCE_SOMEWHAT_IMPORTANT = 2;
+  IMPORTANCE_IMPORTANT = 3;
+  IMPORTANCE_VERY_IMPORTANT = 4;
+}
+
+// Political views
+enum PoliticalView {
+  POLITICAL_UNSPECIFIED = 0;
+  POLITICAL_LIBERAL = 1;
+  POLITICAL_MODERATE = 2;
+  POLITICAL_CONSERVATIVE = 3;
+  POLITICAL_APOLITICAL = 4;
+  POLITICAL_OTHER = 5;
+  POLITICAL_PREFER_NOT_TO_SAY = 6;
+}
+
+// Pet preferences
+enum PetPreference {
+  PET_UNSPECIFIED = 0;
+  PET_DOG_LOVER = 1;              // Has/Loves dogs
+  PET_CAT_LOVER = 2;              // Has/Loves cats
+  PET_BOTH = 3;                   // Has/Loves both
+  PET_OTHER = 4;                  // Has other pets
+  PET_ALLERGIC = 5;               // Allergic to pets
+  PET_NO_PETS = 6;                // Don't have/want pets
+  PET_WANT_SOMEDAY = 7;           // Want pets someday
+}
+
+// Children preferences
+enum ChildrenPreference {
+  CHILDREN_UNSPECIFIED = 0;
+  CHILDREN_HAVE_AND_WANT_MORE = 1;     // Have children, want more
+  CHILDREN_HAVE_DONT_WANT_MORE = 2;    // Have children, don't want more
+  CHILDREN_DONT_HAVE_WANT = 3;         // Don't have, want children
+  CHILDREN_DONT_HAVE_DONT_WANT = 4;    // Don't have, don't want
+  CHILDREN_OPEN_TO_CHILDREN = 5;       // Open to children
+  CHILDREN_NOT_SURE = 6;               // Not sure yet
+  CHILDREN_PREFER_NOT_TO_SAY = 7;
+}
+
+// Communication style
+enum CommunicationStyle {
+  COMMUNICATION_UNSPECIFIED = 0;
+  COMMUNICATION_BIG_TIME_TEXTER = 1;   // Big time texter
+  COMMUNICATION_PHONE_CALLER = 2;       // Phone caller
+  COMMUNICATION_VIDEO_CHATTER = 3;      // Video chatter
+  COMMUNICATION_IN_PERSON = 4;          // Better in person
+  COMMUNICATION_BAD_TEXTER = 5;         // Bad texter
+}
+
+// Love language
+enum LoveLanguage {
+  LOVE_LANGUAGE_UNSPECIFIED = 0;
+  LOVE_LANGUAGE_WORDS_OF_AFFIRMATION = 1;  // Words of affirmation
+  LOVE_LANGUAGE_ACTS_OF_SERVICE = 2;       // Acts of service
+  LOVE_LANGUAGE_RECEIVING_GIFTS = 3;       // Receiving gifts
+  LOVE_LANGUAGE_QUALITY_TIME = 4;          // Quality time
+  LOVE_LANGUAGE_PHYSICAL_TOUCH = 5;        // Physical touch
+}
+
+// Sleep schedule
+enum SleepSchedule {
+  SLEEP_SCHEDULE_UNSPECIFIED = 0;
+  SLEEP_SCHEDULE_EARLY_BIRD = 1;       // Early bird (sleep early, wake early)
+  SLEEP_SCHEDULE_NIGHT_OWL = 2;        // Night owl (sleep late, wake late)
+  SLEEP_SCHEDULE_VARIES = 3;           // Varies/Flexible
+}
+
+// Profile prompts (like Hinge)
+enum PromptQuestion {
+  PROMPT_UNSPECIFIED = 0;
+  PROMPT_TYPICAL_SUNDAY = 1;                      // A typical Sunday for me is...
+  PROMPT_LOOKING_FOR = 2;                         // I'm looking for...
+  PROMPT_MOST_SPONTANEOUS_THING = 3;              // The most spontaneous thing I've done is...
+  PROMPT_SIMPLE_PLEASURES = 4;                    // My simple pleasures...
+  PROMPT_DATING_ME_IS_LIKE = 5;                   // Dating me is like...
+  PROMPT_BEST_TRAVEL_STORY = 6;                   // My best travel story...
+  PROMPT_TOGETHER_WE_COULD = 7;                   // Together we could...
+  PROMPT_IDEAL_FIRST_DATE = 8;                    // My ideal first date...
+  PROMPT_GREEN_FLAG = 9;                          // A green flag for me is...
+  PROMPT_RED_FLAG = 10;                           // A red flag for me is...
+  PROMPT_UNPOPULAR_OPINION = 11;                  // My most unpopular opinion...
+  PROMPT_OBSESSED_WITH = 12;                      // I'm obsessed with...
+  PROMPT_NERD_OUT_ABOUT = 13;                     // I nerd out about...
+  PROMPT_TEACH_YOU = 14;                          // I can teach you...
+  PROMPT_BEST_QUALITY = 15;                       // My best quality is...
+  PROMPT_WORST_HABIT = 16;                        // My worst habit is...
+  PROMPT_RECENT_ACCOMPLISHMENT = 17;              // A recent accomplishment I'm proud of...
+  PROMPT_BUCKET_LIST = 18;                        // On my bucket list...
+  PROMPT_LIFE_GOAL = 19;                          // My life goal is...
+  PROMPT_FAVORITE_QUOTE = 20;                     // My favorite quote...
+}
+
+// Report reason enum
+enum ReportReason {
+  REPORT_REASON_UNSPECIFIED = 0;
+  REPORT_REASON_SPAM = 1;
+  REPORT_REASON_INAPPROPRIATE_CONTENT = 2;
+  REPORT_REASON_FAKE_PROFILE = 3;
+  REPORT_REASON_HARASSMENT = 4;
+  REPORT_REASON_SCAM = 5;
+  REPORT_REASON_UNDERAGE = 6;
+  REPORT_REASON_STOLEN_PHOTOS = 7;
+  REPORT_REASON_HATE_SPEECH = 8;
+  REPORT_REASON_VIOLENCE = 9;
+  REPORT_REASON_OTHER = 10;
+}
+
+// ============================================================================
+// Request/Response Messages
+// ============================================================================
+
+// Get user profile
+message GetUserProfileRequest {
+  // User ID to fetch
+  string user_id = 1;
+}
+
+message GetUserProfileResponse {
+  // User profile
+  UserProfile profile = 1;
+}
+
+// Get my profile
+message GetMyProfileRequest {
+  // Empty - uses auth context
+}
+
+message GetMyProfileResponse {
+  // Current user's profile
+  UserProfile profile = 1;
+}
+
+// Update profile
+message UpdateProfileRequest {
+  // Basic info updates
+  BasicInfo basic_info = 1;
+
+  // Profile details updates
+  ProfileDetails profile_details = 2;
+
+  // Lifestyle info updates
+  LifestyleInfo lifestyle_info = 3;
+
+  // Prompts updates
+  repeated ProfilePrompt prompts = 4;
+
+  // Fields to update (field mask)
+  repeated string update_fields = 5;
+}
+
+message UpdateProfileResponse {
+  // Updated profile
+  UserProfile profile = 1;
+
+  // Success message
+  string message = 2;
+}
+
+// Delete account
+message DeleteAccountRequest {
+  // Confirmation password
+  string password = 1;
+
+  // Reason for deletion
+  string reason = 2;
+}
+
+message DeleteAccountResponse {
+  // Success
+  bool success = 1;
+
+  // Message
+  string message = 2;
+}
+
+// Upload profile photo
+message UploadProfilePhotoRequest {
+  // Photo data (base64 encoded)
+  bytes photo_data = 1;
+
+  // Content type (e.g., "image/jpeg")
+  string content_type = 2;
+
+  // Whether this should be primary photo
+  bool is_primary = 3;
+
+  // Display order
+  int32 order = 4;
+
+  // Caption
+  string caption = 5;
+}
+
+message UploadProfilePhotoResponse {
+  // Uploaded photo
+  ProfilePhoto photo = 1;
+
+  // Message
+  string message = 2;
+}
+
+// Delete profile photo
+message DeleteProfilePhotoRequest {
+  // Photo ID to delete
+  string photo_id = 1;
+}
+
+message DeleteProfilePhotoResponse {
+  // Success
+  bool success = 1;
+
+  // Message
+  string message = 2;
+}
+
+// Search users
+message SearchUsersRequest {
+  // Search filters
+  SearchFilters filters = 1;
+
+  // Pagination
+  common.v1.PaginationRequest pagination = 2;
+}
+
+message SearchUsersResponse {
+  // Matching users
+  repeated UserProfile users = 1;
+
+  // Pagination
+  common.v1.PaginationResponse pagination = 2;
+}
+
+// Search filters
+message SearchFilters {
+  // Gender filter
+  repeated Gender gender = 1;
+
+  // Age range
+  AgeRange age_range = 2;
+
+  // Distance in km
+  int32 distance = 3;
+
+  // Location (for distance calculation)
+  common.v1.Location location = 4;
+
+  // Interests
+  repeated InterestCategory interests = 5;
+
+  // Relationship goals
+  repeated RelationshipGoal relationship_goals = 6;
+
+  // Education levels
+  repeated EducationLevel education_levels = 7;
+
+  // Only verified users
+  bool verified_only = 8;
+
+  // Only online users
+  bool online_only = 9;
+
+  // Height range
+  HeightRange height_range = 10;
+
+  // Lifestyle filters
+  repeated DrinkingHabit drinking = 11;
+  repeated SmokingHabit smoking = 12;
+  repeated ChildrenPreference children = 13;
+}
+
+// Get recommendations
+message GetRecommendationsRequest {
+  // Number of recommendations
+  int32 limit = 1;
+}
+
+message GetRecommendationsResponse {
+  // Recommended users
+  repeated UserProfile recommendations = 1;
+
+  // Total available recommendations
+  int32 total_count = 2;
+}
+
+// Get partner preferences
+message GetPartnerPreferencesRequest {
+  // Empty - uses auth context
+}
+
+message GetPartnerPreferencesResponse {
+  // Partner preferences
+  PartnerPreferences preferences = 1;
+}
+
+// Update partner preferences
+message UpdatePartnerPreferencesRequest {
+  // Updated partner preferences
+  PartnerPreferences preferences = 1;
+
+  // Fields to update
+  repeated string update_fields = 2;
+}
+
+message UpdatePartnerPreferencesResponse {
+  // Updated preferences
+  PartnerPreferences preferences = 1;
+
+  // Success message
+  string message = 2;
+}
+
+// Get user preferences
+message GetUserPreferencesRequest {
+  // Empty - uses auth context
+}
+
+message GetUserPreferencesResponse {
+  // User app preferences
+  UserPreferences preferences = 1;
+}
+
+// Update user preferences
+message UpdateUserPreferencesRequest {
+  // Updated user preferences
+  UserPreferences preferences = 1;
+
+  // Fields to update
+  repeated string update_fields = 2;
+}
+
+message UpdateUserPreferencesResponse {
+  // Updated preferences
+  UserPreferences preferences = 1;
+
+  // Success message
+  string message = 2;
+}
+
+// Block user
+message BlockUserRequest {
+  // User ID to block
+  string user_id = 1;
+
+  // Optional reason
+  string reason = 2;
+}
+
+message BlockUserResponse {
+  // Success
+  bool success = 1;
+
+  // Message
+  string message = 2;
+}
+
+// Unblock user
+message UnblockUserRequest {
+  // User ID to unblock
+  string user_id = 1;
+}
+
+message UnblockUserResponse {
+  // Success
+  bool success = 1;
+
+  // Message
+  string message = 2;
+}
+
+// List blocked users
+message ListBlockedUsersRequest {
+  // Pagination
+  common.v1.PaginationRequest pagination = 1;
+}
+
+message ListBlockedUsersResponse {
+  // Blocked users
+  repeated UserProfile users = 1;
+
+  // Pagination
+  common.v1.PaginationResponse pagination = 2;
+}
+
+// Report user
+message ReportUserRequest {
+  // User ID to report
+  string user_id = 1;
+
+  // Report reason
+  ReportReason reason = 2;
+
+  // Additional details
+  string details = 3;
+
+  // Evidence (screenshot URLs, etc.)
+  repeated string evidence_urls = 4;
+}
+
+message ReportUserResponse {
+  // Report ID
+  string report_id = 1;
+
+  // Success message
+  string message = 2;
+}

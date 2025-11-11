@@ -1,0 +1,279 @@
+syntax = "proto3";
+
+package datifyy.auth.v1;
+
+import "common/v1/types.proto";
+
+option go_package = "github.com/datifyy/backend/gen/auth/v1";
+
+// ============================================================================
+// Authentication Credentials
+// ============================================================================
+
+// Email and password credentials for registration/login
+message EmailPasswordCredentials {
+  // User's email address
+  string email = 1;
+
+  // User's password (plain text - will be hashed server-side)
+  string password = 2;
+
+  // Optional name for registration
+  string name = 3;
+
+  // Device information for session tracking
+  DeviceInfo device_info = 4;
+}
+
+// Phone number and OTP credentials
+message PhoneOTPCredentials {
+  // Phone number in E.164 format (e.g., +1234567890)
+  string phone_number = 1;
+
+  // OTP code sent via SMS
+  string otp_code = 2;
+
+  // Optional name for registration
+  string name = 3;
+
+  // Device information for session tracking
+  DeviceInfo device_info = 4;
+}
+
+// ============================================================================
+// Token & Session Management
+// ============================================================================
+
+// JWT access token
+message AccessToken {
+  // JWT token string
+  string token = 1;
+
+  // Token expiration timestamp
+  common.v1.Timestamp expires_at = 2;
+
+  // Token type (typically "Bearer")
+  string token_type = 3;
+}
+
+// Refresh token for obtaining new access tokens
+message RefreshToken {
+  // Refresh token string
+  string token = 1;
+
+  // Token expiration timestamp
+  common.v1.Timestamp expires_at = 2;
+}
+
+// Token pair (access + refresh)
+message TokenPair {
+  // Access token
+  AccessToken access_token = 1;
+
+  // Refresh token
+  RefreshToken refresh_token = 2;
+}
+
+// Session information
+message SessionInfo {
+  // Session ID
+  string session_id = 1;
+
+  // User ID associated with session
+  string user_id = 2;
+
+  // Device information
+  DeviceInfo device_info = 3;
+
+  // Session creation timestamp
+  common.v1.Timestamp created_at = 4;
+
+  // Last activity timestamp
+  common.v1.Timestamp last_active_at = 5;
+
+  // Session expiration timestamp
+  common.v1.Timestamp expires_at = 6;
+
+  // IP address at session creation
+  string ip_address = 7;
+
+  // Geographic location
+  common.v1.Location location = 8;
+
+  // Whether this is the current session
+  bool is_current = 9;
+}
+
+// Device information for session tracking
+message DeviceInfo {
+  // Device platform
+  common.v1.DevicePlatform platform = 1;
+
+  // Device name/model
+  string device_name = 2;
+
+  // Operating system version
+  string os_version = 3;
+
+  // App version
+  string app_version = 4;
+
+  // Browser name (for web)
+  string browser = 5;
+
+  // Device fingerprint/ID for tracking
+  string device_id = 6;
+
+  // Push notification token (FCM/APNS)
+  string push_token = 7;
+}
+
+// ============================================================================
+// Email Verification
+// ============================================================================
+
+// Verification code information
+message VerificationCode {
+  // Verification code
+  string code = 1;
+
+  // Code expiration timestamp
+  common.v1.Timestamp expires_at = 2;
+
+  // Verification type
+  VerificationType type = 3;
+}
+
+// Verification type enum
+enum VerificationType {
+  VERIFICATION_TYPE_UNSPECIFIED = 0;
+  VERIFICATION_TYPE_EMAIL = 1;          // Email address verification
+  VERIFICATION_TYPE_PHONE = 2;          // Phone number verification
+  VERIFICATION_TYPE_PASSWORD_RESET = 3; // Password reset verification
+}
+
+// Email verification request
+message VerificationRequest {
+  // User's email or phone number
+  string identifier = 1;
+
+  // Verification code
+  string code = 2;
+
+  // Verification type
+  VerificationType type = 3;
+}
+
+// ============================================================================
+// Account Recovery
+// ============================================================================
+
+// Password reset request
+message PasswordResetRequest {
+  // User's email address
+  string email = 1;
+
+  // Optional device info for security
+  DeviceInfo device_info = 2;
+}
+
+// Password reset confirmation
+message PasswordResetConfirm {
+  // Reset token from email
+  string reset_token = 1;
+
+  // New password
+  string new_password = 2;
+
+  // Optional device info
+  DeviceInfo device_info = 3;
+}
+
+// ============================================================================
+// User Profile (Basic Auth Context)
+// ============================================================================
+
+// User profile information (returned after auth)
+message UserProfile {
+  // User ID
+  string user_id = 1;
+
+  // Email address
+  string email = 2;
+
+  // Phone number (if provided)
+  string phone_number = 3;
+
+  // Display name
+  string name = 4;
+
+  // Profile photo URL
+  string photo_url = 5;
+
+  // Account status
+  common.v1.AccountStatus account_status = 6;
+
+  // Email verification status
+  common.v1.VerificationStatus email_verified = 7;
+
+  // Phone verification status
+  common.v1.VerificationStatus phone_verified = 8;
+
+  // Account creation timestamp
+  common.v1.Timestamp created_at = 9;
+
+  // Last login timestamp
+  common.v1.Timestamp last_login_at = 10;
+}
+
+// ============================================================================
+// Device Management
+// ============================================================================
+
+// Active device session
+message DeviceSession {
+  // Session information
+  SessionInfo session = 1;
+
+  // Whether this device is trusted
+  bool is_trusted = 2;
+
+  // Number of logins from this device
+  int32 login_count = 3;
+}
+
+// List of user's devices
+message DeviceList {
+  // Active device sessions
+  repeated DeviceSession devices = 1;
+
+  // Total count
+  int32 total_count = 2;
+}
+
+// ============================================================================
+// OAuth/Social Login (Future)
+// ============================================================================
+
+// OAuth provider enum
+enum OAuthProvider {
+  OAUTH_PROVIDER_UNSPECIFIED = 0;
+  OAUTH_PROVIDER_GOOGLE = 1;
+  OAUTH_PROVIDER_FACEBOOK = 2;
+  OAUTH_PROVIDER_APPLE = 3;
+}
+
+// OAuth credentials
+message OAuthCredentials {
+  // OAuth provider
+  OAuthProvider provider = 1;
+
+  // OAuth access token
+  string access_token = 2;
+
+  // OAuth ID token (for OpenID Connect)
+  string id_token = 3;
+
+  // Device information
+  DeviceInfo device_info = 4;
+}

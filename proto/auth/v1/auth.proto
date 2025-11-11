@@ -1,0 +1,528 @@
+syntax = "proto3";
+
+package datifyy.auth.v1;
+
+import "common/v1/types.proto";
+import "auth/v1/messages.proto";
+
+option go_package = "github.com/datifyy/backend/gen/auth/v1";
+
+// AuthService handles all authentication and authorization operations
+service AuthService {
+  // ============================================================================
+  // Registration
+  // ============================================================================
+
+  // Register a new user with email and password
+  rpc RegisterWithEmail(RegisterWithEmailRequest) returns (RegisterWithEmailResponse);
+
+  // Register a new user with phone number (sends OTP)
+  rpc RegisterWithPhone(RegisterWithPhoneRequest) returns (RegisterWithPhoneResponse);
+
+  // ============================================================================
+  // Login
+  // ============================================================================
+
+  // Login with email and password
+  rpc LoginWithEmail(LoginWithEmailRequest) returns (LoginWithEmailResponse);
+
+  // Request OTP for phone login
+  rpc RequestPhoneOTP(RequestPhoneOTPRequest) returns (RequestPhoneOTPResponse);
+
+  // Login with phone number and OTP
+  rpc LoginWithPhone(LoginWithPhoneRequest) returns (LoginWithPhoneResponse);
+
+  // Login with OAuth provider (future)
+  rpc LoginWithOAuth(LoginWithOAuthRequest) returns (LoginWithOAuthResponse);
+
+  // ============================================================================
+  // Token Management
+  // ============================================================================
+
+  // Refresh access token using refresh token
+  rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
+
+  // Revoke a refresh token
+  rpc RevokeToken(RevokeTokenRequest) returns (RevokeTokenResponse);
+
+  // Validate access token (for internal use)
+  rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse);
+
+  // ============================================================================
+  // Email Verification
+  // ============================================================================
+
+  // Send email verification code
+  rpc SendEmailVerification(SendEmailVerificationRequest) returns (SendEmailVerificationResponse);
+
+  // Verify email with code
+  rpc VerifyEmail(VerifyEmailRequest) returns (VerifyEmailResponse);
+
+  // Resend verification code
+  rpc ResendVerificationCode(ResendVerificationCodeRequest) returns (ResendVerificationCodeResponse);
+
+  // ============================================================================
+  // Phone Verification
+  // ============================================================================
+
+  // Send phone verification OTP
+  rpc SendPhoneVerification(SendPhoneVerificationRequest) returns (SendPhoneVerificationResponse);
+
+  // Verify phone with OTP
+  rpc VerifyPhone(VerifyPhoneRequest) returns (VerifyPhoneResponse);
+
+  // ============================================================================
+  // Password Management
+  // ============================================================================
+
+  // Request password reset (sends reset link/code)
+  rpc RequestPasswordReset(RequestPasswordResetRequest) returns (RequestPasswordResetResponse);
+
+  // Confirm password reset with token
+  rpc ConfirmPasswordReset(ConfirmPasswordResetRequest) returns (ConfirmPasswordResetResponse);
+
+  // Change password (authenticated user)
+  rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse);
+
+  // ============================================================================
+  // Session Management
+  // ============================================================================
+
+  // Get current session info
+  rpc GetCurrentSession(GetCurrentSessionRequest) returns (GetCurrentSessionResponse);
+
+  // List all active sessions
+  rpc ListSessions(ListSessionsRequest) returns (ListSessionsResponse);
+
+  // Revoke a specific session
+  rpc RevokeSession(RevokeSessionRequest) returns (RevokeSessionResponse);
+
+  // Revoke all sessions except current
+  rpc RevokeAllSessions(RevokeAllSessionsRequest) returns (RevokeAllSessionsResponse);
+
+  // ============================================================================
+  // Device Management
+  // ============================================================================
+
+  // List user's devices
+  rpc ListDevices(ListDevicesRequest) returns (ListDevicesResponse);
+
+  // Mark device as trusted
+  rpc TrustDevice(TrustDeviceRequest) returns (TrustDeviceResponse);
+
+  // Revoke device access
+  rpc RevokeDevice(RevokeDeviceRequest) returns (RevokeDeviceResponse);
+
+  // ============================================================================
+  // Logout
+  // ============================================================================
+
+  // Logout current session
+  rpc Logout(LogoutRequest) returns (LogoutResponse);
+
+  // Logout from all devices
+  rpc LogoutAll(LogoutAllRequest) returns (LogoutAllResponse);
+}
+
+// ============================================================================
+// Registration Request/Response Messages
+// ============================================================================
+
+message RegisterWithEmailRequest {
+  EmailPasswordCredentials credentials = 1;
+}
+
+message RegisterWithEmailResponse {
+  // User profile
+  UserProfile user = 1;
+
+  // Authentication tokens
+  TokenPair tokens = 2;
+
+  // Session information
+  SessionInfo session = 3;
+
+  // Whether email verification is required
+  bool requires_email_verification = 4;
+}
+
+message RegisterWithPhoneRequest {
+  // Phone number in E.164 format
+  string phone_number = 1;
+
+  // Optional name
+  string name = 2;
+
+  // Device information
+  DeviceInfo device_info = 3;
+}
+
+message RegisterWithPhoneResponse {
+  // Verification code sent
+  VerificationCode verification = 1;
+
+  // Temporary user ID (for verification)
+  string temp_user_id = 2;
+
+  // Message
+  string message = 3;
+}
+
+// ============================================================================
+// Login Request/Response Messages
+// ============================================================================
+
+message LoginWithEmailRequest {
+  EmailPasswordCredentials credentials = 1;
+}
+
+message LoginWithEmailResponse {
+  // User profile
+  UserProfile user = 1;
+
+  // Authentication tokens
+  TokenPair tokens = 2;
+
+  // Session information
+  SessionInfo session = 3;
+}
+
+message RequestPhoneOTPRequest {
+  // Phone number in E.164 format
+  string phone_number = 1;
+
+  // Device information
+  DeviceInfo device_info = 2;
+}
+
+message RequestPhoneOTPResponse {
+  // Verification code sent
+  VerificationCode verification = 1;
+
+  // Message
+  string message = 2;
+}
+
+message LoginWithPhoneRequest {
+  PhoneOTPCredentials credentials = 1;
+}
+
+message LoginWithPhoneResponse {
+  // User profile
+  UserProfile user = 1;
+
+  // Authentication tokens
+  TokenPair tokens = 2;
+
+  // Session information
+  SessionInfo session = 3;
+}
+
+message LoginWithOAuthRequest {
+  OAuthCredentials credentials = 1;
+}
+
+message LoginWithOAuthResponse {
+  // User profile
+  UserProfile user = 1;
+
+  // Authentication tokens
+  TokenPair tokens = 2;
+
+  // Session information
+  SessionInfo session = 3;
+
+  // Whether this is a new user
+  bool is_new_user = 4;
+}
+
+// ============================================================================
+// Token Management Request/Response Messages
+// ============================================================================
+
+message RefreshTokenRequest {
+  // Refresh token
+  string refresh_token = 1;
+
+  // Device information
+  DeviceInfo device_info = 2;
+}
+
+message RefreshTokenResponse {
+  // New token pair
+  TokenPair tokens = 1;
+}
+
+message RevokeTokenRequest {
+  // Refresh token to revoke
+  string refresh_token = 1;
+}
+
+message RevokeTokenResponse {
+  // Success message
+  string message = 1;
+}
+
+message ValidateTokenRequest {
+  // Access token to validate
+  string access_token = 1;
+}
+
+message ValidateTokenResponse {
+  // Whether token is valid
+  bool valid = 1;
+
+  // User ID if valid
+  string user_id = 2;
+
+  // Session ID if valid
+  string session_id = 3;
+
+  // Token expiration
+  common.v1.Timestamp expires_at = 4;
+}
+
+// ============================================================================
+// Email Verification Request/Response Messages
+// ============================================================================
+
+message SendEmailVerificationRequest {
+  // User's email (if not authenticated)
+  string email = 1;
+}
+
+message SendEmailVerificationResponse {
+  // Verification code info
+  VerificationCode verification = 1;
+
+  // Message
+  string message = 2;
+}
+
+message VerifyEmailRequest {
+  // Verification request
+  VerificationRequest verification = 1;
+}
+
+message VerifyEmailResponse {
+  // Success
+  bool success = 1;
+
+  // Message
+  string message = 2;
+
+  // Updated user profile
+  UserProfile user = 3;
+}
+
+message ResendVerificationCodeRequest {
+  // Email or phone number
+  string identifier = 1;
+
+  // Verification type
+  VerificationType type = 2;
+}
+
+message ResendVerificationCodeResponse {
+  // New verification code info
+  VerificationCode verification = 1;
+
+  // Message
+  string message = 2;
+}
+
+// ============================================================================
+// Phone Verification Request/Response Messages
+// ============================================================================
+
+message SendPhoneVerificationRequest {
+  // Phone number
+  string phone_number = 1;
+}
+
+message SendPhoneVerificationResponse {
+  // Verification code info
+  VerificationCode verification = 1;
+
+  // Message
+  string message = 2;
+}
+
+message VerifyPhoneRequest {
+  // Verification request
+  VerificationRequest verification = 1;
+}
+
+message VerifyPhoneResponse {
+  // Success
+  bool success = 1;
+
+  // Message
+  string message = 2;
+
+  // Updated user profile
+  UserProfile user = 3;
+}
+
+// ============================================================================
+// Password Management Request/Response Messages
+// ============================================================================
+
+message RequestPasswordResetRequest {
+  PasswordResetRequest reset_request = 1;
+}
+
+message RequestPasswordResetResponse {
+  // Message
+  string message = 1;
+
+  // Reset token expiration
+  common.v1.Timestamp expires_at = 2;
+}
+
+message ConfirmPasswordResetRequest {
+  PasswordResetConfirm confirmation = 1;
+}
+
+message ConfirmPasswordResetResponse {
+  // Success
+  bool success = 1;
+
+  // Message
+  string message = 2;
+}
+
+message ChangePasswordRequest {
+  // Current password
+  string current_password = 1;
+
+  // New password
+  string new_password = 2;
+
+  // Whether to revoke all other sessions
+  bool revoke_other_sessions = 3;
+}
+
+message ChangePasswordResponse {
+  // Success
+  bool success = 1;
+
+  // Message
+  string message = 2;
+}
+
+// ============================================================================
+// Session Management Request/Response Messages
+// ============================================================================
+
+message GetCurrentSessionRequest {
+  // Empty - uses auth context
+}
+
+message GetCurrentSessionResponse {
+  // Current session info
+  SessionInfo session = 1;
+}
+
+message ListSessionsRequest {
+  // Pagination
+  common.v1.PaginationRequest pagination = 1;
+}
+
+message ListSessionsResponse {
+  // Active sessions
+  repeated SessionInfo sessions = 1;
+
+  // Pagination info
+  common.v1.PaginationResponse pagination = 2;
+}
+
+message RevokeSessionRequest {
+  // Session ID to revoke
+  string session_id = 1;
+}
+
+message RevokeSessionResponse {
+  // Success message
+  string message = 1;
+}
+
+message RevokeAllSessionsRequest {
+  // Empty - uses auth context
+}
+
+message RevokeAllSessionsResponse {
+  // Number of sessions revoked
+  int32 revoked_count = 1;
+
+  // Message
+  string message = 2;
+}
+
+// ============================================================================
+// Device Management Request/Response Messages
+// ============================================================================
+
+message ListDevicesRequest {
+  // Pagination
+  common.v1.PaginationRequest pagination = 1;
+}
+
+message ListDevicesResponse {
+  // Device list
+  DeviceList devices = 1;
+
+  // Pagination info
+  common.v1.PaginationResponse pagination = 2;
+}
+
+message TrustDeviceRequest {
+  // Device ID to trust
+  string device_id = 1;
+}
+
+message TrustDeviceResponse {
+  // Success
+  bool success = 1;
+
+  // Message
+  string message = 2;
+}
+
+message RevokeDeviceRequest {
+  // Device ID to revoke
+  string device_id = 1;
+}
+
+message RevokeDeviceResponse {
+  // Number of sessions revoked
+  int32 sessions_revoked = 1;
+
+  // Message
+  string message = 2;
+}
+
+// ============================================================================
+// Logout Request/Response Messages
+// ============================================================================
+
+message LogoutRequest {
+  // Empty - uses current session
+}
+
+message LogoutResponse {
+  // Success message
+  string message = 1;
+}
+
+message LogoutAllRequest {
+  // Empty - uses auth context
+}
+
+message LogoutAllResponse {
+  // Number of sessions logged out
+  int32 sessions_logged_out = 1;
+
+  // Message
+  string message = 2;
+}
