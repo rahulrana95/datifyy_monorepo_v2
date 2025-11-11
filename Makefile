@@ -35,8 +35,13 @@ logs-frontend: ## Tail logs from frontend only
 	docker-compose logs -f frontend
 
 generate: ## Generate proto types
-	docker-compose run --rm proto-gen
+	docker-compose run --rm proto-gen "cd proto && buf generate"
 	@echo "Proto types generated!"
+
+proto-watch: ## Watch proto files for changes and auto-generate types
+	@echo "👀 Starting proto watcher..."
+	@echo "Proto files will auto-generate when modified"
+	@docker-compose --profile dev-tools up proto-watcher
 
 db-reset: ## Reset database
 	docker-compose down -v postgres

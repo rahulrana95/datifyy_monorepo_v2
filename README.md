@@ -119,6 +119,78 @@ make up
 make status
 ```
 
+### 📊 Monitoring Logs (Live/Real-time)
+
+All log commands provide **LIVE, real-time output** that updates as events occur.
+
+#### Quick Log Commands
+```bash
+# View all services logs in real-time (Ctrl+C to exit)
+make logs
+
+# View specific service logs (LIVE)
+make logs-backend       # Backend logs only
+make logs-frontend      # Frontend logs only
+
+# Direct Docker commands for more control
+docker-compose logs -f backend    # Follow backend logs
+docker-compose logs -f frontend   # Follow frontend logs
+docker-compose logs -f            # Follow ALL service logs
+```
+
+#### Advanced Log Monitoring
+```bash
+# Last 50 lines + follow new logs
+docker-compose logs --tail=50 -f backend
+
+# Logs from last 5 minutes
+docker-compose logs --since 5m backend frontend
+
+# Filter logs (watch for specific patterns)
+docker-compose logs -f backend | grep -i error     # Watch for errors
+docker-compose logs -f frontend | grep -i compiled # Watch compilation status
+
+# Save logs to file while watching
+docker-compose logs -f backend | tee backend.log
+
+# Multiple services at once
+docker-compose logs -f backend frontend postgres redis
+```
+
+#### Split Terminal Monitoring (Recommended)
+For best development experience, open multiple terminals:
+
+**Terminal 1 - Backend Logs:**
+```bash
+make logs-backend
+```
+
+**Terminal 2 - Frontend Logs:**
+```bash
+make logs-frontend
+```
+
+**Terminal 3 - Database Logs (optional):**
+```bash
+docker-compose logs -f postgres
+```
+
+#### What You'll See in Logs
+
+**Backend Logs:**
+- Air hot reload notifications
+- Database connection status
+- API request logs
+- Error messages
+- Server start/restart messages
+
+**Frontend Logs:**
+- Webpack compilation status
+- TypeScript type checking
+- Hot module replacement (HMR) updates
+- Build errors and warnings
+- Development server status
+
 ### Database Operations
 ```bash
 # Reset database (drops and recreates)
@@ -150,11 +222,35 @@ make redis-cli
 - View logs: `make logs-frontend`
 
 #### Protocol Buffer Changes
+
+##### Manual Generation
 1. Edit `.proto` files in `proto/`
 2. Generate types: `make generate`
 3. Types are generated in:
    - Backend: `apps/backend/gen/`
    - Frontend: `apps/frontend/src/gen/`
+
+##### Automatic Generation (Recommended for Development)
+The proto watcher service automatically regenerates types when `.proto` files change:
+
+```bash
+# Start the proto watcher (runs in foreground)
+make proto-watch
+
+# Or run in background using Docker Compose
+docker-compose --profile dev-tools up -d proto-watcher
+
+# View watcher logs
+docker-compose logs -f proto-watcher
+```
+
+When the watcher is running:
+1. Any changes to `.proto` files are detected automatically
+2. Types are regenerated for both backend and frontend
+3. Backend types: `apps/backend/gen/` (Go)
+4. Frontend types: `apps/frontend/src/gen/` (TypeScript)
+
+Note: The watcher checks for changes every 2 seconds and only regenerates when files actually change.
 
 ### Adding Dependencies
 
@@ -215,9 +311,9 @@ make ps                 # Show running containers
 make dev                # Start development with logs
 
 # Logs
-make logs               # View all logs
-make logs-backend       # View backend logs
-make logs-frontend      # View frontend logs
+make logs               # View all logs (LIVE - follows in real-time)
+make logs-backend       # View backend logs (LIVE - follows in real-time)
+make logs-frontend      # View frontend logs (LIVE - follows in real-time)
 
 # Database
 make db-reset           # Reset database
@@ -236,6 +332,7 @@ make test-db-down       # Stop test database
 
 # Development
 make generate           # Generate proto types
+make proto-watch        # Watch proto files and auto-generate types
 make shell-backend      # Open backend shell
 make shell-frontend     # Open frontend shell
 make shell-db           # Open database shell

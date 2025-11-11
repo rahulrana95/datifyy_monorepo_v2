@@ -14,6 +14,23 @@ services:
     profiles:
       - tools
 
+  # Proto watcher service - automatically regenerates types when .proto files change
+  proto-watcher:
+    build:
+      context: .
+      dockerfile: docker/proto/Dockerfile
+    volumes:
+      - ./proto:/workspace/proto:ro
+      - ./apps/backend/gen:/workspace/apps/backend/gen
+      - ./apps/frontend/src/gen:/workspace/apps/frontend/src/gen
+      - ./scripts:/workspace/scripts:ro
+    command: /bin/bash /workspace/scripts/watch-proto.sh
+    profiles:
+      - dev-tools
+    networks:
+      - app-network
+    restart: unless-stopped
+
   # Backend service
   backend:
     build:

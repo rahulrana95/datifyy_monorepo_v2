@@ -1,12 +1,16 @@
-FROM bufbuild/buf:latest AS buf
+FROM bufbuild/buf:latest
 
 WORKDIR /workspace
 
-# Copy proto files
+# Install bash for the watcher script
+RUN apk add --no-cache bash coreutils findutils
+
+# Copy proto files and buf.gen.yaml
 COPY proto/ ./proto/
 
-# Install dependencies if needed
-RUN cd proto && buf mod update
+# Update dependencies
+RUN cd proto && buf dep update
 
-# Generate command will be run via docker-compose
-CMD ["buf", "generate", "proto"]
+# Default command
+ENTRYPOINT ["/bin/sh", "-c"]
+CMD ["buf generate proto"]
