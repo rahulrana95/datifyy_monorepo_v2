@@ -6,12 +6,19 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
+	authpb "github.com/datifyy/backend/gen/auth/v1"
+	"github.com/datifyy/backend/internal/service"
 	_ "github.com/lib/pq"
 	"github.com/redis/go-redis/v9"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 type Server struct {
@@ -21,9 +28,14 @@ type Server struct {
 
 func main() {
 	// Get configuration from environment
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
+	httpPort := os.Getenv("PORT")
+	if httpPort == "" {
+		httpPort = "8080"
+	}
+
+	grpcPort := os.Getenv("GRPC_PORT")
+	if grpcPort == "" {
+		grpcPort = "9090"
 	}
 
 	dbURL := os.Getenv("DATABASE_URL")
@@ -43,7 +55,7 @@ func main() {
 		log.Println("Running without database connection")
 	} else {
 		defer db.Close()
-		log.Println("Connected to PostgreSQL")
+		log.Println("✓ Connected to PostgreSQL")
 	}
 
 	// Connect to Redis
@@ -53,30 +65,172 @@ func main() {
 		log.Println("Running without Redis connection")
 	} else {
 		defer redisClient.Close()
-		log.Println("Connected to Redis")
+		log.Println("✓ Connected to Redis")
 	}
 
-	// Create server
-	server := &Server{
+	// Create HTTP server
+	httpServer := &Server{
 		db:    db,
 		redis: redisClient,
 	}
 
+	// Start gRPC server in a goroutine
+	go startGRPCServer(grpcPort, db, redisClient)
+
+	// Start HTTP server in a goroutine
+	go startHTTPServer(httpPort, httpServer, db, redisClient)
+
+	// Wait for interrupt signal to gracefully shutdown the servers
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+
+	log.Println("Shutting down servers...")
+}
+
+// startGRPCServer starts the gRPC server
+func startGRPCServer(port string, db *sql.DB, redisClient *redis.Client) {
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%s", port))
+	if err != nil {
+		log.Fatalf("Failed to listen on port %s: %v", port, err)
+	}
+
+	// Create gRPC server
+	grpcServer := grpc.NewServer()
+
+	// Register services
+	authService := service.NewAuthService(db, redisClient)
+	authpb.RegisterAuthServiceServer(grpcServer, authService)
+
+	// Register reflection service (for grpcurl)
+	reflection.Register(grpcServer)
+
+	log.Printf("🚀 gRPC server listening on port %s", port)
+	if err := grpcServer.Serve(lis); err != nil {
+		log.Fatalf("Failed to serve gRPC: %v", err)
+	}
+}
+
+// startHTTPServer starts the HTTP/REST server
+func startHTTPServer(port string, server *Server, db *sql.DB, redisClient *redis.Client) {
 	// Setup routes
 	mux := http.NewServeMux()
+
+	// Health & Info endpoints
 	mux.HandleFunc("/health", server.healthHandler)
 	mux.HandleFunc("/ready", server.readyHandler)
 	mux.HandleFunc("/", server.rootHandler)
 	mux.HandleFunc("/api/test-db", server.testDBHandler)
 	mux.HandleFunc("/api/test-redis", server.testRedisHandler)
 
+	// Auth REST endpoints (wrapper around gRPC)
+	authService := service.NewAuthService(db, redisClient)
+	mux.HandleFunc("/api/v1/auth/register/email", createRegisterHandler(authService))
+	mux.HandleFunc("/api/v1/auth/login/email", func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "Not implemented yet", http.StatusNotImplemented)
+	})
+
 	// Add CORS middleware
 	handler := enableCORS(mux)
 
 	// Start server
-	log.Printf("Server starting on port %s", port)
+	log.Printf("🌐 HTTP server listening on port %s", port)
 	if err := http.ListenAndServe(fmt.Sprintf(":%s", port), handler); err != nil {
 		log.Fatal(err)
+	}
+}
+
+// createRegisterHandler creates HTTP handler for registration
+func createRegisterHandler(authService *service.AuthService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		// Parse JSON request
+		var reqBody struct {
+			Email    string `json:"email"`
+			Password string `json:"password"`
+			Name     string `json:"name"`
+			DeviceInfo *struct {
+				Platform   int32  `json:"platform"`
+				DeviceName string `json:"device_name"`
+				OSVersion  string `json:"os_version"`
+				DeviceID   string `json:"device_id"`
+			} `json:"device_info,omitempty"`
+		}
+
+		if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+			http.Error(w, fmt.Sprintf("Invalid JSON: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		// Convert to gRPC request
+		grpcReq := &authpb.RegisterWithEmailRequest{
+			Credentials: &authpb.EmailPasswordCredentials{
+				Email:    reqBody.Email,
+				Password: reqBody.Password,
+				Name:     reqBody.Name,
+			},
+		}
+
+		if reqBody.DeviceInfo != nil {
+			grpcReq.Credentials.DeviceInfo = &authpb.DeviceInfo{
+				Platform:   reqBody.DeviceInfo.Platform,
+				DeviceName: reqBody.DeviceInfo.DeviceName,
+				OsVersion:  reqBody.DeviceInfo.OSVersion,
+				DeviceId:   reqBody.DeviceInfo.DeviceID,
+			}
+		}
+
+		// Call gRPC service
+		resp, err := authService.RegisterWithEmail(r.Context(), grpcReq)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Registration failed: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		// Convert response to JSON
+		jsonResp := map[string]interface{}{
+			"user": map[string]interface{}{
+				"user_id":        resp.User.UserId,
+				"email":          resp.User.Email,
+				"name":           resp.User.Name,
+				"account_status": resp.User.AccountStatus.String(),
+				"email_verified": resp.User.EmailVerified.String(),
+				"created_at": map[string]int64{
+					"seconds": resp.User.CreatedAt.Seconds,
+					"nanos":   int64(resp.User.CreatedAt.Nanos),
+				},
+			},
+			"tokens": map[string]interface{}{
+				"access_token": map[string]interface{}{
+					"token":      resp.Tokens.AccessToken.Token,
+					"token_type": resp.Tokens.AccessToken.TokenType,
+					"expires_at": map[string]int64{
+						"seconds": resp.Tokens.AccessToken.ExpiresAt.Seconds,
+						"nanos":   int64(resp.Tokens.AccessToken.ExpiresAt.Nanos),
+					},
+				},
+				"refresh_token": map[string]interface{}{
+					"token": resp.Tokens.RefreshToken.Token,
+					"expires_at": map[string]int64{
+						"seconds": resp.Tokens.RefreshToken.ExpiresAt.Seconds,
+						"nanos":   int64(resp.Tokens.RefreshToken.ExpiresAt.Nanos),
+					},
+				},
+			},
+			"session": map[string]interface{}{
+				"session_id": resp.Session.SessionId,
+				"user_id":    resp.Session.UserId,
+			},
+			"requires_email_verification": resp.RequiresEmailVerification,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		json.NewEncoder(w).Encode(jsonResp)
 	}
 }
 
@@ -180,9 +334,17 @@ func (s *Server) rootHandler(w http.ResponseWriter, r *http.Request) {
 		"service":   "Datifyy Backend API",
 		"version":   "1.0.0",
 		"timestamp": time.Now().UTC(),
+		"endpoints": map[string]interface{}{
+			"grpc": ":9090",
+			"http": ":8080",
+		},
 		"status": map[string]bool{
 			"database": s.db != nil && s.db.Ping() == nil,
 			"redis":    s.redis != nil && s.redis.Ping(context.Background()).Err() == nil,
+		},
+		"available_services": []string{
+			"AuthService (gRPC)",
+			"UserService (gRPC - coming soon)",
 		},
 	}
 
@@ -220,11 +382,11 @@ func (s *Server) testRedisHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := context.Background()
-	
+
 	// Set a test value
 	key := fmt.Sprintf("test:%d", time.Now().Unix())
 	value := "Hello from Redis!"
-	
+
 	err := s.redis.Set(ctx, key, value, 10*time.Second).Err()
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Redis error: %v", err), http.StatusInternalServerError)

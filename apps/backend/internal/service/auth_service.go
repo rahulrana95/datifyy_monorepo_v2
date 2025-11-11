@@ -1,0 +1,227 @@
+package service
+
+import (
+	"context"
+	"database/sql"
+	"fmt"
+	"time"
+
+	authpb "github.com/datifyy/backend/gen/auth/v1"
+	commonpb "github.com/datifyy/backend/gen/common/v1"
+	"github.com/datifyy/backend/internal/auth"
+	"github.com/datifyy/backend/internal/repository"
+	"github.com/redis/go-redis/v9"
+)
+
+// AuthService handles authentication operations
+type AuthService struct {
+	authpb.UnimplementedAuthServiceServer
+	userRepo *repository.UserRepository
+	db       *sql.DB
+	redis    *redis.Client
+}
+
+// NewAuthService creates a new auth service
+func NewAuthService(db *sql.DB, redisClient *redis.Client) *AuthService {
+	return &AuthService{
+		userRepo: repository.NewUserRepository(db),
+		db:       db,
+		redis:    redisClient,
+	}
+}
+
+// RegisterWithEmail implements email/password registration
+func (s *AuthService) RegisterWithEmail(
+	ctx context.Context,
+	req *authpb.RegisterWithEmailRequest,
+) (*authpb.RegisterWithEmailResponse, error) {
+	// Validate input
+	if req.Credentials == nil {
+		return nil, fmt.Errorf("credentials are required")
+	}
+
+	if err := auth.ValidateEmail(req.Credentials.Email); err != nil {
+		return nil, fmt.Errorf("invalid email: %w", err)
+	}
+
+	if err := auth.ValidatePassword(req.Credentials.Password); err != nil {
+		return nil, fmt.Errorf("invalid password: %w", err)
+	}
+
+	if req.Credentials.Name == "" {
+		return nil, fmt.Errorf("name is required")
+	}
+
+	// Hash password
+	passwordHash, err := auth.HashPassword(req.Credentials.Password)
+	if err != nil {
+		return nil, fmt.Errorf("failed to hash password: %w", err)
+	}
+
+	// Generate verification token
+	verificationToken, err := auth.GenerateVerificationToken()
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate verification token: %w", err)
+	}
+
+	// Create user
+	user, err := s.userRepo.Create(ctx, repository.CreateUserInput{
+		Email:             req.Credentials.Email,
+		Name:              req.Credentials.Name,
+		PasswordHash:      passwordHash,
+		VerificationToken: verificationToken,
+		TokenExpiresAt:    time.Now().Add(24 * time.Hour), // Token valid for 24 hours
+	})
+
+	if err != nil {
+		if err == repository.ErrEmailExists {
+			return nil, fmt.Errorf("email already registered")
+		}
+		return nil, fmt.Errorf("failed to create user: %w", err)
+	}
+
+	// TODO: Send verification email with token
+	// emailService.SendVerificationEmail(user.Email, verificationToken)
+
+	// Create session and tokens
+	tokens, sessionInfo, err := s.createSessionAndTokens(ctx, user, req.Credentials.DeviceInfo)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create session: %w", err)
+	}
+
+	// Build user profile response
+	userProfile := &authpb.UserProfile{
+		UserId:        fmt.Sprintf("%d", user.ID),
+		Email:         user.Email,
+		Name:          user.Name,
+		AccountStatus: accountStatusToProto(user.AccountStatus),
+		EmailVerified: emailVerificationStatusToProto(user.EmailVerified),
+		CreatedAt:     timeToProto(user.CreatedAt),
+	}
+
+	if user.LastLoginAt.Valid {
+		userProfile.LastLoginAt = timeToProto(user.LastLoginAt.Time)
+	}
+
+	return &authpb.RegisterWithEmailResponse{
+		User:                       userProfile,
+		Tokens:                     tokens,
+		Session:                    sessionInfo,
+		RequiresEmailVerification:  true,
+	}, nil
+}
+
+// createSessionAndTokens creates a session and generates access/refresh tokens
+func (s *AuthService) createSessionAndTokens(
+	ctx context.Context,
+	user *repository.User,
+	deviceInfo *authpb.DeviceInfo,
+) (*authpb.TokenPair, *authpb.SessionInfo, error) {
+	// For now, we'll use simple JWT tokens (to be implemented with proper JWT library)
+	// This is a placeholder implementation
+
+	sessionID := fmt.Sprintf("sess_%d_%d", user.ID, time.Now().Unix())
+
+	// Create tokens (placeholder)
+	accessToken := &authpb.AccessToken{
+		Token:     generatePlaceholderToken(user.ID, "access"),
+		ExpiresAt: timeToProto(time.Now().Add(15 * time.Minute)),
+		TokenType: "Bearer",
+	}
+
+	refreshToken := &authpb.RefreshToken{
+		Token:     generatePlaceholderToken(user.ID, "refresh"),
+		ExpiresAt: timeToProto(time.Now().Add(7 * 24 * time.Hour)),
+	}
+
+	tokens := &authpb.TokenPair{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	}
+
+	// Create session info
+	sessionInfo := &authpb.SessionInfo{
+		SessionId: sessionID,
+		UserId:    fmt.Sprintf("%d", user.ID),
+		CreatedAt: timeToProto(time.Now()),
+		ExpiresAt: refreshToken.ExpiresAt,
+		IsCurrent: true,
+	}
+
+	if deviceInfo != nil {
+		sessionInfo.DeviceInfo = deviceInfo
+	}
+
+	// Store session in database
+	deviceIDStr := ""
+	if deviceInfo != nil && deviceInfo.DeviceId != "" {
+		deviceIDStr = deviceInfo.DeviceId
+	}
+
+	expiresAt := time.Unix(refreshToken.ExpiresAt.Seconds, int64(refreshToken.ExpiresAt.Nanos))
+
+	_, err := s.db.ExecContext(ctx,
+		`INSERT INTO sessions (id, user_id, device_id, expires_at, is_active, last_active_at)
+		 VALUES ($1, $2, $3, $4, true, NOW())`,
+		sessionID,
+		user.ID,
+		sql.NullString{String: deviceIDStr, Valid: deviceIDStr != ""},
+		expiresAt,
+	)
+
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to store session: %w", err)
+	}
+
+	// Store session in Redis for fast lookup
+	if s.redis != nil {
+		sessionData := fmt.Sprintf("%d:%s", user.ID, sessionID)
+		err = s.redis.Set(ctx, fmt.Sprintf("session:%s", sessionID), sessionData, 7*24*time.Hour).Err()
+		if err != nil {
+			// Log error but don't fail the request
+			fmt.Printf("Warning: failed to store session in Redis: %v\n", err)
+		}
+	}
+
+	return tokens, sessionInfo, nil
+}
+
+// generatePlaceholderToken generates a simple placeholder token
+// TODO: Replace with proper JWT implementation
+func generatePlaceholderToken(userID int, tokenType string) string {
+	return fmt.Sprintf("%s_token_%d_%d", tokenType, userID, time.Now().Unix())
+}
+
+// Helper functions to convert database values to proto enums
+
+func accountStatusToProto(status string) commonpb.AccountStatus {
+	switch status {
+	case "ACTIVE":
+		return commonpb.AccountStatus_ACCOUNT_STATUS_ACTIVE
+	case "PENDING":
+		return commonpb.AccountStatus_ACCOUNT_STATUS_PENDING
+	case "SUSPENDED":
+		return commonpb.AccountStatus_ACCOUNT_STATUS_SUSPENDED
+	case "BANNED":
+		return commonpb.AccountStatus_ACCOUNT_STATUS_BANNED
+	case "DELETED":
+		return commonpb.AccountStatus_ACCOUNT_STATUS_DELETED
+	default:
+		return commonpb.AccountStatus_ACCOUNT_STATUS_UNSPECIFIED
+	}
+}
+
+func emailVerificationStatusToProto(verified bool) commonpb.VerificationStatus {
+	if verified {
+		return commonpb.VerificationStatus_VERIFICATION_STATUS_VERIFIED
+	}
+	return commonpb.VerificationStatus_VERIFICATION_STATUS_UNVERIFIED
+}
+
+// timeToProto converts a Go time.Time to our custom Timestamp proto
+func timeToProto(t time.Time) *commonpb.Timestamp {
+	return &commonpb.Timestamp{
+		Seconds: t.Unix(),
+		Nanos:   int32(t.Nanosecond()),
+	}
+}

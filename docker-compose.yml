@@ -37,7 +37,8 @@ services:
       context: .
       dockerfile: docker/backend/Dockerfile.dev
     ports:
-      - "8080:8080"
+      - "8080:8080"  # HTTP/REST
+      - "9090:9090"  # gRPC
     volumes:
       - ./apps/backend:/app
       - backend-cache:/go/pkg/mod

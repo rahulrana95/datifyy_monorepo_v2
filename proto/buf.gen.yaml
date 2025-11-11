@@ -6,11 +6,16 @@ managed:
     except:
       - buf.build/googleapis/googleapis
 plugins:
+  # Generate Go protobuf code
   - plugin: buf.build/protocolbuffers/go
     out: ../apps/backend/gen
     opt: paths=source_relative
+
+  # Generate Go gRPC code
   - plugin: buf.build/grpc/go
     out: ../apps/backend/gen
     opt: paths=source_relative
+
+  # Generate TypeScript/JavaScript code for frontend
   - plugin: buf.build/bufbuild/es
     out: ../apps/frontend/src/gen
