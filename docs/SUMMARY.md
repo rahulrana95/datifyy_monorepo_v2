@@ -78,6 +78,23 @@ docs/
   - Unit tests: `internal/service/auth_service_test.go:540-660`
   - Integration tests: `tests/integration_test.go:505-655`
 
+#### ✅ ValidateToken
+- **Status**: Fully implemented with tests
+- **Features**:
+  - Access token validation
+  - Token expiration checking (15 min lifetime)
+  - Session verification (active, not expired)
+  - Account status validation
+  - Returns user ID, session ID, and expiration
+  - Unit tests (8 test cases)
+  - Integration tests (3 test suites)
+- **Endpoints**:
+  - gRPC: `datifyy.auth.v1.AuthService/ValidateToken`
+- **Files**:
+  - Service: `internal/service/auth_service.go:353-446`
+  - Unit tests: `internal/service/auth_token_service_test.go`
+  - Integration tests: `tests/auth_token_integration_test.go`
+
 ---
 
 ## Quick Links

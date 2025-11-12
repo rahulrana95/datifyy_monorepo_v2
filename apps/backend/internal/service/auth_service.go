@@ -350,6 +350,101 @@ func (s *AuthService) RevokeToken(
 	}, nil
 }
 
+// ValidateToken implements access token validation
+func (s *AuthService) ValidateToken(
+	ctx context.Context,
+	req *authpb.ValidateTokenRequest,
+) (*authpb.ValidateTokenResponse, error) {
+	// Validate input
+	if req.AccessToken == "" {
+		return &authpb.ValidateTokenResponse{
+			Valid: false,
+		}, nil
+	}
+
+	// Parse access token to extract user ID and timestamp
+	// Format: "access_token_{userID}_{timestamp}"
+	var userID int
+	var timestamp int64
+	_, err := fmt.Sscanf(req.AccessToken, "access_token_%d_%d", &userID, &timestamp)
+	if err != nil {
+		return &authpb.ValidateTokenResponse{
+			Valid: false,
+		}, nil
+	}
+
+	// Calculate token expiration (15 minutes from issue time)
+	issueTime := time.Unix(timestamp, 0)
+	expiresAt := issueTime.Add(15 * time.Minute)
+
+	// Check if token has expired
+	if time.Now().After(expiresAt) {
+		return &authpb.ValidateTokenResponse{
+			Valid: false,
+		}, nil
+	}
+
+	// Construct session ID from token timestamp
+	sessionID := fmt.Sprintf("sess_%d_%d", userID, timestamp)
+
+	// Verify session exists and is active
+	var isActive bool
+	var sessionExpiresAt time.Time
+	query := `
+		SELECT is_active, expires_at
+		FROM sessions
+		WHERE id = $1 AND user_id = $2
+	`
+
+	err = s.db.QueryRowContext(ctx, query, sessionID, userID).Scan(&isActive, &sessionExpiresAt)
+	if err == sql.ErrNoRows {
+		return &authpb.ValidateTokenResponse{
+			Valid: false,
+		}, nil
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to validate session: %w", err)
+	}
+
+	// Check if session is active
+	if !isActive {
+		return &authpb.ValidateTokenResponse{
+			Valid: false,
+		}, nil
+	}
+
+	// Check if session has expired
+	if time.Now().After(sessionExpiresAt) {
+		return &authpb.ValidateTokenResponse{
+			Valid: false,
+		}, nil
+	}
+
+	// Get user to verify account status
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		return &authpb.ValidateTokenResponse{
+			Valid: false,
+		}, nil
+	}
+
+	// Check account status
+	if user.AccountStatus == "SUSPENDED" || user.AccountStatus == "BANNED" || user.AccountStatus == "DELETED" {
+		return &authpb.ValidateTokenResponse{
+			Valid: false,
+		}, nil
+	}
+
+	// Token is valid
+	return &authpb.ValidateTokenResponse{
+		Valid:     true,
+		UserId:    fmt.Sprintf("%d", userID),
+		SessionId: sessionID,
+		ExpiresAt: timeToProto(expiresAt),
+	}, nil
+}
+
 // createSessionAndTokens creates a session and generates access/refresh tokens
 func (s *AuthService) createSessionAndTokens(
 	ctx context.Context,
