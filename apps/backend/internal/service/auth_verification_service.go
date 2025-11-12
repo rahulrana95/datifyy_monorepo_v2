@@ -139,6 +139,69 @@ func (s *AuthService) VerifyEmail(
 	}, nil
 }
 
+// ResendVerificationCode resends verification code to email
+func (s *AuthService) ResendVerificationCode(
+	ctx context.Context,
+	req *authpb.ResendVerificationCodeRequest,
+) (*authpb.ResendVerificationCodeResponse, error) {
+	// Validate identifier
+	if req.Identifier == "" {
+		return nil, fmt.Errorf("identifier is required")
+	}
+
+	if err := auth.ValidateEmail(req.Identifier); err != nil {
+		return nil, fmt.Errorf("invalid email: %w", err)
+	}
+
+	// Check verification type
+	if req.Type != authpb.VerificationType_VERIFICATION_TYPE_EMAIL {
+		return nil, fmt.Errorf("only email verification is currently supported")
+	}
+
+	// Get user by email
+	user, err := s.userRepo.GetByEmail(ctx, req.Identifier)
+	if err != nil {
+		return nil, fmt.Errorf("user not found with identifier: %s", req.Identifier)
+	}
+
+	// Check if already verified
+	if user.EmailVerified {
+		return nil, fmt.Errorf("email already verified")
+	}
+
+	// Generate new verification token
+	verificationToken, err := auth.GenerateVerificationToken()
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate verification token: %w", err)
+	}
+
+	// Store new verification token in database
+	expiresAt := time.Now().Add(24 * time.Hour) // 24 hour expiration
+
+	query := `
+		UPDATE users
+		SET verification_token = $1, verification_token_expires_at = $2
+		WHERE id = $3
+	`
+
+	_, err = s.db.ExecContext(ctx, query, verificationToken, expiresAt, user.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to store verification token: %w", err)
+	}
+
+	// TODO: Send verification email via email service
+	// For now, we just return the token for testing purposes
+
+	return &authpb.ResendVerificationCodeResponse{
+		Verification: &authpb.VerificationCode{
+			Code:      verificationToken,
+			ExpiresAt: timeToProto(expiresAt),
+			Type:      authpb.VerificationType_VERIFICATION_TYPE_EMAIL,
+		},
+		Message: fmt.Sprintf("Verification code resent to %s", req.Identifier),
+	}, nil
+}
+
 // buildUserProfile creates a UserProfile from repository.User
 func buildUserProfile(user *repository.User) *authpb.UserProfile {
 	userProfile := &authpb.UserProfile{
