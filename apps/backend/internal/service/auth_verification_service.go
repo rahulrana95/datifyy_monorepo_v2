@@ -7,7 +7,6 @@ import (
 
 	authpb "github.com/datifyy/backend/gen/auth/v1"
 	"github.com/datifyy/backend/internal/auth"
-	"github.com/datifyy/backend/internal/repository"
 )
 
 // SendEmailVerification sends email verification code
@@ -213,22 +212,4 @@ func (s *AuthService) ResendVerificationCode(
 		},
 		Message: fmt.Sprintf("Verification code resent to %s", req.Identifier),
 	}, nil
-}
-
-// buildUserProfile creates a UserProfile from repository.User
-func buildUserProfile(user *repository.User) *authpb.UserProfile {
-	userProfile := &authpb.UserProfile{
-		UserId:        fmt.Sprintf("%d", user.ID),
-		Email:         user.Email,
-		Name:          user.Name,
-		AccountStatus: accountStatusToProto(user.AccountStatus),
-		EmailVerified: emailVerificationStatusToProto(user.EmailVerified),
-		CreatedAt:     timeToProto(user.CreatedAt),
-	}
-
-	if user.LastLoginAt.Valid {
-		userProfile.LastLoginAt = timeToProto(user.LastLoginAt.Time)
-	}
-
-	return userProfile
 }

@@ -7,7 +7,6 @@ import (
 	"time"
 
 	authpb "github.com/datifyy/backend/gen/auth/v1"
-	commonpb "github.com/datifyy/backend/gen/common/v1"
 	"github.com/datifyy/backend/internal/auth"
 	"github.com/datifyy/backend/internal/repository"
 	"github.com/redis/go-redis/v9"
@@ -621,28 +620,6 @@ func (s *AuthService) LoginWithOAuth(
 	}, nil
 }
 
-// extractTokenFromContext extracts the access token from gRPC metadata
-// Looks for "authorization" key with format "Bearer {token}" or just "{token}"
-func extractTokenFromContext(ctx context.Context) string {
-	// TODO: Import google.golang.org/grpc/metadata when implementing
-	// For now, return empty string - this will be implemented with auth middleware
-	// md, ok := metadata.FromIncomingContext(ctx)
-	// if !ok {
-	//     return ""
-	// }
-	//
-	// authHeaders := md.Get("authorization")
-	// if len(authHeaders) == 0 {
-	//     return ""
-	// }
-	//
-	// // Handle "Bearer {token}" format
-	// token := strings.TrimPrefix(authHeaders[0], "Bearer ")
-	// return token
-
-	return "" // Placeholder until we add gRPC metadata support
-}
-
 // createSessionAndTokens creates a session and generates access/refresh tokens
 func (s *AuthService) createSessionAndTokens(
 	ctx context.Context,
@@ -716,44 +693,4 @@ func (s *AuthService) createSessionAndTokens(
 	}
 
 	return tokens, sessionInfo, nil
-}
-
-// generatePlaceholderToken generates a simple placeholder token
-// TODO: Replace with proper JWT implementation
-func generatePlaceholderToken(userID int, tokenType string) string {
-	return fmt.Sprintf("%s_token_%d_%d", tokenType, userID, time.Now().Unix())
-}
-
-// Helper functions to convert database values to proto enums
-
-func accountStatusToProto(status string) commonpb.AccountStatus {
-	switch status {
-	case "ACTIVE":
-		return commonpb.AccountStatus_ACCOUNT_STATUS_ACTIVE
-	case "PENDING":
-		return commonpb.AccountStatus_ACCOUNT_STATUS_PENDING
-	case "SUSPENDED":
-		return commonpb.AccountStatus_ACCOUNT_STATUS_SUSPENDED
-	case "BANNED":
-		return commonpb.AccountStatus_ACCOUNT_STATUS_BANNED
-	case "DELETED":
-		return commonpb.AccountStatus_ACCOUNT_STATUS_DELETED
-	default:
-		return commonpb.AccountStatus_ACCOUNT_STATUS_UNSPECIFIED
-	}
-}
-
-func emailVerificationStatusToProto(verified bool) commonpb.VerificationStatus {
-	if verified {
-		return commonpb.VerificationStatus_VERIFICATION_STATUS_VERIFIED
-	}
-	return commonpb.VerificationStatus_VERIFICATION_STATUS_UNVERIFIED
-}
-
-// timeToProto converts a Go time.Time to our custom Timestamp proto
-func timeToProto(t time.Time) *commonpb.Timestamp {
-	return &commonpb.Timestamp{
-		Seconds: t.Unix(),
-		Nanos:   int32(t.Nanosecond()),
-	}
 }
