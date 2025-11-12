@@ -24,7 +24,7 @@ func TestValidateToken_Success_Integration(t *testing.T) {
 	defer redisClient.Close()
 
 	ctx := context.Background()
-	authService := service.NewAuthService(db, redisClient)
+	authService := service.NewAuthService(db, redisClient, nil)
 
 	// Use unique email for this test run
 	testEmail := fmt.Sprintf("integration-validate-token-%d@example.com", time.Now().Unix())
@@ -80,7 +80,7 @@ func TestValidateToken_RevokedToken_Integration(t *testing.T) {
 	defer redisClient.Close()
 
 	ctx := context.Background()
-	authService := service.NewAuthService(db, redisClient)
+	authService := service.NewAuthService(db, redisClient, nil)
 
 	// Use unique email for this test run
 	testEmail := fmt.Sprintf("integration-validate-revoked-%d@example.com", time.Now().Unix())
@@ -138,7 +138,7 @@ func TestValidateToken_InvalidToken_Integration(t *testing.T) {
 	defer redisClient.Close()
 
 	ctx := context.Background()
-	authService := service.NewAuthService(db, redisClient)
+	authService := service.NewAuthService(db, redisClient, nil)
 
 	tests := []struct {
 		name        string

@@ -19,7 +19,7 @@ func setupTestAuthService(t *testing.T) (*AuthService, sqlmock.Sqlmock, *sql.DB)
 	db, mock, err := sqlmock.New()
 	require.NoError(t, err)
 
-	service := NewAuthService(db, nil) // nil redis for unit tests
+	service := NewAuthService(db, nil, nil) // nil redis and email client for unit tests
 	return service, mock, db
 }
 

@@ -55,8 +55,15 @@ func (s *AuthService) SendEmailVerification(
 		return nil, fmt.Errorf("failed to store verification token: %w", err)
 	}
 
-	// TODO: Send verification email via email service
-	// For now, we just return the token for testing purposes
+	// Send verification email
+	if s.emailClient != nil {
+		err = s.emailClient.SendVerificationEmail(req.Email, verificationToken)
+		if err != nil {
+			// Log error but don't fail the request
+			// The token is still valid even if email fails
+			fmt.Printf("Warning: failed to send verification email: %v\n", err)
+		}
+	}
 
 	return &authpb.SendEmailVerificationResponse{
 		Verification: &authpb.VerificationCode{
@@ -189,8 +196,14 @@ func (s *AuthService) ResendVerificationCode(
 		return nil, fmt.Errorf("failed to store verification token: %w", err)
 	}
 
-	// TODO: Send verification email via email service
-	// For now, we just return the token for testing purposes
+	// Send verification email
+	if s.emailClient != nil {
+		err = s.emailClient.SendVerificationEmail(req.Identifier, verificationToken)
+		if err != nil {
+			// Log error but don't fail the request
+			fmt.Printf("Warning: failed to send verification email: %v\n", err)
+		}
+	}
 
 	return &authpb.ResendVerificationCodeResponse{
 		Verification: &authpb.VerificationCode{

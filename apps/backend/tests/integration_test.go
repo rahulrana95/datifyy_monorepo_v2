@@ -193,7 +193,7 @@ func TestLoginWithEmail_Integration(t *testing.T) {
 	defer redisClient.Close()
 
 	ctx := context.Background()
-	authService := service.NewAuthService(db, redisClient)
+	authService := service.NewAuthService(db, redisClient, nil)
 
 	// Use unique email for this test run
 	testEmail := fmt.Sprintf("integration-test-%d@example.com", time.Now().Unix())
@@ -260,7 +260,7 @@ func TestLoginWithEmail_WrongPassword_Integration(t *testing.T) {
 	defer redisClient.Close()
 
 	ctx := context.Background()
-	authService := service.NewAuthService(db, redisClient)
+	authService := service.NewAuthService(db, redisClient, nil)
 
 	// Use unique email for this test run
 	testEmail := fmt.Sprintf("integration-test-wrong-pass-%d@example.com", time.Now().Unix())
@@ -309,7 +309,7 @@ func TestLoginWithEmail_NonExistentUser_Integration(t *testing.T) {
 	defer redisClient.Close()
 
 	ctx := context.Background()
-	authService := service.NewAuthService(db, redisClient)
+	authService := service.NewAuthService(db, redisClient, nil)
 
 	// Try to login with non-existent user
 	loginReq := &authpb.LoginWithEmailRequest{
@@ -337,7 +337,7 @@ func TestRefreshToken_Success_Integration(t *testing.T) {
 	defer redisClient.Close()
 
 	ctx := context.Background()
-	authService := service.NewAuthService(db, redisClient)
+	authService := service.NewAuthService(db, redisClient, nil)
 
 	// Use unique email for this test run
 	testEmail := fmt.Sprintf("integration-refresh-%d@example.com", time.Now().Unix())
@@ -404,7 +404,7 @@ func TestRefreshToken_InvalidToken_Integration(t *testing.T) {
 	defer redisClient.Close()
 
 	ctx := context.Background()
-	authService := service.NewAuthService(db, redisClient)
+	authService := service.NewAuthService(db, redisClient, nil)
 
 	// Try to refresh with an invalid token
 	refreshReq := &authpb.RefreshTokenRequest{
@@ -429,7 +429,7 @@ func TestRefreshToken_NonExistentSession_Integration(t *testing.T) {
 	defer redisClient.Close()
 
 	ctx := context.Background()
-	authService := service.NewAuthService(db, redisClient)
+	authService := service.NewAuthService(db, redisClient, nil)
 
 	// Try to refresh with a valid format but non-existent session
 	// Format: refresh_token_{userID}_{timestamp}
@@ -457,7 +457,7 @@ func TestRefreshToken_RevokedSession_Integration(t *testing.T) {
 	defer redisClient.Close()
 
 	ctx := context.Background()
-	authService := service.NewAuthService(db, redisClient)
+	authService := service.NewAuthService(db, redisClient, nil)
 
 	// Use unique email for this test run
 	testEmail := fmt.Sprintf("integration-revoked-%d@example.com", time.Now().Unix())
@@ -510,7 +510,7 @@ func TestRevokeToken_Success_Integration(t *testing.T) {
 	defer redisClient.Close()
 
 	ctx := context.Background()
-	authService := service.NewAuthService(db, redisClient)
+	authService := service.NewAuthService(db, redisClient, nil)
 
 	// Use unique email for this test run
 	testEmail := fmt.Sprintf("integration-revoke-success-%d@example.com", time.Now().Unix())
@@ -581,7 +581,7 @@ func TestRevokeToken_AlreadyRevoked_Integration(t *testing.T) {
 	defer redisClient.Close()
 
 	ctx := context.Background()
-	authService := service.NewAuthService(db, redisClient)
+	authService := service.NewAuthService(db, redisClient, nil)
 
 	// Use unique email for this test run
 	testEmail := fmt.Sprintf("integration-revoke-twice-%d@example.com", time.Now().Unix())
@@ -635,7 +635,7 @@ func TestRevokeToken_InvalidToken_Integration(t *testing.T) {
 	defer redisClient.Close()
 
 	ctx := context.Background()
-	authService := service.NewAuthService(db, redisClient)
+	authService := service.NewAuthService(db, redisClient, nil)
 
 	// Try to revoke with an invalid token format
 	revokeReq := &authpb.RevokeTokenRequest{

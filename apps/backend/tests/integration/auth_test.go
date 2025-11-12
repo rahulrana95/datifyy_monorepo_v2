@@ -111,7 +111,7 @@ func TestRegisterWithEmail_Success(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
-	authService := service.NewAuthService(testDB, testRedis)
+	authService := service.NewAuthService(testDB, testRedis, nil)
 	ctx := context.Background()
 
 	testEmail := fmt.Sprintf("test-%d@example.com", time.Now().Unix())
@@ -232,7 +232,7 @@ func TestRegisterWithEmail_DuplicateEmail(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
-	authService := service.NewAuthService(testDB, testRedis)
+	authService := service.NewAuthService(testDB, testRedis, nil)
 	ctx := context.Background()
 
 	testEmail := fmt.Sprintf("test-%d@example.com", time.Now().Unix())
@@ -264,7 +264,7 @@ func TestRegisterWithEmail_InvalidEmail(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
-	authService := service.NewAuthService(testDB, testRedis)
+	authService := service.NewAuthService(testDB, testRedis, nil)
 	ctx := context.Background()
 
 	tests := []struct {
@@ -308,7 +308,7 @@ func TestRegisterWithEmail_WeakPassword(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
-	authService := service.NewAuthService(testDB, testRedis)
+	authService := service.NewAuthService(testDB, testRedis, nil)
 	ctx := context.Background()
 
 	tests := []struct {
@@ -360,7 +360,7 @@ func TestRegisterWithEmail_MissingName(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
-	authService := service.NewAuthService(testDB, testRedis)
+	authService := service.NewAuthService(testDB, testRedis, nil)
 	ctx := context.Background()
 
 	req := &authpb.RegisterWithEmailRequest{

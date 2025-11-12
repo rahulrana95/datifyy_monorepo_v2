@@ -16,15 +16,24 @@ import (
 // AuthService handles authentication operations
 type AuthService struct {
 	authpb.UnimplementedAuthServiceServer
-	userRepo *repository.UserRepository
-	db       *sql.DB
-	redis    *redis.Client
+	userRepo    *repository.UserRepository
+	db          *sql.DB
+	redis       *redis.Client
+	emailClient EmailSender
+}
+
+// EmailSender interface for sending emails
+type EmailSender interface {
+	SendVerificationEmail(to, code string) error
+	SendPasswordResetEmail(to, token string) error
+	SendWelcomeEmail(to, name string) error
 }
 
 // NewAuthService creates a new auth service
-func NewAuthService(db *sql.DB, redisClient *redis.Client) *AuthService {
+func NewAuthService(db *sql.DB, redisClient *redis.Client, emailClient EmailSender) *AuthService {
 	return &AuthService{
-		userRepo: repository.NewUserRepository(db),
+		userRepo:    repository.NewUserRepository(db),
+		emailClient: emailClient,
 		db:       db,
 		redis:    redisClient,
 	}

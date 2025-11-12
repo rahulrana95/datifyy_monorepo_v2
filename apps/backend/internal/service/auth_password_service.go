@@ -155,8 +155,14 @@ func (s *AuthService) RequestPasswordReset(
 		return nil, fmt.Errorf("failed to store reset token: %w", err)
 	}
 
-	// TODO: Send password reset email via email service
-	// For now, return the token for testing
+	// Send password reset email
+	if s.emailClient != nil {
+		err = s.emailClient.SendPasswordResetEmail(req.ResetRequest.Email, resetToken)
+		if err != nil {
+			// Log error but don't fail the request
+			fmt.Printf("Warning: failed to send password reset email: %v\n", err)
+		}
+	}
 
 	return &authpb.RequestPasswordResetResponse{
 		Message: "If an account with that email exists, a password reset link has been sent",

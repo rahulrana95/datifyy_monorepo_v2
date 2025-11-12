@@ -25,7 +25,7 @@ func TestListSessions_Success_Integration(t *testing.T) {
 	defer redisClient.Close()
 
 	ctx := context.Background()
-	authService := service.NewAuthService(db, redisClient)
+	authService := service.NewAuthService(db, redisClient, nil)
 
 	// Use unique email for this test run
 	testEmail := fmt.Sprintf("integration-list-sessions-%d@example.com", time.Now().Unix())
@@ -101,7 +101,7 @@ func TestRevokeSession_Success_Integration(t *testing.T) {
 	defer redisClient.Close()
 
 	ctx := context.Background()
-	authService := service.NewAuthService(db, redisClient)
+	authService := service.NewAuthService(db, redisClient, nil)
 
 	// Use unique email for this test run
 	testEmail := fmt.Sprintf("integration-revoke-session-%d@example.com", time.Now().Unix())
@@ -177,7 +177,7 @@ func TestRevokeSession_InvalidSessionID_Integration(t *testing.T) {
 	defer redisClient.Close()
 
 	ctx := context.Background()
-	authService := service.NewAuthService(db, redisClient)
+	authService := service.NewAuthService(db, redisClient, nil)
 
 	// Test with empty session ID
 	revokeReq := &authpb.RevokeSessionRequest{
@@ -205,7 +205,7 @@ func TestGetCurrentSession_Success_Integration(t *testing.T) {
 	defer redisClient.Close()
 
 	ctx := context.Background()
-	authService := service.NewAuthService(db, redisClient)
+	authService := service.NewAuthService(db, redisClient, nil)
 
 	// Use unique email for this test run
 	testEmail := fmt.Sprintf("integration-get-session-%d@example.com", time.Now().Unix())
