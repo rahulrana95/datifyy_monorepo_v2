@@ -129,6 +129,7 @@ func startHTTPServer(port string, server *Server, db *sql.DB, redisClient *redis
 	mux.HandleFunc("/api/v1/auth/register/email", createRegisterHandler(authService))
 	mux.HandleFunc("/api/v1/auth/login/email", createLoginHandler(authService))
 	mux.HandleFunc("/api/v1/auth/token/refresh", createRefreshTokenHandler(authService))
+	mux.HandleFunc("/api/v1/auth/token/revoke", createRevokeTokenHandler(authService))
 
 	// Add CORS middleware
 	handler := enableCORS(mux)
@@ -389,6 +390,47 @@ func createRefreshTokenHandler(authService *service.AuthService) http.HandlerFun
 					},
 				},
 			},
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(jsonResp)
+	}
+}
+
+// createRevokeTokenHandler creates HTTP handler for token revocation (logout)
+func createRevokeTokenHandler(authService *service.AuthService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		// Parse JSON request
+		var reqBody struct {
+			RefreshToken string `json:"refresh_token"`
+		}
+
+		if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+			http.Error(w, fmt.Sprintf("Invalid JSON: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		// Convert to gRPC request
+		grpcReq := &authpb.RevokeTokenRequest{
+			RefreshToken: reqBody.RefreshToken,
+		}
+
+		// Call gRPC service
+		resp, err := authService.RevokeToken(r.Context(), grpcReq)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Token revocation failed: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		// Convert response to JSON
+		jsonResp := map[string]interface{}{
+			"message": resp.Message,
 		}
 
 		w.Header().Set("Content-Type", "application/json")

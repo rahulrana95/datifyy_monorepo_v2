@@ -532,3 +532,137 @@ func TestRefreshToken_SuspendedAccount(t *testing.T) {
 	assert.Nil(t, resp)
 	assert.Contains(t, err.Error(), "SUSPENDED")
 }
+
+// ============================================================================
+// RevokeToken Tests
+// ============================================================================
+
+func TestRevokeToken_Success(t *testing.T) {
+	// Arrange
+	service, mock, db := setupTestAuthService(t)
+	defer db.Close()
+
+	ctx := context.Background()
+	userID := 1
+	timestamp := int64(1234567890)
+	refreshToken := fmt.Sprintf("refresh_token_%d_%d", userID, timestamp)
+	sessionID := fmt.Sprintf("sess_%d_%d", userID, timestamp)
+
+	// Mock session revocation update
+	mock.ExpectExec("UPDATE sessions SET is_active = false").
+		WithArgs(sessionID, userID).
+		WillReturnResult(sqlmock.NewResult(0, 1)) // 1 row affected
+
+	req := &authpb.RevokeTokenRequest{
+		RefreshToken: refreshToken,
+	}
+
+	// Act
+	resp, err := service.RevokeToken(ctx, req)
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, "Token revoked successfully", resp.Message)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestRevokeToken_EmptyToken(t *testing.T) {
+	// Arrange
+	service, _, db := setupTestAuthService(t)
+	defer db.Close()
+
+	ctx := context.Background()
+
+	req := &authpb.RevokeTokenRequest{
+		RefreshToken: "",
+	}
+
+	// Act
+	resp, err := service.RevokeToken(ctx, req)
+
+	// Assert
+	require.Error(t, err)
+	assert.Nil(t, resp)
+	assert.Contains(t, err.Error(), "refresh token is required")
+}
+
+func TestRevokeToken_InvalidFormat(t *testing.T) {
+	// Arrange
+	service, _, db := setupTestAuthService(t)
+	defer db.Close()
+
+	ctx := context.Background()
+
+	req := &authpb.RevokeTokenRequest{
+		RefreshToken: "invalid_token_format",
+	}
+
+	// Act
+	resp, err := service.RevokeToken(ctx, req)
+
+	// Assert
+	require.Error(t, err)
+	assert.Nil(t, resp)
+	assert.Contains(t, err.Error(), "invalid refresh token format")
+}
+
+func TestRevokeToken_SessionNotFound(t *testing.T) {
+	// Arrange
+	service, mock, db := setupTestAuthService(t)
+	defer db.Close()
+
+	ctx := context.Background()
+	userID := 1
+	timestamp := int64(1234567890)
+	refreshToken := fmt.Sprintf("refresh_token_%d_%d", userID, timestamp)
+	sessionID := fmt.Sprintf("sess_%d_%d", userID, timestamp)
+
+	// Mock session revocation update that affects 0 rows (session not found)
+	mock.ExpectExec("UPDATE sessions SET is_active = false").
+		WithArgs(sessionID, userID).
+		WillReturnResult(sqlmock.NewResult(0, 0)) // 0 rows affected
+
+	req := &authpb.RevokeTokenRequest{
+		RefreshToken: refreshToken,
+	}
+
+	// Act
+	resp, err := service.RevokeToken(ctx, req)
+
+	// Assert
+	require.Error(t, err)
+	assert.Nil(t, resp)
+	assert.Contains(t, err.Error(), "session not found or already revoked")
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestRevokeToken_DatabaseError(t *testing.T) {
+	// Arrange
+	service, mock, db := setupTestAuthService(t)
+	defer db.Close()
+
+	ctx := context.Background()
+	userID := 1
+	timestamp := int64(1234567890)
+	refreshToken := fmt.Sprintf("refresh_token_%d_%d", userID, timestamp)
+	sessionID := fmt.Sprintf("sess_%d_%d", userID, timestamp)
+
+	// Mock database error
+	mock.ExpectExec("UPDATE sessions SET is_active = false").
+		WithArgs(sessionID, userID).
+		WillReturnError(fmt.Errorf("database connection error"))
+
+	req := &authpb.RevokeTokenRequest{
+		RefreshToken: refreshToken,
+	}
+
+	// Act
+	resp, err := service.RevokeToken(ctx, req)
+
+	// Assert
+	require.Error(t, err)
+	assert.Nil(t, resp)
+	assert.Contains(t, err.Error(), "failed to revoke session")
+	assert.NoError(t, mock.ExpectationsWereMet())
+}

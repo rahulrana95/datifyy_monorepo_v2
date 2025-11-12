@@ -291,6 +291,65 @@ func (s *AuthService) RefreshToken(
 	}, nil
 }
 
+// RevokeToken implements token revocation (logout)
+func (s *AuthService) RevokeToken(
+	ctx context.Context,
+	req *authpb.RevokeTokenRequest,
+) (*authpb.RevokeTokenResponse, error) {
+	// Validate input
+	if req.RefreshToken == "" {
+		return nil, fmt.Errorf("refresh token is required")
+	}
+
+	// Parse refresh token to extract user ID and timestamp
+	// Format: "refresh_token_{userID}_{timestamp}"
+	var userID int
+	var timestamp int64
+	_, err := fmt.Sscanf(req.RefreshToken, "refresh_token_%d_%d", &userID, &timestamp)
+	if err != nil {
+		return nil, fmt.Errorf("invalid refresh token format")
+	}
+
+	// Construct session ID from token
+	sessionID := fmt.Sprintf("sess_%d_%d", userID, timestamp)
+
+	// Revoke the session in database by setting is_active = false
+	query := `
+		UPDATE sessions
+		SET is_active = false
+		WHERE id = $1 AND user_id = $2 AND is_active = true
+	`
+
+	result, err := s.db.ExecContext(ctx, query, sessionID, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to revoke session: %w", err)
+	}
+
+	// Check if session was found and updated
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return nil, fmt.Errorf("failed to check revocation result: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return nil, fmt.Errorf("session not found or already revoked")
+	}
+
+	// Remove session from Redis cache
+	if s.redis != nil {
+		redisKey := fmt.Sprintf("session:%s", sessionID)
+		err = s.redis.Del(ctx, redisKey).Err()
+		if err != nil {
+			// Log error but don't fail the request
+			fmt.Printf("Warning: failed to remove session from Redis: %v\n", err)
+		}
+	}
+
+	return &authpb.RevokeTokenResponse{
+		Message: "Token revoked successfully",
+	}, nil
+}
+
 // createSessionAndTokens creates a session and generates access/refresh tokens
 func (s *AuthService) createSessionAndTokens(
 	ctx context.Context,

@@ -60,6 +60,24 @@ docs/
   - Unit tests: `internal/service/auth_service_test.go:278-533`
   - Integration tests: `tests/integration_test.go:330-502`
 
+#### ✅ RevokeToken
+- **Status**: Fully implemented with tests
+- **Features**:
+  - Token revocation (logout functionality)
+  - Session invalidation (is_active = false)
+  - Redis cache cleanup
+  - Prevents reuse of revoked tokens
+  - Unit tests (5 test cases)
+  - Integration tests (3 test suites)
+- **Endpoints**:
+  - gRPC: `datifyy.auth.v1.AuthService/RevokeToken`
+  - REST: `POST /api/v1/auth/token/revoke`
+- **Files**:
+  - Service: `internal/service/auth_service.go:294-351`
+  - HTTP Handler: `cmd/server/main.go:401-440`
+  - Unit tests: `internal/service/auth_service_test.go:540-660`
+  - Integration tests: `tests/integration_test.go:505-655`
+
 ---
 
 ## Quick Links

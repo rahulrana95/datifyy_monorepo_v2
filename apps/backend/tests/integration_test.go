@@ -500,3 +500,152 @@ func TestRefreshToken_RevokedSession_Integration(t *testing.T) {
 
 	t.Log("Revoked session test passed successfully")
 }
+func TestRevokeToken_Success_Integration(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+
+	db, redisClient := setupTestDB(t)
+	defer db.Close()
+	defer redisClient.Close()
+
+	ctx := context.Background()
+	authService := service.NewAuthService(db, redisClient)
+
+	// Use unique email for this test run
+	testEmail := fmt.Sprintf("integration-revoke-success-%d@example.com", time.Now().Unix())
+	testPassword := "TestPass123!"
+	testName := "Revoke Success Test User"
+
+	// Cleanup before and after
+	cleanupTestUser(t, db, testEmail)
+	defer cleanupTestUser(t, db, testEmail)
+
+	// Step 1: Register a new user
+	registerReq := &authpb.RegisterWithEmailRequest{
+		Credentials: &authpb.EmailPasswordCredentials{
+			Email:    testEmail,
+			Password: testPassword,
+			Name:     testName,
+		},
+	}
+
+	registerResp, err := authService.RegisterWithEmail(ctx, registerReq)
+	require.NoError(t, err)
+	require.NotNil(t, registerResp)
+
+	refreshToken := registerResp.Tokens.RefreshToken.Token
+	sessionID := registerResp.Session.SessionId
+
+	// Verify session is active before revocation
+	var isActive bool
+	err = db.QueryRowContext(ctx, "SELECT is_active FROM sessions WHERE id = $1", sessionID).Scan(&isActive)
+	require.NoError(t, err)
+	assert.True(t, isActive)
+
+	// Step 2: Revoke the token
+	revokeReq := &authpb.RevokeTokenRequest{
+		RefreshToken: refreshToken,
+	}
+
+	revokeResp, err := authService.RevokeToken(ctx, revokeReq)
+	require.NoError(t, err)
+	require.NotNil(t, revokeResp)
+	assert.Equal(t, "Token revoked successfully", revokeResp.Message)
+
+	// Step 3: Verify session is inactive after revocation
+	err = db.QueryRowContext(ctx, "SELECT is_active FROM sessions WHERE id = $1", sessionID).Scan(&isActive)
+	require.NoError(t, err)
+	assert.False(t, isActive, "Session should be inactive after revocation")
+
+	// Step 4: Try to refresh with the revoked token (should fail)
+	refreshReq := &authpb.RefreshTokenRequest{
+		RefreshToken: refreshToken,
+	}
+
+	refreshResp, err := authService.RefreshToken(ctx, refreshReq)
+	require.Error(t, err)
+	assert.Nil(t, refreshResp)
+	assert.Contains(t, err.Error(), "session has been revoked")
+
+	t.Log("RevokeToken success integration test passed successfully")
+}
+
+func TestRevokeToken_AlreadyRevoked_Integration(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+
+	db, redisClient := setupTestDB(t)
+	defer db.Close()
+	defer redisClient.Close()
+
+	ctx := context.Background()
+	authService := service.NewAuthService(db, redisClient)
+
+	// Use unique email for this test run
+	testEmail := fmt.Sprintf("integration-revoke-twice-%d@example.com", time.Now().Unix())
+	testPassword := "TestPass123!"
+	testName := "Revoke Twice Test User"
+
+	// Cleanup before and after
+	cleanupTestUser(t, db, testEmail)
+	defer cleanupTestUser(t, db, testEmail)
+
+	// Step 1: Register a new user
+	registerReq := &authpb.RegisterWithEmailRequest{
+		Credentials: &authpb.EmailPasswordCredentials{
+			Email:    testEmail,
+			Password: testPassword,
+			Name:     testName,
+		},
+	}
+
+	registerResp, err := authService.RegisterWithEmail(ctx, registerReq)
+	require.NoError(t, err)
+	require.NotNil(t, registerResp)
+
+	refreshToken := registerResp.Tokens.RefreshToken.Token
+
+	// Step 2: Revoke the token (first time)
+	revokeReq := &authpb.RevokeTokenRequest{
+		RefreshToken: refreshToken,
+	}
+
+	revokeResp, err := authService.RevokeToken(ctx, revokeReq)
+	require.NoError(t, err)
+	require.NotNil(t, revokeResp)
+
+	// Step 3: Try to revoke the same token again (should fail)
+	revokeResp, err = authService.RevokeToken(ctx, revokeReq)
+	require.Error(t, err)
+	assert.Nil(t, revokeResp)
+	assert.Contains(t, err.Error(), "session not found or already revoked")
+
+	t.Log("Revoke already revoked token test passed successfully")
+}
+
+func TestRevokeToken_InvalidToken_Integration(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+
+	db, redisClient := setupTestDB(t)
+	defer db.Close()
+	defer redisClient.Close()
+
+	ctx := context.Background()
+	authService := service.NewAuthService(db, redisClient)
+
+	// Try to revoke with an invalid token format
+	revokeReq := &authpb.RevokeTokenRequest{
+		RefreshToken: "invalid_token_format",
+	}
+
+	revokeResp, err := authService.RevokeToken(ctx, revokeReq)
+	require.Error(t, err)
+	assert.Nil(t, revokeResp)
+	assert.Contains(t, err.Error(), "invalid refresh token format")
+
+	t.Log("Invalid token test passed successfully")
+}
