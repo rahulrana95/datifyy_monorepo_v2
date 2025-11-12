@@ -445,6 +445,92 @@ func (s *AuthService) ValidateToken(
 	}, nil
 }
 
+// Logout implements logout for the current session
+// Extracts access token from gRPC metadata "authorization" header
+func (s *AuthService) Logout(
+	ctx context.Context,
+	req *authpb.LogoutRequest,
+) (*authpb.LogoutResponse, error) {
+	// Extract access token from context
+	// In production with auth middleware, this would be pre-validated
+	// For now, we extract it from metadata directly
+
+	// Get metadata from context
+	accessToken := extractTokenFromContext(ctx)
+	if accessToken == "" {
+		return nil, fmt.Errorf("authorization required: access token not found in metadata")
+	}
+
+	// Parse access token to extract user ID and timestamp
+	// Format: "access_token_{userID}_{timestamp}"
+	var userID int
+	var timestamp int64
+	_, err := fmt.Sscanf(accessToken, "access_token_%d_%d", &userID, &timestamp)
+	if err != nil {
+		return nil, fmt.Errorf("invalid access token format")
+	}
+
+	// Construct session ID from token
+	sessionID := fmt.Sprintf("sess_%d_%d", userID, timestamp)
+
+	// Revoke the session
+	query := `
+		UPDATE sessions
+		SET is_active = false
+		WHERE id = $1 AND user_id = $2 AND is_active = true
+	`
+
+	result, err := s.db.ExecContext(ctx, query, sessionID, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to logout: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return nil, fmt.Errorf("failed to check logout result: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return nil, fmt.Errorf("session not found or already logged out")
+	}
+
+	// Remove session from Redis cache
+	if s.redis != nil {
+		redisKey := fmt.Sprintf("session:%s", sessionID)
+		err = s.redis.Del(ctx, redisKey).Err()
+		if err != nil {
+			// Log error but don't fail the request
+			fmt.Printf("Warning: failed to remove session from Redis: %v\n", err)
+		}
+	}
+
+	return &authpb.LogoutResponse{
+		Message: "Logged out successfully",
+	}, nil
+}
+
+// extractTokenFromContext extracts the access token from gRPC metadata
+// Looks for "authorization" key with format "Bearer {token}" or just "{token}"
+func extractTokenFromContext(ctx context.Context) string {
+	// TODO: Import google.golang.org/grpc/metadata when implementing
+	// For now, return empty string - this will be implemented with auth middleware
+	// md, ok := metadata.FromIncomingContext(ctx)
+	// if !ok {
+	//     return ""
+	// }
+	//
+	// authHeaders := md.Get("authorization")
+	// if len(authHeaders) == 0 {
+	//     return ""
+	// }
+	//
+	// // Handle "Bearer {token}" format
+	// token := strings.TrimPrefix(authHeaders[0], "Bearer ")
+	// return token
+
+	return "" // Placeholder until we add gRPC metadata support
+}
+
 // createSessionAndTokens creates a session and generates access/refresh tokens
 func (s *AuthService) createSessionAndTokens(
 	ctx context.Context,
