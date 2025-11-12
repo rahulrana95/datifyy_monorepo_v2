@@ -115,3 +115,9 @@ func GenerateVerificationCode() (string, error) {
 
 	return fmt.Sprintf("%06d", code), nil
 }
+
+// GenerateOTPCode generates a 6-digit OTP code for phone verification
+// Alias for GenerateVerificationCode
+func GenerateOTPCode() (string, error) {
+	return GenerateVerificationCode()
+}

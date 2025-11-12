@@ -509,6 +509,109 @@ func (s *AuthService) Logout(
 	}, nil
 }
 
+// LoginWithOAuth logs in or registers user with OAuth provider
+func (s *AuthService) LoginWithOAuth(
+	ctx context.Context,
+	req *authpb.LoginWithOAuthRequest,
+) (*authpb.LoginWithOAuthResponse, error) {
+	// Validate credentials
+	if req.Credentials == nil {
+		return nil, fmt.Errorf("credentials are required")
+	}
+	if req.Credentials.AccessToken == "" {
+		return nil, fmt.Errorf("access_token is required")
+	}
+
+	// TODO: Verify OAuth token with the provider
+	// For now, this is a placeholder implementation
+	// In production, you would:
+	// 1. Verify the access_token with the OAuth provider (Google, Facebook, etc.)
+	// 2. Get user info from the provider
+	// 3. Extract email, name, and other profile data
+
+	// Placeholder user info (would come from OAuth provider)
+	var oauthEmail string
+	var oauthName string
+	var oauthProviderID string // TODO: Use this when storing OAuth connection
+
+	switch req.Credentials.Provider {
+	case authpb.OAuthProvider_OAUTH_PROVIDER_GOOGLE:
+		// TODO: Call Google OAuth API to verify token and get user info
+		oauthEmail = "oauth_user@gmail.com" // Placeholder
+		oauthName = "OAuth User"
+		oauthProviderID = "google_123456"
+	case authpb.OAuthProvider_OAUTH_PROVIDER_FACEBOOK:
+		// TODO: Call Facebook Graph API
+		oauthEmail = "oauth_user@facebook.com"
+		oauthName = "OAuth User"
+		oauthProviderID = "fb_123456"
+	case authpb.OAuthProvider_OAUTH_PROVIDER_APPLE:
+		// TODO: Verify Apple Sign In token
+		oauthEmail = "oauth_user@privaterelay.appleid.com"
+		oauthName = "OAuth User"
+		oauthProviderID = "apple_123456"
+	default:
+		return nil, fmt.Errorf("unsupported OAuth provider")
+	}
+	_ = oauthProviderID // Will be used when we add OAuth accounts table
+
+	// Check if user exists with this email
+	user, err := s.userRepo.GetByEmail(ctx, oauthEmail)
+	isNewUser := false
+
+	if err != nil {
+		// User doesn't exist - create new account
+		isNewUser = true
+
+		// Create user account
+		// OAuth users don't have passwords, so we'll use an empty password hash
+		newUserInput := repository.CreateUserInput{
+			Email:        oauthEmail,
+			Name:         oauthName,
+			PasswordHash: "", // No password for OAuth users
+			// Email verification not needed for OAuth
+			VerificationToken: "",
+			TokenExpiresAt:    time.Now(),
+		}
+
+		user, err = s.userRepo.Create(ctx, newUserInput)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create user: %w", err)
+		}
+
+		// OAuth users have verified email by default
+		// TODO: Update email_verified to true in the database
+		// TODO: Store OAuth provider info in oauth_accounts table
+		// oauth_accounts(user_id, provider, provider_user_id, connected_at)
+	} else {
+		// Existing user - verify account status
+		if user.AccountStatus != "active" {
+			return nil, fmt.Errorf("account is %s", user.AccountStatus)
+		}
+
+		// Update last login
+		if err := s.userRepo.UpdateLastLogin(ctx, user.ID); err != nil {
+			fmt.Printf("Warning: failed to update last login: %v\n", err)
+		}
+	}
+
+	// Create session and tokens
+	tokens, session, err := s.createSessionAndTokens(ctx, user, req.Credentials.DeviceInfo)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create session: %w", err)
+	}
+
+	// Build user profile
+	userProfile := buildUserProfile(user)
+
+	return &authpb.LoginWithOAuthResponse{
+		User:      userProfile,
+		Tokens:    tokens,
+		Session:   session,
+		IsNewUser: isNewUser,
+	}, nil
+}
+
 // extractTokenFromContext extracts the access token from gRPC metadata
 // Looks for "authorization" key with format "Bearer {token}" or just "{token}"
 func extractTokenFromContext(ctx context.Context) string {
