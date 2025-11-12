@@ -1,52 +1,21 @@
 /**
  * Auth Store
  * Zustand store for authentication state management
+ * Uses types from generated proto files
  */
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import * as authAPI from '../services/auth.api';
-
-/**
- * User and Token types matching REST API responses
- */
-export interface User {
-  user_id: string;
-  email: string;
-  name: string;
-  account_status: string;
-  email_verified: string;
-  created_at: {
-    seconds: number;
-    nanos: number;
-  };
-}
-
-export interface Tokens {
-  access_token: {
-    token: string;
-    token_type: string;
-    expires_at: {
-      seconds: number;
-      nanos: number;
-    };
-  };
-  refresh_token: {
-    token: string;
-    expires_at: {
-      seconds: number;
-      nanos: number;
-    };
-  };
-}
+import type { UserProfile, TokenPair } from '../../../gen/auth/v1/messages_pb';
 
 /**
  * Auth state interface
  */
 interface AuthState {
-  // State
-  user: User | null;
-  tokens: Tokens | null;
+  // State - uses generated proto types
+  user: UserProfile | null;
+  tokens: TokenPair | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
@@ -143,8 +112,8 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true, error: null });
 
         try {
-          if (tokens?.refresh_token?.token) {
-            await authAPI.revokeToken(tokens.refresh_token.token);
+          if (tokens?.refreshToken?.token) {
+            await authAPI.revokeToken(tokens.refreshToken.token);
           }
 
           set({
@@ -170,12 +139,12 @@ export const useAuthStore = create<AuthState>()(
        */
       refreshAccessToken: async () => {
         const { tokens } = get();
-        if (!tokens?.refresh_token?.token) {
+        if (!tokens?.refreshToken?.token) {
           throw new Error('No refresh token available');
         }
 
         try {
-          const response = await authAPI.refreshToken(tokens.refresh_token.token);
+          const response = await authAPI.refreshToken(tokens.refreshToken.token);
 
           set({
             tokens: response.tokens,
@@ -279,7 +248,7 @@ export const useAuthStore = create<AuthState>()(
       loadUserFromStorage: async () => {
         const { tokens, refreshAccessToken } = get();
 
-        if (tokens?.refresh_token) {
+        if (tokens?.refreshToken) {
           try {
             // Try to refresh the access token
             await refreshAccessToken();
@@ -322,3 +291,8 @@ export const selectIsAuthenticated = (state: AuthState) => state.isAuthenticated
 export const selectIsLoading = (state: AuthState) => state.isLoading;
 export const selectError = (state: AuthState) => state.error;
 export const selectTokens = (state: AuthState) => state.tokens;
+
+/**
+ * Re-export types from generated proto files for convenience
+ */
+export type { UserProfile as User, TokenPair as Tokens } from '../../../gen/auth/v1/messages_pb';

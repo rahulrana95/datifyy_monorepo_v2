@@ -1,70 +1,18 @@
 /**
  * Auth REST API Client
  * HTTP client for authentication REST endpoints
+ * Uses types from generated proto files
  */
+
+import type {
+  RegisterWithEmailResponse,
+  LoginWithEmailResponse,
+  RefreshTokenResponse,
+  RevokeTokenResponse,
+} from '../../../gen/auth/v1/auth_pb';
 
 // API base URL from environment
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
-
-/**
- * API Types matching backend REST responses
- */
-export interface UserResponse {
-  user_id: string;
-  email: string;
-  name: string;
-  account_status: string;
-  email_verified: string;
-  created_at: {
-    seconds: number;
-    nanos: number;
-  };
-}
-
-export interface TokenResponse {
-  access_token: {
-    token: string;
-    token_type: string;
-    expires_at: {
-      seconds: number;
-      nanos: number;
-    };
-  };
-  refresh_token: {
-    token: string;
-    expires_at: {
-      seconds: number;
-      nanos: number;
-    };
-  };
-}
-
-export interface RegisterResponse {
-  user: UserResponse;
-  tokens: TokenResponse;
-  session: {
-    session_id: string;
-    user_id: string;
-  };
-  requires_email_verification: boolean;
-}
-
-export interface LoginResponse {
-  user: UserResponse;
-  tokens: TokenResponse;
-  session: {
-    session_id: string;
-    user_id: string;
-  };
-}
-
-export interface RefreshTokenResponse {
-  tokens: TokenResponse;
-}
-
-export interface RevokeTokenResponse {
-  message: string;
-}
 
 /**
  * Register new user with email and password
@@ -73,7 +21,7 @@ export async function registerWithEmail(
   email: string,
   password: string,
   name: string
-): Promise<RegisterResponse> {
+): Promise<RegisterWithEmailResponse> {
   const response = await fetch(`${API_BASE_URL}/api/v1/auth/register/email`, {
     method: 'POST',
     headers: {
@@ -100,7 +48,7 @@ export async function registerWithEmail(
 export async function loginWithEmail(
   email: string,
   password: string
-): Promise<LoginResponse> {
+): Promise<LoginWithEmailResponse> {
   const response = await fetch(`${API_BASE_URL}/api/v1/auth/login/email`, {
     method: 'POST',
     headers: {
