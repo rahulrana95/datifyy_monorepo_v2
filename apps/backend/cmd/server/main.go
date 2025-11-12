@@ -127,9 +127,7 @@ func startHTTPServer(port string, server *Server, db *sql.DB, redisClient *redis
 	// Auth REST endpoints (wrapper around gRPC)
 	authService := service.NewAuthService(db, redisClient)
 	mux.HandleFunc("/api/v1/auth/register/email", createRegisterHandler(authService))
-	mux.HandleFunc("/api/v1/auth/login/email", func(w http.ResponseWriter, r *http.Request) {
-		http.Error(w, "Not implemented yet", http.StatusNotImplemented)
-	})
+	mux.HandleFunc("/api/v1/auth/login/email", createLoginHandler(authService))
 
 	// Add CORS middleware
 	handler := enableCORS(mux)
@@ -231,6 +229,97 @@ func createRegisterHandler(authService *service.AuthService) http.HandlerFunc {
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
+		json.NewEncoder(w).Encode(jsonResp)
+	}
+}
+
+// createLoginHandler creates HTTP handler for login
+func createLoginHandler(authService *service.AuthService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		// Parse JSON request
+		var reqBody struct {
+			Email    string `json:"email"`
+			Password string `json:"password"`
+			DeviceInfo *struct {
+				Platform   int32  `json:"platform"`
+				DeviceName string `json:"device_name"`
+				OSVersion  string `json:"os_version"`
+				DeviceID   string `json:"device_id"`
+			} `json:"device_info,omitempty"`
+		}
+
+		if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+			http.Error(w, fmt.Sprintf("Invalid JSON: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		// Convert to gRPC request
+		grpcReq := &authpb.LoginWithEmailRequest{
+			Credentials: &authpb.EmailPasswordCredentials{
+				Email:    reqBody.Email,
+				Password: reqBody.Password,
+			},
+		}
+
+		if reqBody.DeviceInfo != nil {
+			grpcReq.Credentials.DeviceInfo = &authpb.DeviceInfo{
+				Platform:   commonpb.DevicePlatform(reqBody.DeviceInfo.Platform),
+				DeviceName: reqBody.DeviceInfo.DeviceName,
+				OsVersion:  reqBody.DeviceInfo.OSVersion,
+				DeviceId:   reqBody.DeviceInfo.DeviceID,
+			}
+		}
+
+		// Call gRPC service
+		resp, err := authService.LoginWithEmail(r.Context(), grpcReq)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Login failed: %v", err), http.StatusUnauthorized)
+			return
+		}
+
+		// Convert response to JSON
+		jsonResp := map[string]interface{}{
+			"user": map[string]interface{}{
+				"user_id":        resp.User.UserId,
+				"email":          resp.User.Email,
+				"name":           resp.User.Name,
+				"account_status": resp.User.AccountStatus.String(),
+				"email_verified": resp.User.EmailVerified.String(),
+				"created_at": map[string]int64{
+					"seconds": resp.User.CreatedAt.Seconds,
+					"nanos":   int64(resp.User.CreatedAt.Nanos),
+				},
+			},
+			"tokens": map[string]interface{}{
+				"access_token": map[string]interface{}{
+					"token":      resp.Tokens.AccessToken.Token,
+					"token_type": resp.Tokens.AccessToken.TokenType,
+					"expires_at": map[string]int64{
+						"seconds": resp.Tokens.AccessToken.ExpiresAt.Seconds,
+						"nanos":   int64(resp.Tokens.AccessToken.ExpiresAt.Nanos),
+					},
+				},
+				"refresh_token": map[string]interface{}{
+					"token": resp.Tokens.RefreshToken.Token,
+					"expires_at": map[string]int64{
+						"seconds": resp.Tokens.RefreshToken.ExpiresAt.Seconds,
+						"nanos":   int64(resp.Tokens.RefreshToken.ExpiresAt.Nanos),
+					},
+				},
+			},
+			"session": map[string]interface{}{
+				"session_id": resp.Session.SessionId,
+				"user_id":    resp.Session.UserId,
+			},
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(jsonResp)
 	}
 }

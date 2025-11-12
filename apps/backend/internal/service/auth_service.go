@@ -111,6 +111,80 @@ func (s *AuthService) RegisterWithEmail(
 	}, nil
 }
 
+// LoginWithEmail implements email/password login
+func (s *AuthService) LoginWithEmail(
+	ctx context.Context,
+	req *authpb.LoginWithEmailRequest,
+) (*authpb.LoginWithEmailResponse, error) {
+	// Validate credentials
+	if req.Credentials == nil {
+		return nil, fmt.Errorf("credentials are required")
+	}
+
+	if err := auth.ValidateEmail(req.Credentials.Email); err != nil {
+		return nil, fmt.Errorf("invalid email: %w", err)
+	}
+
+	if req.Credentials.Password == "" {
+		return nil, fmt.Errorf("password is required")
+	}
+
+	// Get user from database
+	user, err := s.userRepo.GetByEmail(ctx, req.Credentials.Email)
+	if err != nil {
+		if err == repository.ErrUserNotFound {
+			return nil, fmt.Errorf("invalid email or password")
+		}
+		return nil, fmt.Errorf("failed to get user: %w", err)
+	}
+
+	// Verify password
+	if !user.PasswordHash.Valid {
+		return nil, fmt.Errorf("account does not have password set")
+	}
+
+	if err := auth.VerifyPassword(user.PasswordHash.String, req.Credentials.Password); err != nil {
+		return nil, fmt.Errorf("invalid email or password")
+	}
+
+	// Check account status
+	if user.AccountStatus == "SUSPENDED" || user.AccountStatus == "BANNED" || user.AccountStatus == "DELETED" {
+		return nil, fmt.Errorf("account is %s", user.AccountStatus)
+	}
+
+	// Create session and tokens
+	tokens, sessionInfo, err := s.createSessionAndTokens(ctx, user, req.Credentials.DeviceInfo)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create session: %w", err)
+	}
+
+	// Update last login timestamp
+	if err := s.userRepo.UpdateLastLogin(ctx, user.ID); err != nil {
+		// Log but don't fail the request
+		fmt.Printf("Warning: failed to update last login: %v\n", err)
+	}
+
+	// Build user profile response
+	userProfile := &authpb.UserProfile{
+		UserId:        fmt.Sprintf("%d", user.ID),
+		Email:         user.Email,
+		Name:          user.Name,
+		AccountStatus: accountStatusToProto(user.AccountStatus),
+		EmailVerified: emailVerificationStatusToProto(user.EmailVerified),
+		CreatedAt:     timeToProto(user.CreatedAt),
+	}
+
+	if user.LastLoginAt.Valid {
+		userProfile.LastLoginAt = timeToProto(user.LastLoginAt.Time)
+	}
+
+	return &authpb.LoginWithEmailResponse{
+		User:    userProfile,
+		Tokens:  tokens,
+		Session: sessionInfo,
+	}, nil
+}
+
 // createSessionAndTokens creates a session and generates access/refresh tokens
 func (s *AuthService) createSessionAndTokens(
 	ctx context.Context,
