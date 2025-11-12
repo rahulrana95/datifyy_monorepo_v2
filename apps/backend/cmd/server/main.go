@@ -15,6 +15,7 @@ import (
 
 	authpb "github.com/datifyy/backend/gen/auth/v1"
 	commonpb "github.com/datifyy/backend/gen/common/v1"
+	userpb "github.com/datifyy/backend/gen/user/v1"
 	"github.com/datifyy/backend/internal/email"
 	"github.com/datifyy/backend/internal/service"
 	_ "github.com/lib/pq"
@@ -50,17 +51,6 @@ func main() {
 		redisURL = "redis://localhost:6379"
 	}
 
-	// MailerSend configuration
-	mailerSendAPIKey := os.Getenv("MAILERSEND_API_KEY")
-	mailerSendFromEmail := os.Getenv("MAILERSEND_FROM_EMAIL")
-	if mailerSendFromEmail == "" {
-		mailerSendFromEmail = "noreply@datifyy.com"
-	}
-	mailerSendFromName := os.Getenv("MAILERSEND_FROM_NAME")
-	if mailerSendFromName == "" {
-		mailerSendFromName = "Datifyy"
-	}
-
 	// Connect to PostgreSQL
 	db, err := connectPostgres(dbURL)
 	if err != nil {
@@ -81,15 +71,6 @@ func main() {
 		log.Println("✓ Connected to Redis")
 	}
 
-	// Initialize MailerSend email client
-	var emailClient *email.MailerSendClient
-	if mailerSendAPIKey != "" {
-		emailClient = email.NewMailerSendClient(mailerSendAPIKey, mailerSendFromEmail, mailerSendFromName)
-		log.Println("✓ MailerSend email client initialized")
-	} else {
-		log.Println("Warning: MAILERSEND_API_KEY not set - email sending will be disabled")
-	}
-
 	// Create HTTP server
 	httpServer := &Server{
 		db:    db,
@@ -97,10 +78,10 @@ func main() {
 	}
 
 	// Start gRPC server in a goroutine
-	go startGRPCServer(grpcPort, db, redisClient, emailClient)
+	go startGRPCServer(grpcPort, db, redisClient)
 
 	// Start HTTP server in a goroutine
-	go startHTTPServer(httpPort, httpServer, db, redisClient, emailClient)
+	go startHTTPServer(httpPort, httpServer, db, redisClient)
 
 	// Wait for interrupt signal to gracefully shutdown the servers
 	quit := make(chan os.Signal, 1)
@@ -111,7 +92,7 @@ func main() {
 }
 
 // startGRPCServer starts the gRPC server
-func startGRPCServer(port string, db *sql.DB, redisClient *redis.Client, emailClient *email.MailerSendClient) {
+func startGRPCServer(port string, db *sql.DB, redisClient *redis.Client) {
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%s", port))
 	if err != nil {
 		log.Fatalf("Failed to listen on port %s: %v", port, err)
@@ -120,9 +101,24 @@ func startGRPCServer(port string, db *sql.DB, redisClient *redis.Client, emailCl
 	// Create gRPC server
 	grpcServer := grpc.NewServer()
 
+	// Initialize email client
+	emailAPIKey := os.Getenv("MAILERSEND_API_KEY")
+	emailFrom := os.Getenv("EMAIL_FROM")
+	if emailFrom == "" {
+		emailFrom = "noreply@datifyy.com"
+	}
+	emailFromName := os.Getenv("EMAIL_FROM_NAME")
+	if emailFromName == "" {
+		emailFromName = "Datifyy"
+	}
+	emailClient := email.NewMailerSendClient(emailAPIKey, emailFrom, emailFromName)
+
 	// Register services
 	authService := service.NewAuthService(db, redisClient, emailClient)
 	authpb.RegisterAuthServiceServer(grpcServer, authService)
+
+	userService := service.NewUserService(db, redisClient)
+	userpb.RegisterUserServiceServer(grpcServer, userService)
 
 	// Register reflection service (for grpcurl)
 	reflection.Register(grpcServer)
@@ -134,7 +130,7 @@ func startGRPCServer(port string, db *sql.DB, redisClient *redis.Client, emailCl
 }
 
 // startHTTPServer starts the HTTP/REST server
-func startHTTPServer(port string, server *Server, db *sql.DB, redisClient *redis.Client, emailClient *email.MailerSendClient) {
+func startHTTPServer(port string, server *Server, db *sql.DB, redisClient *redis.Client) {
 	// Setup routes
 	mux := http.NewServeMux()
 
@@ -144,6 +140,18 @@ func startHTTPServer(port string, server *Server, db *sql.DB, redisClient *redis
 	mux.HandleFunc("/", server.rootHandler)
 	mux.HandleFunc("/api/test-db", server.testDBHandler)
 	mux.HandleFunc("/api/test-redis", server.testRedisHandler)
+
+	// Initialize email client
+	emailAPIKey := os.Getenv("MAILERSEND_API_KEY")
+	emailFrom := os.Getenv("EMAIL_FROM")
+	if emailFrom == "" {
+		emailFrom = "noreply@datifyy.com"
+	}
+	emailFromName := os.Getenv("EMAIL_FROM_NAME")
+	if emailFromName == "" {
+		emailFromName = "Datifyy"
+	}
+	emailClient := email.NewMailerSendClient(emailAPIKey, emailFrom, emailFromName)
 
 	// Auth REST endpoints (wrapper around gRPC)
 	authService := service.NewAuthService(db, redisClient, emailClient)
@@ -570,7 +578,7 @@ func (s *Server) rootHandler(w http.ResponseWriter, r *http.Request) {
 		},
 		"available_services": []string{
 			"AuthService (gRPC)",
-			"UserService (gRPC - coming soon)",
+			"UserService (gRPC)",
 		},
 	}
 
