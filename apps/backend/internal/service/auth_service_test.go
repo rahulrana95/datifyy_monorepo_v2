@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"testing"
 	"time"
 
@@ -268,6 +269,263 @@ func TestLoginWithEmail_SuspendedAccount(t *testing.T) {
 
 	// Act
 	resp, err := service.LoginWithEmail(ctx, req)
+
+	// Assert
+	require.Error(t, err)
+	assert.Nil(t, resp)
+	assert.Contains(t, err.Error(), "SUSPENDED")
+}
+
+// ============================================================================
+// RefreshToken Tests
+// ============================================================================
+
+func TestRefreshToken_Success(t *testing.T) {
+	// Arrange
+	service, mock, db := setupTestAuthService(t)
+	defer db.Close()
+
+	ctx := context.Background()
+	userID := 1
+	timestamp := int64(1234567890)
+	refreshToken := fmt.Sprintf("refresh_token_%d_%d", userID, timestamp)
+	sessionID := fmt.Sprintf("sess_%d_%d", userID, timestamp)
+	now := time.Now()
+	expiresAt := now.Add(7 * 24 * time.Hour)
+
+	// Mock session query
+	sessionRows := sqlmock.NewRows([]string{"id", "user_id", "expires_at", "is_active", "last_active_at"}).
+		AddRow(sessionID, userID, expiresAt, true, now)
+
+	mock.ExpectQuery("SELECT (.+) FROM sessions WHERE").
+		WithArgs(sessionID, userID).
+		WillReturnRows(sessionRows)
+
+	// Mock user query - all 18 fields
+	userRows := sqlmock.NewRows([]string{
+		"id", "email", "name", "password_hash", "phone_number",
+		"email_verified", "phone_verified", "account_status",
+		"verification_token", "verification_token_expires_at",
+		"password_reset_token", "password_reset_token_expires_at",
+		"last_login_at", "photo_url", "date_of_birth", "gender",
+		"created_at", "updated_at",
+	}).AddRow(
+		userID, "test@example.com", "Test User", "hashedpass", nil,
+		true, false, "ACTIVE",
+		nil, nil,
+		nil, nil,
+		nil, nil, nil, nil,
+		now, now,
+	)
+
+	mock.ExpectQuery("SELECT (.+) FROM users WHERE id").
+		WithArgs(userID).
+		WillReturnRows(userRows)
+
+	// Mock session activity update
+	mock.ExpectExec("UPDATE sessions SET last_active_at").
+		WithArgs(sessionID).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+
+	req := &authpb.RefreshTokenRequest{
+		RefreshToken: refreshToken,
+	}
+
+	// Act
+	resp, err := service.RefreshToken(ctx, req)
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+	assert.NotNil(t, resp.Tokens)
+	assert.NotNil(t, resp.Tokens.AccessToken)
+	assert.Equal(t, refreshToken, resp.Tokens.RefreshToken.Token)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestRefreshToken_EmptyToken(t *testing.T) {
+	// Arrange
+	service, _, db := setupTestAuthService(t)
+	defer db.Close()
+
+	ctx := context.Background()
+	req := &authpb.RefreshTokenRequest{
+		RefreshToken: "",
+	}
+
+	// Act
+	resp, err := service.RefreshToken(ctx, req)
+
+	// Assert
+	require.Error(t, err)
+	assert.Nil(t, resp)
+	assert.Contains(t, err.Error(), "refresh token is required")
+}
+
+func TestRefreshToken_InvalidFormat(t *testing.T) {
+	// Arrange
+	service, _, db := setupTestAuthService(t)
+	defer db.Close()
+
+	ctx := context.Background()
+	req := &authpb.RefreshTokenRequest{
+		RefreshToken: "invalid_token_format",
+	}
+
+	// Act
+	resp, err := service.RefreshToken(ctx, req)
+
+	// Assert
+	require.Error(t, err)
+	assert.Nil(t, resp)
+	assert.Contains(t, err.Error(), "invalid refresh token format")
+}
+
+func TestRefreshToken_SessionNotFound(t *testing.T) {
+	// Arrange
+	service, mock, db := setupTestAuthService(t)
+	defer db.Close()
+
+	ctx := context.Background()
+	userID := 1
+	timestamp := int64(1234567890)
+	refreshToken := fmt.Sprintf("refresh_token_%d_%d", userID, timestamp)
+	sessionID := fmt.Sprintf("sess_%d_%d", userID, timestamp)
+
+	// Mock session query - return no rows
+	mock.ExpectQuery("SELECT (.+) FROM sessions WHERE").
+		WithArgs(sessionID, userID).
+		WillReturnError(sql.ErrNoRows)
+
+	req := &authpb.RefreshTokenRequest{
+		RefreshToken: refreshToken,
+	}
+
+	// Act
+	resp, err := service.RefreshToken(ctx, req)
+
+	// Assert
+	require.Error(t, err)
+	assert.Nil(t, resp)
+	assert.Contains(t, err.Error(), "session not found or expired")
+}
+
+func TestRefreshToken_SessionRevoked(t *testing.T) {
+	// Arrange
+	service, mock, db := setupTestAuthService(t)
+	defer db.Close()
+
+	ctx := context.Background()
+	userID := 1
+	timestamp := int64(1234567890)
+	refreshToken := fmt.Sprintf("refresh_token_%d_%d", userID, timestamp)
+	sessionID := fmt.Sprintf("sess_%d_%d", userID, timestamp)
+	now := time.Now()
+	expiresAt := now.Add(7 * 24 * time.Hour)
+
+	// Mock session query with is_active = false
+	sessionRows := sqlmock.NewRows([]string{"id", "user_id", "expires_at", "is_active", "last_active_at"}).
+		AddRow(sessionID, userID, expiresAt, false, now)
+
+	mock.ExpectQuery("SELECT (.+) FROM sessions WHERE").
+		WithArgs(sessionID, userID).
+		WillReturnRows(sessionRows)
+
+	req := &authpb.RefreshTokenRequest{
+		RefreshToken: refreshToken,
+	}
+
+	// Act
+	resp, err := service.RefreshToken(ctx, req)
+
+	// Assert
+	require.Error(t, err)
+	assert.Nil(t, resp)
+	assert.Contains(t, err.Error(), "session has been revoked")
+}
+
+func TestRefreshToken_SessionExpired(t *testing.T) {
+	// Arrange
+	service, mock, db := setupTestAuthService(t)
+	defer db.Close()
+
+	ctx := context.Background()
+	userID := 1
+	timestamp := int64(1234567890)
+	refreshToken := fmt.Sprintf("refresh_token_%d_%d", userID, timestamp)
+	sessionID := fmt.Sprintf("sess_%d_%d", userID, timestamp)
+	now := time.Now()
+	expiresAt := now.Add(-1 * time.Hour) // Expired 1 hour ago
+
+	// Mock session query with expired timestamp
+	sessionRows := sqlmock.NewRows([]string{"id", "user_id", "expires_at", "is_active", "last_active_at"}).
+		AddRow(sessionID, userID, expiresAt, true, now)
+
+	mock.ExpectQuery("SELECT (.+) FROM sessions WHERE").
+		WithArgs(sessionID, userID).
+		WillReturnRows(sessionRows)
+
+	req := &authpb.RefreshTokenRequest{
+		RefreshToken: refreshToken,
+	}
+
+	// Act
+	resp, err := service.RefreshToken(ctx, req)
+
+	// Assert
+	require.Error(t, err)
+	assert.Nil(t, resp)
+	assert.Contains(t, err.Error(), "session has expired")
+}
+
+func TestRefreshToken_SuspendedAccount(t *testing.T) {
+	// Arrange
+	service, mock, db := setupTestAuthService(t)
+	defer db.Close()
+
+	ctx := context.Background()
+	userID := 1
+	timestamp := int64(1234567890)
+	refreshToken := fmt.Sprintf("refresh_token_%d_%d", userID, timestamp)
+	sessionID := fmt.Sprintf("sess_%d_%d", userID, timestamp)
+	now := time.Now()
+	expiresAt := now.Add(7 * 24 * time.Hour)
+
+	// Mock session query
+	sessionRows := sqlmock.NewRows([]string{"id", "user_id", "expires_at", "is_active", "last_active_at"}).
+		AddRow(sessionID, userID, expiresAt, true, now)
+
+	mock.ExpectQuery("SELECT (.+) FROM sessions WHERE").
+		WithArgs(sessionID, userID).
+		WillReturnRows(sessionRows)
+
+	// Mock user query with SUSPENDED status - all 18 fields
+	userRows := sqlmock.NewRows([]string{
+		"id", "email", "name", "password_hash", "phone_number",
+		"email_verified", "phone_verified", "account_status",
+		"verification_token", "verification_token_expires_at",
+		"password_reset_token", "password_reset_token_expires_at",
+		"last_login_at", "photo_url", "date_of_birth", "gender",
+		"created_at", "updated_at",
+	}).AddRow(
+		userID, "test@example.com", "Test User", "hashedpass", nil,
+		true, false, "SUSPENDED",
+		nil, nil,
+		nil, nil,
+		nil, nil, nil, nil,
+		now, now,
+	)
+
+	mock.ExpectQuery("SELECT (.+) FROM users WHERE id").
+		WithArgs(userID).
+		WillReturnRows(userRows)
+
+	req := &authpb.RefreshTokenRequest{
+		RefreshToken: refreshToken,
+	}
+
+	// Act
+	resp, err := service.RefreshToken(ctx, req)
 
 	// Assert
 	require.Error(t, err)

@@ -326,3 +326,177 @@ func TestLoginWithEmail_NonExistentUser_Integration(t *testing.T) {
 
 	t.Log("Non-existent user test passed successfully")
 }
+
+func TestRefreshToken_Success_Integration(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+
+	db, redisClient := setupTestDB(t)
+	defer db.Close()
+	defer redisClient.Close()
+
+	ctx := context.Background()
+	authService := service.NewAuthService(db, redisClient)
+
+	// Use unique email for this test run
+	testEmail := fmt.Sprintf("integration-refresh-%d@example.com", time.Now().Unix())
+	testPassword := "TestPass123!"
+	testName := "Refresh Test User"
+
+	// Cleanup before and after
+	cleanupTestUser(t, db, testEmail)
+	defer cleanupTestUser(t, db, testEmail)
+
+	// Step 1: Register a new user
+	registerReq := &authpb.RegisterWithEmailRequest{
+		Credentials: &authpb.EmailPasswordCredentials{
+			Email:    testEmail,
+			Password: testPassword,
+			Name:     testName,
+		},
+	}
+
+	registerResp, err := authService.RegisterWithEmail(ctx, registerReq)
+	require.NoError(t, err)
+	require.NotNil(t, registerResp)
+
+	// Get the refresh token from registration
+	originalRefreshToken := registerResp.Tokens.RefreshToken.Token
+	originalAccessToken := registerResp.Tokens.AccessToken.Token
+
+	// Wait a moment to ensure different access token timestamp
+	time.Sleep(1 * time.Second)
+
+	// Step 2: Refresh the token
+	refreshReq := &authpb.RefreshTokenRequest{
+		RefreshToken: originalRefreshToken,
+	}
+
+	refreshResp, err := authService.RefreshToken(ctx, refreshReq)
+	require.NoError(t, err)
+	require.NotNil(t, refreshResp)
+
+	// Verify response
+	assert.NotNil(t, refreshResp.Tokens)
+	assert.NotNil(t, refreshResp.Tokens.AccessToken)
+	assert.NotNil(t, refreshResp.Tokens.RefreshToken)
+
+	// Access token should be new (different timestamp)
+	assert.NotEqual(t, originalAccessToken, refreshResp.Tokens.AccessToken.Token)
+
+	// Refresh token should be the same (we reuse it)
+	assert.Equal(t, originalRefreshToken, refreshResp.Tokens.RefreshToken.Token)
+
+	// Token type should be Bearer
+	assert.Equal(t, "Bearer", refreshResp.Tokens.AccessToken.TokenType)
+
+	t.Log("RefreshToken success integration test passed successfully")
+}
+
+func TestRefreshToken_InvalidToken_Integration(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+
+	db, redisClient := setupTestDB(t)
+	defer db.Close()
+	defer redisClient.Close()
+
+	ctx := context.Background()
+	authService := service.NewAuthService(db, redisClient)
+
+	// Try to refresh with an invalid token
+	refreshReq := &authpb.RefreshTokenRequest{
+		RefreshToken: "invalid_token_format",
+	}
+
+	refreshResp, err := authService.RefreshToken(ctx, refreshReq)
+	require.Error(t, err)
+	assert.Nil(t, refreshResp)
+	assert.Contains(t, err.Error(), "invalid refresh token format")
+
+	t.Log("Invalid token test passed successfully")
+}
+
+func TestRefreshToken_NonExistentSession_Integration(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+
+	db, redisClient := setupTestDB(t)
+	defer db.Close()
+	defer redisClient.Close()
+
+	ctx := context.Background()
+	authService := service.NewAuthService(db, redisClient)
+
+	// Try to refresh with a valid format but non-existent session
+	// Format: refresh_token_{userID}_{timestamp}
+	nonExistentToken := "refresh_token_99999_1234567890"
+
+	refreshReq := &authpb.RefreshTokenRequest{
+		RefreshToken: nonExistentToken,
+	}
+
+	refreshResp, err := authService.RefreshToken(ctx, refreshReq)
+	require.Error(t, err)
+	assert.Nil(t, refreshResp)
+	assert.Contains(t, err.Error(), "session not found or expired")
+
+	t.Log("Non-existent session test passed successfully")
+}
+
+func TestRefreshToken_RevokedSession_Integration(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+
+	db, redisClient := setupTestDB(t)
+	defer db.Close()
+	defer redisClient.Close()
+
+	ctx := context.Background()
+	authService := service.NewAuthService(db, redisClient)
+
+	// Use unique email for this test run
+	testEmail := fmt.Sprintf("integration-revoked-%d@example.com", time.Now().Unix())
+	testPassword := "TestPass123!"
+	testName := "Revoked Session Test User"
+
+	// Cleanup before and after
+	cleanupTestUser(t, db, testEmail)
+	defer cleanupTestUser(t, db, testEmail)
+
+	// Step 1: Register a new user
+	registerReq := &authpb.RegisterWithEmailRequest{
+		Credentials: &authpb.EmailPasswordCredentials{
+			Email:    testEmail,
+			Password: testPassword,
+			Name:     testName,
+		},
+	}
+
+	registerResp, err := authService.RegisterWithEmail(ctx, registerReq)
+	require.NoError(t, err)
+	require.NotNil(t, registerResp)
+
+	refreshToken := registerResp.Tokens.RefreshToken.Token
+	sessionID := registerResp.Session.SessionId
+
+	// Step 2: Manually revoke the session
+	_, err = db.ExecContext(ctx, "UPDATE sessions SET is_active = false WHERE id = $1", sessionID)
+	require.NoError(t, err)
+
+	// Step 3: Try to refresh with revoked session
+	refreshReq := &authpb.RefreshTokenRequest{
+		RefreshToken: refreshToken,
+	}
+
+	refreshResp, err := authService.RefreshToken(ctx, refreshReq)
+	require.Error(t, err)
+	assert.Nil(t, refreshResp)
+	assert.Contains(t, err.Error(), "session has been revoked")
+
+	t.Log("Revoked session test passed successfully")
+}

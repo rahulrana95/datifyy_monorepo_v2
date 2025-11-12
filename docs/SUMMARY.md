@@ -6,11 +6,59 @@ This document provides an overview of all available documentation and guides.
 
 ```
 docs/
-├── DEVELOPMENT.md      # Complete development guide
-├── TESTING.md          # Testing guidelines
-├── GRPC_TESTING.md     # gRPC testing tools
-└── SUMMARY.md          # This file
+├── DEVELOPMENT.md                          # Complete development guide
+├── TESTING.md                              # Testing guidelines
+├── GRPC_TESTING.md                         # gRPC testing tools
+├── REGISTER_WITH_EMAIL_IMPLEMENTATION.md   # RegisterWithEmail RPC details
+└── SUMMARY.md                              # This file
 ```
+
+---
+
+## 🎯 Implemented RPCs
+
+### AuthService (datifyy.auth.v1.AuthService)
+
+#### ✅ RegisterWithEmail
+- **Status**: Fully implemented with tests
+- **Documentation**: [REGISTER_WITH_EMAIL_IMPLEMENTATION.md](./REGISTER_WITH_EMAIL_IMPLEMENTATION.md)
+- **Features**:
+  - Email/password registration
+  - Password strength validation (bcrypt)
+  - Email verification token generation
+  - User profile & preferences creation
+  - Session management (DB + Redis)
+  - Unit tests (17 tests, 100% coverage)
+  - Integration tests (5 test suites)
+
+#### ✅ LoginWithEmail
+- **Status**: Fully implemented with tests
+- **Features**:
+  - Email/password authentication
+  - Password verification (bcrypt)
+  - Account status validation
+  - Session creation (DB + Redis)
+  - Last login tracking
+  - Unit tests (7 test cases)
+  - Integration tests (3 test suites)
+
+#### ✅ RefreshToken
+- **Status**: Fully implemented with tests
+- **Features**:
+  - Token refresh using refresh token
+  - Session validation (active, not expired)
+  - Account status checking
+  - New access token generation
+  - Session activity tracking
+  - Unit tests (7 test cases)
+  - Integration tests (4 test suites)
+- **Endpoints**:
+  - gRPC: `datifyy.auth.v1.AuthService/RefreshToken`
+  - REST: `POST /api/v1/auth/token/refresh`
+- **Files**:
+  - Service: `internal/service/auth_service.go:188-292`
+  - Unit tests: `internal/service/auth_service_test.go:278-533`
+  - Integration tests: `tests/integration_test.go:330-502`
 
 ---
 
