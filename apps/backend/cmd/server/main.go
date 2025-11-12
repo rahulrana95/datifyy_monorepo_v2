@@ -128,6 +128,7 @@ func startHTTPServer(port string, server *Server, db *sql.DB, redisClient *redis
 	authService := service.NewAuthService(db, redisClient)
 	mux.HandleFunc("/api/v1/auth/register/email", createRegisterHandler(authService))
 	mux.HandleFunc("/api/v1/auth/login/email", createLoginHandler(authService))
+	mux.HandleFunc("/api/v1/auth/token/refresh", createRefreshTokenHandler(authService))
 
 	// Add CORS middleware
 	handler := enableCORS(mux)
@@ -315,6 +316,78 @@ func createLoginHandler(authService *service.AuthService) http.HandlerFunc {
 			"session": map[string]interface{}{
 				"session_id": resp.Session.SessionId,
 				"user_id":    resp.Session.UserId,
+			},
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(jsonResp)
+	}
+}
+
+// createRefreshTokenHandler creates HTTP handler for token refresh
+func createRefreshTokenHandler(authService *service.AuthService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		// Parse JSON request
+		var reqBody struct {
+			RefreshToken string `json:"refresh_token"`
+			DeviceInfo   *struct {
+				Platform   int32  `json:"platform"`
+				DeviceName string `json:"device_name"`
+				OSVersion  string `json:"os_version"`
+				DeviceID   string `json:"device_id"`
+			} `json:"device_info,omitempty"`
+		}
+
+		if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+			http.Error(w, fmt.Sprintf("Invalid JSON: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		// Convert to gRPC request
+		grpcReq := &authpb.RefreshTokenRequest{
+			RefreshToken: reqBody.RefreshToken,
+		}
+
+		if reqBody.DeviceInfo != nil {
+			grpcReq.DeviceInfo = &authpb.DeviceInfo{
+				Platform:   commonpb.DevicePlatform(reqBody.DeviceInfo.Platform),
+				DeviceName: reqBody.DeviceInfo.DeviceName,
+				OsVersion:  reqBody.DeviceInfo.OSVersion,
+				DeviceId:   reqBody.DeviceInfo.DeviceID,
+			}
+		}
+
+		// Call gRPC service
+		resp, err := authService.RefreshToken(r.Context(), grpcReq)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Token refresh failed: %v", err), http.StatusUnauthorized)
+			return
+		}
+
+		// Convert response to JSON
+		jsonResp := map[string]interface{}{
+			"tokens": map[string]interface{}{
+				"access_token": map[string]interface{}{
+					"token":      resp.Tokens.AccessToken.Token,
+					"token_type": resp.Tokens.AccessToken.TokenType,
+					"expires_at": map[string]int64{
+						"seconds": resp.Tokens.AccessToken.ExpiresAt.Seconds,
+						"nanos":   int64(resp.Tokens.AccessToken.ExpiresAt.Nanos),
+					},
+				},
+				"refresh_token": map[string]interface{}{
+					"token": resp.Tokens.RefreshToken.Token,
+					"expires_at": map[string]int64{
+						"seconds": resp.Tokens.RefreshToken.ExpiresAt.Seconds,
+						"nanos":   int64(resp.Tokens.RefreshToken.ExpiresAt.Nanos),
+					},
+				},
 			},
 		}
 

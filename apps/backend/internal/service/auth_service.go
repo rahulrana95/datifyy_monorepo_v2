@@ -185,6 +185,112 @@ func (s *AuthService) LoginWithEmail(
 	}, nil
 }
 
+// RefreshToken implements token refresh using a refresh token
+func (s *AuthService) RefreshToken(
+	ctx context.Context,
+	req *authpb.RefreshTokenRequest,
+) (*authpb.RefreshTokenResponse, error) {
+	// Validate input
+	if req.RefreshToken == "" {
+		return nil, fmt.Errorf("refresh token is required")
+	}
+
+	// Parse refresh token to extract user ID and timestamp
+	// Format: "refresh_token_{userID}_{timestamp}"
+	var userID int
+	var timestamp int64
+	_, err := fmt.Sscanf(req.RefreshToken, "refresh_token_%d_%d", &userID, &timestamp)
+	if err != nil {
+		return nil, fmt.Errorf("invalid refresh token format")
+	}
+
+	// Look up the session from database using token timestamp
+	sessionID := fmt.Sprintf("sess_%d_%d", userID, timestamp)
+
+	var session struct {
+		ID           string
+		UserID       int
+		ExpiresAt    time.Time
+		IsActive     bool
+		LastActiveAt time.Time
+	}
+
+	query := `
+		SELECT id, user_id, expires_at, is_active, last_active_at
+		FROM sessions
+		WHERE id = $1 AND user_id = $2
+	`
+
+	err = s.db.QueryRowContext(ctx, query, sessionID, userID).Scan(
+		&session.ID,
+		&session.UserID,
+		&session.ExpiresAt,
+		&session.IsActive,
+		&session.LastActiveAt,
+	)
+
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("session not found or expired")
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to validate session: %w", err)
+	}
+
+	// Check if session is still active
+	if !session.IsActive {
+		return nil, fmt.Errorf("session has been revoked")
+	}
+
+	// Check if session has expired
+	if time.Now().After(session.ExpiresAt) {
+		return nil, fmt.Errorf("session has expired")
+	}
+
+	// Get user details
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user: %w", err)
+	}
+
+	// Check account status
+	if user.AccountStatus == "SUSPENDED" || user.AccountStatus == "BANNED" || user.AccountStatus == "DELETED" {
+		return nil, fmt.Errorf("account is %s", user.AccountStatus)
+	}
+
+	// Generate new tokens (reuse existing session ID)
+	accessToken := &authpb.AccessToken{
+		Token:     generatePlaceholderToken(userID, "access"),
+		ExpiresAt: timeToProto(time.Now().Add(15 * time.Minute)),
+		TokenType: "Bearer",
+	}
+
+	refreshToken := &authpb.RefreshToken{
+		Token:     req.RefreshToken, // Keep same refresh token
+		ExpiresAt: timeToProto(session.ExpiresAt),
+	}
+
+	tokens := &authpb.TokenPair{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	}
+
+	// Update session's last_active_at
+	_, err = s.db.ExecContext(ctx,
+		"UPDATE sessions SET last_active_at = NOW() WHERE id = $1",
+		sessionID,
+	)
+
+	if err != nil {
+		// Log but don't fail the request
+		fmt.Printf("Warning: failed to update session activity: %v\n", err)
+	}
+
+	return &authpb.RefreshTokenResponse{
+		Tokens: tokens,
+	}, nil
+}
+
 // createSessionAndTokens creates a session and generates access/refresh tokens
 func (s *AuthService) createSessionAndTokens(
 	ctx context.Context,
