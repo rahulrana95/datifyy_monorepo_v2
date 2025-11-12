@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"testing"
 	"time"
 
@@ -309,4 +310,106 @@ func TestReportUser_MissingReason(t *testing.T) {
 	assert.Error(t, err)
 	assert.Nil(t, resp)
 	assert.Contains(t, err.Error(), "reason is required")
+}
+
+func TestBlockUser_DatabaseError(t *testing.T) {
+	service, mock, db := setupTestUserService(t)
+	defer db.Close()
+
+	ctx := context.WithValue(context.Background(), "userID", 1)
+
+	// Mock block insert with error
+	mock.ExpectExec("INSERT INTO user_blocks").
+		WillReturnError(sql.ErrConnDone)
+
+	req := &userpb.BlockUserRequest{
+		UserId: "2",
+		Reason: "Test",
+	}
+
+	resp, err := service.BlockUser(ctx, req)
+
+	assert.Error(t, err)
+	assert.Nil(t, resp)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestUnblockUser_DatabaseError(t *testing.T) {
+	service, mock, db := setupTestUserService(t)
+	defer db.Close()
+
+	ctx := context.WithValue(context.Background(), "userID", 1)
+
+	// Mock unblock delete with error
+	mock.ExpectExec("DELETE FROM user_blocks WHERE blocker_user_id").
+		WillReturnError(sql.ErrConnDone)
+
+	req := &userpb.UnblockUserRequest{
+		UserId: "2",
+	}
+
+	resp, err := service.UnblockUser(ctx, req)
+
+	assert.Error(t, err)
+	assert.Nil(t, resp)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestReportUser_InvalidUserID(t *testing.T) {
+	service, _, db := setupTestUserService(t)
+	defer db.Close()
+
+	ctx := context.WithValue(context.Background(), "userID", 1)
+
+	req := &userpb.ReportUserRequest{
+		UserId: "invalid",
+		Reason: userpb.ReportReason_REPORT_REASON_SPAM,
+	}
+
+	resp, err := service.ReportUser(ctx, req)
+
+	assert.Error(t, err)
+	assert.Nil(t, resp)
+	assert.Contains(t, err.Error(), "invalid user_id format")
+}
+
+func TestBlockUser_NoAuthentication(t *testing.T) {
+	service, _, db := setupTestUserService(t)
+	defer db.Close()
+
+	ctx := context.Background() // No userID in context
+
+	req := &userpb.BlockUserRequest{
+		UserId: "2",
+	}
+
+	resp, err := service.BlockUser(ctx, req)
+
+	assert.Error(t, err)
+	assert.Nil(t, resp)
+	assert.Contains(t, err.Error(), "authentication required")
+}
+
+func TestListBlockedUsers_DatabaseError(t *testing.T) {
+	service, mock, db := setupTestUserService(t)
+	defer db.Close()
+
+	ctx := context.WithValue(context.Background(), "userID", 1)
+
+	// Mock count query with error
+	mock.ExpectQuery("SELECT COUNT").
+		WillReturnError(sql.ErrConnDone)
+
+	req := &userpb.ListBlockedUsersRequest{
+		Pagination: &commonpb.PaginationRequest{
+			Page:     1,
+			PageSize: 20,
+		},
+	}
+
+	resp, err := service.ListBlockedUsers(ctx, req)
+
+	assert.Error(t, err)
+	assert.Nil(t, resp)
+	assert.NoError(t, mock.ExpectationsWereMet())
 }

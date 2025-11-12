@@ -79,27 +79,47 @@ A production-ready containerized monorepo with React frontend, Go backend, Postg
 ```
 .
 ├── apps/
-│   ├── backend/             # Go backend application
-│   │   ├── cmd/server/      # Main server entry point
-│   │   ├── migrations/      # Database migrations
-│   │   └── gen/             # Generated protobuf files
-│   └── frontend/            # React frontend application
+│   ├── backend/                    # Go backend application
+│   │   ├── cmd/server/             # Main server entry point
+│   │   │   └── main.go             # HTTP & gRPC server setup
+│   │   ├── internal/               # Private application code
+│   │   │   ├── service/            # Business logic layer
+│   │   │   │   ├── auth_*.go       # Auth service modules (6 files)
+│   │   │   │   ├── user_*.go       # User service modules (6 files)
+│   │   │   │   └── utils_*.go      # Shared utilities (4 files)
+│   │   │   ├── auth/               # Authentication utilities
+│   │   │   ├── email/              # Email service (MailerSend)
+│   │   │   └── repository/         # Data access layer (future)
+│   │   ├── gen/                    # Generated protobuf files
+│   │   │   ├── auth/v1/            # Auth service definitions
+│   │   │   ├── user/v1/            # User service definitions
+│   │   │   └── common/v1/          # Shared types
+│   │   ├── migrations/             # Database migrations (4 files)
+│   │   ├── api/                    # REST endpoint wrappers
+│   │   └── tests/                  # Integration tests
+│   └── frontend/                   # React frontend application
 │       ├── src/
-│       │   └── gen/         # Generated protobuf TypeScript files
-│       └── nginx.conf       # Production nginx configuration
-├── proto/                   # Protocol buffer definitions
-├── docker/                  # Docker configurations
-│   ├── backend/            # Backend Dockerfiles (dev & prod)
-│   ├── frontend/           # Frontend Dockerfiles (dev & prod)
-│   └── proto/              # Proto generation Dockerfile
-├── scripts/                # Utility scripts
-│   └── init-db.sql         # Database initialization
-├── .devcontainer/          # VS Code DevContainer configuration
-├── docker-compose.yml      # Local development setup
-├── docker-compose.test.yml # Testing environment setup
-├── Makefile                # Helper commands
-├── .env                    # Environment variables
-└── .dockerignore           # Docker ignore rules
+│       │   └── gen/                # Generated protobuf TypeScript files
+│       └── nginx.conf              # Production nginx configuration
+├── proto/                          # Protocol buffer definitions
+│   ├── auth/v1/                    # Auth service proto files
+│   ├── user/v1/                    # User service proto files
+│   └── common/v1/                  # Shared type definitions
+├── docker/                         # Docker configurations
+│   ├── backend/                    # Backend Dockerfiles (dev & prod)
+│   ├── frontend/                   # Frontend Dockerfiles (dev & prod)
+│   └── proto/                      # Proto generation Dockerfile
+├── docs/                           # Documentation
+│   ├── BACKEND_ARCHITECTURE.md     # Backend service details
+│   ├── DEVELOPMENT.md              # Development guide
+│   ├── TESTING.md                  # Testing guidelines
+│   └── GRPC_TESTING.md             # gRPC testing tools
+├── scripts/                        # Utility scripts
+├── .devcontainer/                  # VS Code DevContainer configuration
+├── docker-compose.yml              # Local development setup
+├── docker-compose.test.yml         # Testing environment setup
+├── Makefile                        # Helper commands
+└── .env                            # Environment variables
 ```
 
 ## 📡 API Architecture
@@ -128,17 +148,29 @@ The backend runs **two servers simultaneously**:
 
 #### Authentication (HTTP REST)
 - `POST /api/v1/auth/register/email` - Register with email and password
-- `POST /api/v1/auth/login/email` - Login with email (coming soon)
+- `POST /api/v1/auth/login/email` - Login with email
+- `POST /api/v1/auth/token/refresh` - Refresh access token
+- `POST /api/v1/auth/token/revoke` - Logout and revoke token
 
-#### Authentication (gRPC)
-All gRPC services available at `localhost:9090` with 26 methods:
-- `datifyy.auth.v1.AuthService/RegisterWithEmail`
-- `datifyy.auth.v1.AuthService/LoginWithEmail`
-- `datifyy.auth.v1.AuthService/RefreshToken`
-- `datifyy.auth.v1.AuthService/VerifyEmail`
-- ... and 22 more methods
+#### gRPC Services
+All gRPC services available at `localhost:9090`:
 
-See [GRPC_TESTING.md](./docs/GRPC_TESTING.md) for testing gRPC endpoints.
+**AuthService (26 RPCs - Complete)**
+- Email Authentication: `RegisterWithEmail`, `LoginWithEmail`, `VerifyEmail`, `ResendVerificationEmail`
+- Phone Authentication: `RegisterWithPhone`, `LoginWithPhone`, `VerifyPhone`, `ResendPhoneVerification`
+- Session Management: `RefreshToken`, `RevokeToken`, `Logout`, `ValidateSession`, `GetActiveSessions`, `RevokeSession`, `RevokeAllSessions`
+- Password Management: `ChangePassword`, `RequestPasswordReset`, `ConfirmPasswordReset`
+- Device Management: `RegisterDevice`, `UpdateDevice`, `UnregisterDevice`, `GetUserDevices`
+- Profile: `GetProfile`, `UpdateProfile`, `DeleteAccount`
+
+**UserService (15 RPCs - Complete)**
+- Profile: `GetMyProfile`, `GetUserProfile`, `UpdateProfile`, `DeleteAccount`
+- Photos: `UploadProfilePhoto`, `DeleteProfilePhoto`
+- Preferences: `GetPartnerPreferences`, `UpdatePartnerPreferences`, `GetUserPreferences`, `UpdateUserPreferences`
+- Discovery: `SearchUsers`
+- Interactions: `BlockUser`, `UnblockUser`, `ListBlockedUsers`, `ReportUser`
+
+See [GRPC_TESTING.md](./docs/GRPC_TESTING.md) for testing gRPC endpoints and [BACKEND_ARCHITECTURE.md](./docs/BACKEND_ARCHITECTURE.md) for detailed service documentation.
 
 ## 🗄️ Database & Cache
 

@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -156,4 +157,66 @@ func TestDeleteProfilePhoto_NotFound(t *testing.T) {
 	assert.Error(t, err)
 	assert.Nil(t, resp)
 	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestUploadProfilePhoto_DatabaseError(t *testing.T) {
+	service, mock, db := setupTestUserService(t)
+	defer db.Close()
+
+	ctx := context.WithValue(context.Background(), "userID", 1)
+
+	// Mock photo insert with error
+	mock.ExpectQuery("INSERT INTO user_photos").
+		WillReturnError(sql.ErrConnDone)
+
+	req := &userpb.UploadProfilePhotoRequest{
+		PhotoData:   []byte("fake-photo-data"),
+		ContentType: "image/jpeg",
+		IsPrimary:   true,
+	}
+
+	resp, err := service.UploadProfilePhoto(ctx, req)
+
+	assert.Error(t, err)
+	assert.Nil(t, resp)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestDeleteProfilePhoto_DatabaseError(t *testing.T) {
+	service, mock, db := setupTestUserService(t)
+	defer db.Close()
+
+	ctx := context.WithValue(context.Background(), "userID", 1)
+
+	// Mock photo delete with error
+	mock.ExpectExec("DELETE FROM user_photos WHERE user_id").
+		WillReturnError(sql.ErrConnDone)
+
+	req := &userpb.DeleteProfilePhotoRequest{
+		PhotoId: "photo_123",
+	}
+
+	resp, err := service.DeleteProfilePhoto(ctx, req)
+
+	assert.Error(t, err)
+	assert.Nil(t, resp)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestUploadProfilePhoto_NoAuthentication(t *testing.T) {
+	service, _, db := setupTestUserService(t)
+	defer db.Close()
+
+	ctx := context.Background() // No userID in context
+
+	req := &userpb.UploadProfilePhotoRequest{
+		PhotoData:   []byte("fake-photo-data"),
+		ContentType: "image/jpeg",
+	}
+
+	resp, err := service.UploadProfilePhoto(ctx, req)
+
+	assert.Error(t, err)
+	assert.Nil(t, resp)
+	assert.Contains(t, err.Error(), "authentication required")
 }

@@ -420,6 +420,233 @@ func TestUpdateProfile_NoFieldsToUpdate(t *testing.T) {
 	assert.Contains(t, err.Error(), "update_fields is required")
 }
 
+func TestUpdateProfile_AllProfileFields(t *testing.T) {
+	service, mock, db := setupTestUserService(t)
+	defer db.Close()
+
+	ctx := context.WithValue(context.Background(), "userID", 1)
+	now := time.Now()
+
+	// Mock profile update with all fields
+	mock.ExpectExec("UPDATE user_profiles SET").
+		WillReturnResult(sqlmock.NewResult(0, 1))
+
+	// Mock getting updated profile
+	userRows := sqlmock.NewRows([]string{
+		"id", "email", "name", "password_hash", "phone_number",
+		"email_verified", "phone_verified", "account_status",
+		"verification_token", "verification_token_expires_at",
+		"password_reset_token", "password_reset_token_expires_at",
+		"last_login_at", "photo_url", "date_of_birth", "gender",
+		"created_at", "updated_at",
+	}).AddRow(
+		1, "test@example.com", "Test User", "hash", nil,
+		true, false, "ACTIVE",
+		nil, nil, nil, nil,
+		nil, nil, nil, nil,
+		now, now,
+	)
+
+	mock.ExpectQuery("SELECT (.+) FROM users WHERE id").
+		WillReturnRows(userRows)
+
+	profileRows := sqlmock.NewRows([]string{
+		"id", "user_id", "bio", "occupation", "company", "job_title", "education",
+		"school", "height", "location", "hometown", "interests", "languages",
+		"relationship_goals", "drinking", "smoking", "workout", "dietary_preference",
+		"religion", "religion_importance", "political_view", "pets", "children",
+		"personality_type", "communication_style", "love_language", "sleep_schedule",
+		"prompts", "completion_percentage", "is_public", "is_verified",
+	}).AddRow(
+		1, 1, "Updated bio", []byte("[]"), "New Company", "Senior Engineer", []byte("[]"),
+		"MIT", 175, []byte("{}"), "Boston", []byte("[]"), []byte("[]"),
+		[]byte("[]"), nil, nil, nil, nil,
+		nil, nil, nil, nil, nil,
+		nil, nil, nil, nil,
+		[]byte("[]"), 80, true, false,
+	)
+
+	mock.ExpectQuery("SELECT (.+) FROM user_profiles WHERE user_id").
+		WillReturnRows(profileRows)
+
+	mock.ExpectQuery("SELECT (.+) FROM user_photos WHERE user_id").
+		WillReturnRows(sqlmock.NewRows([]string{"id", "user_id", "photo_id", "url", "thumbnail_url", "display_order", "is_primary", "caption", "uploaded_at"}))
+
+	mock.ExpectQuery("SELECT (.+) FROM partner_preferences WHERE user_id").
+		WillReturnError(sql.ErrNoRows)
+
+	mock.ExpectQuery("SELECT (.+) FROM user_preferences WHERE user_id").
+		WillReturnError(sql.ErrNoRows)
+
+	mock.ExpectQuery("INSERT INTO user_preferences").
+		WillReturnRows(sqlmock.NewRows([]string{
+			"id", "user_id", "push_enabled", "email_enabled", "sms_enabled",
+			"notify_matches", "notify_messages", "notify_likes", "notify_super_likes",
+			"notify_profile_views", "public_profile", "show_online_status", "show_distance",
+			"show_age", "allow_search_engines", "incognito_mode", "read_receipts",
+			"discoverable", "global_mode", "verified_only", "distance_radius",
+			"recently_active_days", "app_language", "theme",
+		}).AddRow(1, 1, true, true, false, true, true, true, true, false, true, true, true, true, false, false, true, true, false, false, 50, 7, "en", "light"))
+
+	req := &userpb.UpdateProfileRequest{
+		ProfileDetails: &userpb.ProfileDetails{
+			Bio:       "Updated bio",
+			Company:   "New Company",
+			JobTitle:  "Senior Engineer",
+			School:    "MIT",
+			Height:    175,
+			Hometown:  "Boston",
+		},
+		UpdateFields: []string{
+			"bio", "company", "job_title", "school", "height", "hometown",
+		},
+	}
+
+	resp, err := service.UpdateProfile(ctx, req)
+
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, "Profile updated successfully", resp.Message)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestUpdateProfile_AllLifestyleFields(t *testing.T) {
+	service, mock, db := setupTestUserService(t)
+	defer db.Close()
+
+	ctx := context.WithValue(context.Background(), "userID", 1)
+	now := time.Now()
+
+	// Mock profile update
+	mock.ExpectExec("UPDATE user_profiles SET").
+		WillReturnResult(sqlmock.NewResult(0, 1))
+
+	// Mock getting updated profile
+	userRows := sqlmock.NewRows([]string{
+		"id", "email", "name", "password_hash", "phone_number",
+		"email_verified", "phone_verified", "account_status",
+		"verification_token", "verification_token_expires_at",
+		"password_reset_token", "password_reset_token_expires_at",
+		"last_login_at", "photo_url", "date_of_birth", "gender",
+		"created_at", "updated_at",
+	}).AddRow(
+		1, "test@example.com", "Test User", "hash", nil,
+		true, false, "ACTIVE",
+		nil, nil, nil, nil,
+		nil, nil, nil, nil,
+		now, now,
+	)
+
+	mock.ExpectQuery("SELECT (.+) FROM users WHERE id").
+		WillReturnRows(userRows)
+
+	profileRows := sqlmock.NewRows([]string{
+		"id", "user_id", "bio", "occupation", "company", "job_title", "education",
+		"school", "height", "location", "hometown", "interests", "languages",
+		"relationship_goals", "drinking", "smoking", "workout", "dietary_preference",
+		"religion", "religion_importance", "political_view", "pets", "children",
+		"personality_type", "communication_style", "love_language", "sleep_schedule",
+		"prompts", "completion_percentage", "is_public", "is_verified",
+	}).AddRow(
+		1, 1, "Bio", []byte("[]"), "Company", "Engineer", []byte("[]"),
+		"School", 180, []byte("{}"), "Hometown", []byte("[]"), []byte("[]"),
+		[]byte("[]"), "RARELY", "NEVER", "OFTEN", "VEGETARIAN",
+		"HINDU", "IMPORTANT", "MODERATE", "DOG_LOVER", "DONT_HAVE_WANT",
+		"INTJ", "BIG_TIME_TEXTER", "QUALITY_TIME", "EARLY_BIRD",
+		[]byte("[]"), 75, true, false,
+	)
+
+	mock.ExpectQuery("SELECT (.+) FROM user_profiles WHERE user_id").
+		WillReturnRows(profileRows)
+
+	mock.ExpectQuery("SELECT (.+) FROM user_photos WHERE user_id").
+		WillReturnRows(sqlmock.NewRows([]string{"id", "user_id", "photo_id", "url", "thumbnail_url", "display_order", "is_primary", "caption", "uploaded_at"}))
+
+	mock.ExpectQuery("SELECT (.+) FROM partner_preferences WHERE user_id").
+		WillReturnError(sql.ErrNoRows)
+
+	mock.ExpectQuery("SELECT (.+) FROM user_preferences WHERE user_id").
+		WillReturnError(sql.ErrNoRows)
+
+	mock.ExpectQuery("INSERT INTO user_preferences").
+		WillReturnRows(sqlmock.NewRows([]string{
+			"id", "user_id", "push_enabled", "email_enabled", "sms_enabled",
+			"notify_matches", "notify_messages", "notify_likes", "notify_super_likes",
+			"notify_profile_views", "public_profile", "show_online_status", "show_distance",
+			"show_age", "allow_search_engines", "incognito_mode", "read_receipts",
+			"discoverable", "global_mode", "verified_only", "distance_radius",
+			"recently_active_days", "app_language", "theme",
+		}).AddRow(1, 1, true, true, false, true, true, true, true, false, true, true, true, true, false, false, true, true, false, false, 50, 7, "en", "light"))
+
+	req := &userpb.UpdateProfileRequest{
+		LifestyleInfo: &userpb.LifestyleInfo{
+			Drinking:             userpb.DrinkingHabit_DRINKING_RARELY,
+			Smoking:              userpb.SmokingHabit_SMOKING_NEVER,
+			Workout:              userpb.WorkoutFrequency_WORKOUT_OFTEN,
+			DietaryPreference:    userpb.DietaryPreference_DIETARY_VEGETARIAN,
+			Religion:             userpb.Religion_RELIGION_HINDU,
+			ReligionImportance:   userpb.Importance_IMPORTANCE_IMPORTANT,
+			PersonalityType:      "INTJ",
+		},
+		UpdateFields: []string{
+			"drinking", "smoking", "workout", "dietary_preference",
+			"religion", "religion_importance", "personality_type",
+		},
+	}
+
+	resp, err := service.UpdateProfile(ctx, req)
+
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, "Profile updated successfully", resp.Message)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestUpdateProfile_NoAuthentication(t *testing.T) {
+	service, _, db := setupTestUserService(t)
+	defer db.Close()
+
+	ctx := context.Background() // No userID in context
+
+	req := &userpb.UpdateProfileRequest{
+		ProfileDetails: &userpb.ProfileDetails{
+			Bio: "Test",
+		},
+		UpdateFields: []string{"bio"},
+	}
+
+	resp, err := service.UpdateProfile(ctx, req)
+
+	assert.Error(t, err)
+	assert.Nil(t, resp)
+	assert.Contains(t, err.Error(), "authentication required")
+}
+
+func TestUpdateProfile_DatabaseError(t *testing.T) {
+	service, mock, db := setupTestUserService(t)
+	defer db.Close()
+
+	ctx := context.WithValue(context.Background(), "userID", 1)
+
+	// Mock profile update with error
+	mock.ExpectExec("UPDATE user_profiles SET").
+		WillReturnError(sql.ErrConnDone)
+
+	req := &userpb.UpdateProfileRequest{
+		ProfileDetails: &userpb.ProfileDetails{
+			Bio: "Test bio",
+		},
+		UpdateFields: []string{"bio"},
+	}
+
+	resp, err := service.UpdateProfile(ctx, req)
+
+	assert.Error(t, err)
+	assert.Nil(t, resp)
+	assert.Contains(t, err.Error(), "failed to update profile")
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
 func TestDeleteAccount_Success(t *testing.T) {
 	service, mock, db := setupTestUserService(t)
 	defer db.Close()

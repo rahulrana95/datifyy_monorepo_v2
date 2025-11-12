@@ -2,6 +2,8 @@
 
 This document provides comprehensive guidelines for adding new services, RPC methods, and following the established development patterns in this project.
 
+> **Note**: For detailed information about the current backend architecture, service implementations, database schema, and API reference, see [BACKEND_ARCHITECTURE.md](./BACKEND_ARCHITECTURE.md).
+
 ## Table of Contents
 
 - [Architecture Overview](#architecture-overview)
@@ -10,6 +12,15 @@ This document provides comprehensive guidelines for adding new services, RPC met
 - [Development Workflow](#development-workflow)
 - [Code Organization](#code-organization)
 - [Best Practices](#best-practices)
+
+## Implementation Status
+
+**Current Backend Status**:
+- **AuthService**: 26/26 RPCs complete (100%)
+- **UserService**: 15/15 RPCs complete (100%)
+- **Test Coverage**: 43.6% (108 tests passing)
+- **Database**: 4 migrations with comprehensive schema
+- **Email Service**: MailerSend integration complete
 
 ---
 
@@ -62,6 +73,36 @@ The backend runs two servers simultaneously:
 │      Database (PostgreSQL/Redis)    │
 └─────────────────────────────────────┘
 ```
+
+### Current Service Organization
+
+The backend is organized into modular service files for better maintainability:
+
+**AuthService** (`internal/service/auth_*.go` - 6 files):
+- `auth_service.go` - Core service initialization, email auth (Register/Login)
+- `auth_password_service.go` - Password management (Change, Reset)
+- `auth_session_service.go` - Session & token management (Refresh, Revoke)
+- `auth_phone_service.go` - Phone authentication (Register, Login, Verify)
+- `auth_device_service.go` - Device management (Register, Update, List)
+- `auth_verification_service.go` - Email/phone verification codes
+
+**UserService** (`internal/service/user_*.go` - 6 files):
+- `user_service.go` - Core service initialization
+- `user_profile_service.go` - Profile CRUD operations
+- `user_photo_service.go` - Photo upload and management
+- `user_preferences_service.go` - User & partner preferences
+- `user_discovery_service.go` - User search and discovery
+- `user_blocking_service.go` - Block, unblock, report functionality
+
+**Utilities** (`internal/service/utils_*.go` - 4 files):
+- `utils_user_profile.go` - Profile builders and DB conversions
+- `utils_user.go` - User-related helper functions
+- `utils_conversion.go` - Type conversion utilities
+- `utils_token.go` - Token generation functions
+
+**Other Modules**:
+- `internal/auth/password.go` - Password hashing with bcrypt
+- `internal/email/mailersend.go` - Email service integration
 
 ---
 

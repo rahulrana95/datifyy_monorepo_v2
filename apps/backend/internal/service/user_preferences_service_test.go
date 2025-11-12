@@ -284,3 +284,122 @@ func TestUpdateUserPreferences_MissingPreferences(t *testing.T) {
 	assert.Nil(t, resp)
 	assert.Contains(t, err.Error(), "preferences is required")
 }
+
+func TestGetPartnerPreferences_DatabaseError(t *testing.T) {
+	service, mock, db := setupTestUserService(t)
+	defer db.Close()
+
+	ctx := context.WithValue(context.Background(), "userID", 1)
+
+	// Mock partner preferences query with error
+	mock.ExpectQuery("SELECT (.+) FROM partner_preferences WHERE user_id").
+		WillReturnError(sql.ErrConnDone)
+
+	req := &userpb.GetPartnerPreferencesRequest{}
+
+	resp, err := service.GetPartnerPreferences(ctx, req)
+
+	assert.Error(t, err)
+	assert.Nil(t, resp)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestUpdatePartnerPreferences_DatabaseError(t *testing.T) {
+	service, mock, db := setupTestUserService(t)
+	defer db.Close()
+
+	ctx := context.WithValue(context.Background(), "userID", 1)
+
+	// Mock update with error
+	mock.ExpectExec("UPDATE partner_preferences SET").
+		WillReturnError(sql.ErrConnDone)
+
+	req := &userpb.UpdatePartnerPreferencesRequest{
+		Preferences: &userpb.PartnerPreferences{
+			AgeRange: &userpb.AgeRange{
+				MinAge: 25,
+				MaxAge: 40,
+			},
+		},
+	}
+
+	resp, err := service.UpdatePartnerPreferences(ctx, req)
+
+	assert.Error(t, err)
+	assert.Nil(t, resp)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetUserPreferences_DatabaseError(t *testing.T) {
+	service, mock, db := setupTestUserService(t)
+	defer db.Close()
+
+	ctx := context.WithValue(context.Background(), "userID", 1)
+
+	// Mock user preferences query with error
+	mock.ExpectQuery("SELECT (.+) FROM user_preferences WHERE user_id").
+		WillReturnError(sql.ErrConnDone)
+
+	req := &userpb.GetUserPreferencesRequest{}
+
+	resp, err := service.GetUserPreferences(ctx, req)
+
+	assert.Error(t, err)
+	assert.Nil(t, resp)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestUpdateUserPreferences_DatabaseError(t *testing.T) {
+	service, mock, db := setupTestUserService(t)
+	defer db.Close()
+
+	ctx := context.WithValue(context.Background(), "userID", 1)
+
+	// Mock update with error
+	mock.ExpectExec("UPDATE user_preferences SET").
+		WillReturnError(sql.ErrConnDone)
+
+	req := &userpb.UpdateUserPreferencesRequest{
+		Preferences: &userpb.UserPreferences{
+			Notifications: &userpb.NotificationPreferences{
+				PushEnabled: true,
+			},
+		},
+	}
+
+	resp, err := service.UpdateUserPreferences(ctx, req)
+
+	assert.Error(t, err)
+	assert.Nil(t, resp)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetPartnerPreferences_NoAuthentication(t *testing.T) {
+	service, _, db := setupTestUserService(t)
+	defer db.Close()
+
+	ctx := context.Background() // No userID in context
+
+	req := &userpb.GetPartnerPreferencesRequest{}
+
+	resp, err := service.GetPartnerPreferences(ctx, req)
+
+	assert.Error(t, err)
+	assert.Nil(t, resp)
+	assert.Contains(t, err.Error(), "authentication required")
+}
+
+func TestGetUserPreferences_NoAuthentication(t *testing.T) {
+	service, _, db := setupTestUserService(t)
+	defer db.Close()
+
+	ctx := context.Background() // No userID in context
+
+	req := &userpb.GetUserPreferencesRequest{}
+
+	resp, err := service.GetUserPreferences(ctx, req)
+
+	assert.Error(t, err)
+	assert.Nil(t, resp)
+	assert.Contains(t, err.Error(), "authentication required")
+}
