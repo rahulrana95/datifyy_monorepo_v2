@@ -1,9 +1,10 @@
 /**
- * Auth Modal Component
- * Handles Login, Signup, and Password Reset flows using Chakra UI v3
+ * Auth Modal Component - Enhanced Romantic Design
+ * Beautiful login/signup modal with romantic animations and smooth transitions
  */
 
 import React, { useState } from 'react';
+import styled from '@emotion/styled';
 import {
   Box,
   VStack,
@@ -13,7 +14,145 @@ import {
   Flex,
   Heading,
 } from '@chakra-ui/react';
+import { keyframes } from '@emotion/react';
 import { useAuthStore } from '../store/auth.store';
+import { datifyyTheme } from '../../../theme/datifyy.theme';
+
+// Romantic animations
+const scaleIn = keyframes`
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+`;
+
+const fadeIn = keyframes`
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+`;
+
+const heartPulse = keyframes`
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+`;
+
+// Styled components
+const Backdrop = styled(Box)`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(23, 23, 23, 0.7);
+  backdrop-filter: blur(12px);
+  z-index: ${datifyyTheme.zIndices.modal};
+  animation: ${fadeIn} 0.3s ease-out;
+`;
+
+const ModalContainer = styled(Box)`
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: ${datifyyTheme.zIndices.modal + 1};
+  background: white;
+  border-radius: ${datifyyTheme.radii['3xl']};
+  box-shadow: ${datifyyTheme.shadows.premium};
+  width: 90%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: ${scaleIn} 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+`;
+
+const HeartIcon = styled.span`
+  font-size: 2.5rem;
+  display: inline-block;
+  animation: ${heartPulse} 2s ease-in-out infinite;
+`;
+
+const StyledInput = styled(Input)`
+  border-radius: ${datifyyTheme.radii.xl};
+  border-width: 2px;
+  border-color: ${datifyyTheme.colors.primary[200]};
+  transition: all 0.3s ease;
+
+  &:hover {
+    border-color: ${datifyyTheme.colors.primary[300]};
+  }
+
+  &:focus {
+    border-color: ${datifyyTheme.colors.primary[500]};
+    box-shadow: 0 0 0 3px ${datifyyTheme.colors.primary[200]};
+  }
+
+  &.error {
+    border-color: #ef4444;
+
+    &:focus {
+      border-color: #ef4444;
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+    }
+  }
+`;
+
+const TabButton = styled(Button)<{ active?: boolean }>`
+  flex: 1;
+  background: ${(props) =>
+    props.active ? datifyyTheme.colors.primary[500] : 'transparent'};
+  color: ${(props) => (props.active ? 'white' : datifyyTheme.colors.text.secondary)};
+  font-weight: 700;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: ${datifyyTheme.radii.xl};
+
+  &:hover {
+    background: ${(props) =>
+      props.active ? datifyyTheme.colors.primary[600] : datifyyTheme.colors.primary[50]};
+    color: ${(props) => (props.active ? 'white' : datifyyTheme.colors.primary[600])};
+  }
+`;
+
+const MessageBox = styled(Box)<{ type: 'success' | 'error' }>`
+  padding: 16px;
+  border-radius: ${datifyyTheme.radii.xl};
+  background: ${(props) => (props.type === 'success' ? '#ecfdf5' : '#fef2f2')};
+  color: ${(props) => (props.type === 'success' ? '#065f46' : '#991b1b')};
+  font-size: 14px;
+  font-weight: 600;
+  animation: ${scaleIn} 0.3s ease-out;
+  border: 2px solid ${(props) => (props.type === 'success' ? '#10b981' : '#ef4444')};
+`;
+
+const CloseButton = styled(Button)`
+  color: ${datifyyTheme.colors.text.tertiary};
+  font-size: 24px;
+  line-height: 1;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  min-width: auto;
+  background: transparent;
+  border-radius: ${datifyyTheme.radii.lg};
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: ${datifyyTheme.colors.primary[50]};
+    color: ${datifyyTheme.colors.primary[600]};
+    transform: scale(1.1);
+  }
+`;
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -140,68 +279,34 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   return (
     <>
       {/* Backdrop */}
-      <Box
-        position="fixed"
-        top={0}
-        left={0}
-        right={0}
-        bottom={0}
-        bg="rgba(23, 23, 23, 0.6)"
-        backdropFilter="blur(8px)"
-        zIndex={1400}
-        onClick={handleClose}
-      />
+      <Backdrop onClick={handleClose} />
 
       {/* Modal Content */}
-      <Box
-        position="fixed"
-        top="50%"
-        left="50%"
-        transform="translate(-50%, -50%)"
-        zIndex={1401}
-        bg="white"
-        borderRadius="2xl"
-        boxShadow="0 25px 50px -12px rgba(0, 0, 0, 0.25)"
-        width={{ base: '90%', sm: '400px', md: '450px' }}
-        maxHeight="90vh"
-        overflowY="auto"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <VStack gap={6} p={8} align="stretch">
+      <ModalContainer onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+        <VStack gap={7} p={{ base: 6, md: 10 }} align="stretch">
           {/* Header */}
           <Flex justify="space-between" align="center">
-            <Heading size="lg" fontFamily="heading" color="gray.900">
-              {showResetPassword ? 'Reset Password' : 'Welcome to Datifyy'}
-            </Heading>
-            <Button
-              variant="ghost"
-              onClick={handleClose}
-              size="sm"
-              borderRadius="lg"
-              _hover={{ bg: 'gray.100' }}
-            >
-              ✕
-            </Button>
+            <Flex align="center" gap={3}>
+              <HeartIcon>💝</HeartIcon>
+              <Heading
+                size={{ base: 'lg', md: 'xl' }}
+                fontFamily={datifyyTheme.fonts.heading}
+                color={datifyyTheme.colors.text.primary}
+              >
+                {showResetPassword ? 'Reset Password' : 'Welcome to Datifyy'}
+              </Heading>
+            </Flex>
+            <CloseButton onClick={handleClose}>✕</CloseButton>
           </Flex>
 
           {/* Message */}
-          {message && (
-            <Box
-              p={3}
-              borderRadius="lg"
-              bg={message.type === 'success' ? 'green.50' : 'red.50'}
-              color={message.type === 'success' ? 'green.700' : 'red.700'}
-              fontSize="sm"
-            >
-              {message.text}
-            </Box>
-          )}
+          {message && <MessageBox type={message.type}>{message.text}</MessageBox>}
 
           {showResetPassword ? (
             // Password Reset Form
             resetEmailSent ? (
               <VStack gap={4} py={4}>
-                <Text color="gray.700" textAlign="center">
+                <Text textAlign="center">
                   We've sent password reset instructions to your email.
                 </Text>
                 <Button
@@ -231,13 +336,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       onChange={(e) => setResetEmail(e.target.value)}
                       type="email"
                       placeholder="you@example.com"
-                      borderRadius="xl"
-                      borderWidth="2px"
-                      borderColor={errors.email ? 'red.500' : 'gray.200'}
-                      _focus={{
-                        borderColor: 'primary.500',
-                        boxShadow: '0 0 0 3px rgba(244, 63, 94, 0.1)',
-                      }}
+                      borderColor={errors.email ? 'red.500' : undefined}
                     />
                     {errors.email && (
                       <Text color="red.500" fontSize="sm">
@@ -249,14 +348,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   <Button
                     type="submit"
                     disabled={isLoading}
-                    bg="linear-gradient(to right, #f43f5e, #fb7185)"
-                    color="white"
-                    borderRadius="full"
-                    fontWeight="semibold"
+                    variant="solid"
                     size="lg"
-                    _hover={{
-                      transform: 'translateY(-2px) scale(1.02)',
-                    }}
                   >
                     {isLoading ? 'Sending...' : 'Send Reset Link'}
                   </Button>
@@ -278,43 +371,32 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             // Login/Signup Tabs
             <>
               {/* Tab Buttons */}
-              <Flex gap={2} bg="gray.50" p={1} borderRadius="xl">
-                <Button
-                  flex={1}
-                  borderRadius="lg"
-                  fontWeight="semibold"
-                  variant={activeTab === 'login' ? 'solid' : 'ghost'}
-                  bg={activeTab === 'login' ? 'white' : 'transparent'}
-                  color={activeTab === 'login' ? 'primary.500' : 'gray.600'}
+              <Flex
+                gap={3}
+                bg={datifyyTheme.colors.primary[50]}
+                p={2}
+                borderRadius={datifyyTheme.radii['2xl']}
+              >
+                <TabButton
+                  active={activeTab === 'login'}
                   onClick={() => {
                     setActiveTab('login');
                     setMessage(null);
                     setErrors({});
                   }}
-                  _hover={{
-                    bg: activeTab === 'login' ? 'white' : 'gray.100',
-                  }}
                 >
                   Login
-                </Button>
-                <Button
-                  flex={1}
-                  borderRadius="lg"
-                  fontWeight="semibold"
-                  variant={activeTab === 'signup' ? 'solid' : 'ghost'}
-                  bg={activeTab === 'signup' ? 'white' : 'transparent'}
-                  color={activeTab === 'signup' ? 'primary.500' : 'gray.600'}
+                </TabButton>
+                <TabButton
+                  active={activeTab === 'signup'}
                   onClick={() => {
                     setActiveTab('signup');
                     setMessage(null);
                     setErrors({});
                   }}
-                  _hover={{
-                    bg: activeTab === 'signup' ? 'white' : 'gray.100',
-                  }}
                 >
                   Sign Up
-                </Button>
+                </TabButton>
               </Flex>
 
               {/* Login Form */}
@@ -330,13 +412,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                         onChange={(e) => setLoginEmail(e.target.value)}
                         type="email"
                         placeholder="you@example.com"
-                        borderRadius="xl"
-                        borderWidth="2px"
-                        borderColor={errors.email ? 'red.500' : 'gray.200'}
-                        _focus={{
-                          borderColor: 'primary.500',
-                          boxShadow: '0 0 0 3px rgba(244, 63, 94, 0.1)',
-                        }}
+                        borderColor={errors.email ? 'red.500' : undefined}
                       />
                       {errors.email && (
                         <Text color="red.500" fontSize="sm">
@@ -346,36 +422,39 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     </VStack>
 
                     <VStack gap={2} align="stretch">
-                      <Text fontSize="sm" fontWeight="medium" color="gray.700">
+                      <Text
+                        fontSize="sm"
+                        fontWeight="700"
+                        color={datifyyTheme.colors.text.primary}
+                      >
                         Password
                       </Text>
-                      <Input
+                      <StyledInput
                         value={loginPassword}
                         onChange={(e) => setLoginPassword(e.target.value)}
                         type="password"
                         placeholder="••••••••"
-                        borderRadius="xl"
-                        borderWidth="2px"
-                        borderColor={errors.password ? 'red.500' : 'gray.200'}
-                        _focus={{
-                          borderColor: 'primary.500',
-                          boxShadow: '0 0 0 3px rgba(244, 63, 94, 0.1)',
-                        }}
+                        className={errors.password ? 'error' : ''}
                       />
                       {errors.password && (
-                        <Text color="red.500" fontSize="sm">
+                        <Text color="#ef4444" fontSize="sm" fontWeight="600">
                           {errors.password}
                         </Text>
                       )}
                     </VStack>
 
                     <Text
-                      color="primary.500"
+                      color={datifyyTheme.colors.primary[600]}
                       fontSize="sm"
+                      fontWeight="600"
                       textAlign="right"
                       onClick={() => setShowResetPassword(true)}
                       cursor="pointer"
-                      _hover={{ textDecoration: 'underline' }}
+                      transition="all 0.3s ease"
+                      _hover={{
+                        textDecoration: 'underline',
+                        color: datifyyTheme.colors.primary[700],
+                      }}
                     >
                       Forgot password?
                     </Text>
@@ -383,14 +462,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     <Button
                       type="submit"
                       disabled={isLoading}
-                      bg="linear-gradient(to right, #f43f5e, #fb7185)"
-                      color="white"
-                      borderRadius="full"
-                      fontWeight="semibold"
+                      variant="solid"
                       size="lg"
-                      _hover={{
-                        transform: 'translateY(-2px) scale(1.02)',
-                      }}
                     >
                       {isLoading ? 'Signing in...' : 'Sign In'}
                     </Button>
@@ -411,13 +484,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                         onChange={(e) => setSignupName(e.target.value)}
                         type="text"
                         placeholder="John Doe"
-                        borderRadius="xl"
-                        borderWidth="2px"
-                        borderColor={errors.name ? 'red.500' : 'gray.200'}
-                        _focus={{
-                          borderColor: 'primary.500',
-                          boxShadow: '0 0 0 3px rgba(244, 63, 94, 0.1)',
-                        }}
+                        borderColor={errors.name ? 'red.500' : undefined}
                       />
                       {errors.name && (
                         <Text color="red.500" fontSize="sm">
@@ -435,13 +502,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                         onChange={(e) => setSignupEmail(e.target.value)}
                         type="email"
                         placeholder="you@example.com"
-                        borderRadius="xl"
-                        borderWidth="2px"
-                        borderColor={errors.email ? 'red.500' : 'gray.200'}
-                        _focus={{
-                          borderColor: 'primary.500',
-                          boxShadow: '0 0 0 3px rgba(244, 63, 94, 0.1)',
-                        }}
+                        borderColor={errors.email ? 'red.500' : undefined}
                       />
                       {errors.email && (
                         <Text color="red.500" fontSize="sm">
@@ -459,13 +520,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                         onChange={(e) => setSignupPassword(e.target.value)}
                         type="password"
                         placeholder="••••••••"
-                        borderRadius="xl"
-                        borderWidth="2px"
-                        borderColor={errors.password ? 'red.500' : 'gray.200'}
-                        _focus={{
-                          borderColor: 'primary.500',
-                          boxShadow: '0 0 0 3px rgba(244, 63, 94, 0.1)',
-                        }}
+                        borderColor={errors.password ? 'red.500' : undefined}
                       />
                       {errors.password && (
                         <Text color="red.500" fontSize="sm">
@@ -477,14 +532,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     <Button
                       type="submit"
                       disabled={isLoading}
-                      bg="linear-gradient(to right, #f43f5e, #fb7185)"
-                      color="white"
-                      borderRadius="full"
-                      fontWeight="semibold"
+                      variant="solid"
                       size="lg"
-                      _hover={{
-                        transform: 'translateY(-2px) scale(1.02)',
-                      }}
                     >
                       {isLoading ? 'Creating account...' : 'Create Account'}
                     </Button>
@@ -498,7 +547,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </>
           )}
         </VStack>
-      </Box>
+      </ModalContainer>
     </>
   );
 };
