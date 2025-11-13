@@ -16,7 +16,7 @@ import {
 import { keyframes } from '@emotion/react';
 import { useAuthStore } from '../../../features/auth/store/auth.store';
 import { AuthModal } from '../../../features/auth/components/AuthModal';
-import { datifyyTheme } from '../../../theme/datifyy.theme';
+import { colors } from '../../../theme/colors.reference';
 
 // Romantic heart beat animation
 const heartbeat = keyframes`
@@ -32,12 +32,12 @@ const heartbeat = keyframes`
 `;
 
 const LogoText = styled(Text)`
-  background: ${datifyyTheme.colors.primary.gradient};
+  background: ${colors.gradient.brand};
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  font-family: ${datifyyTheme.fonts.heading};
-  font-weight: ${datifyyTheme.fontWeights.black};
+  font-family: 'Inter', -apple-system, sans-serif;
+  font-weight: 900;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
   display: flex;
@@ -59,12 +59,112 @@ const GlassHeader = styled(Box)`
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid ${datifyyTheme.colors.primary[100]};
-  box-shadow: ${datifyyTheme.shadows.sm};
+  border-bottom: 1px solid ${colors.brand[100]};
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   position: sticky;
   top: 0;
-  z-index: ${datifyyTheme.zIndices.sticky};
+  z-index: 1100;
   transition: all 0.3s ease;
+`;
+
+const LoginButton = styled(Button)`
+  height: 40px;
+  padding: 0 20px;
+  background: transparent !important;
+  color: ${colors.text.primary} !important;
+  font-weight: 600;
+  font-size: 15px;
+  border-radius: 10px;
+  border: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: none !important;
+
+  &:hover {
+    background: ${colors.brand[50]} !important;
+    color: ${colors.brand[600]} !important;
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+    background: ${colors.brand[100]} !important;
+  }
+
+  &:focus {
+    box-shadow: none !important;
+    outline: none !important;
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${colors.brand[500]} !important;
+    outline-offset: 2px;
+  }
+`;
+
+const SignUpButton = styled(Button)`
+  height: 44px;
+  padding: 0 28px;
+  background: ${colors.gradient.brand} !important;
+  color: white !important;
+  font-weight: 600;
+  font-size: 15px;
+  border-radius: 12px;
+  border: none;
+  box-shadow: 0 4px 12px rgba(232, 93, 117, 0.25) !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:hover {
+    box-shadow: 0 6px 20px rgba(232, 93, 117, 0.35) !important;
+    transform: translateY(-2px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  &:focus {
+    box-shadow: 0 4px 12px rgba(232, 93, 117, 0.25) !important;
+    outline: none !important;
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${colors.brand[500]} !important;
+    outline-offset: 2px;
+  }
+`;
+
+const LogoutButton = styled(Button)`
+  height: 40px;
+  padding: 0 20px;
+  background: transparent !important;
+  color: ${colors.text.secondary} !important;
+  font-weight: 600;
+  font-size: 15px;
+  border-radius: 10px;
+  border: 2px solid ${colors.gray[200]} !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: none !important;
+
+  &:hover {
+    background: ${colors.nope[50]} !important;
+    color: ${colors.nope[600]} !important;
+    border-color: ${colors.nope[200]} !important;
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  &:focus {
+    box-shadow: none !important;
+    outline: none !important;
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${colors.brand[500]} !important;
+    outline-offset: 2px;
+  }
 `;
 
 export const Header: React.FC = () => {
@@ -107,41 +207,36 @@ export const Header: React.FC = () => {
             </LogoText>
 
             {/* Desktop Navigation */}
-            <HStack gap={{ base: 3, md: 4 }} display={{ base: 'none', md: 'flex' }}>
+            <HStack gap={3} display={{ base: 'none', md: 'flex' }}>
               {isAuthenticated && user ? (
-                <HStack gap={4}>
+                <HStack gap={3}>
                   <Box
-                    bg={datifyyTheme.colors.primary[50]}
+                    bg={colors.brand[50]}
                     px={5}
                     py={2}
                     borderRadius="full"
-                    border={`2px solid ${datifyyTheme.colors.primary[200]}`}
+                    border={`2px solid ${colors.brand[200]}`}
                   >
                     <Text
-                      fontWeight="700"
-                      color={datifyyTheme.colors.primary[700]}
-                      fontSize="md"
+                      fontWeight="600"
+                      color={colors.brand[700]}
+                      fontSize="15px"
                     >
                       Hi, {user.name} 💕
                     </Text>
                   </Box>
-                  <Button variant="ghost" onClick={handleLogout} size="md">
+                  <LogoutButton onClick={handleLogout}>
                     Logout
-                  </Button>
+                  </LogoutButton>
                 </HStack>
               ) : (
                 <>
-                  <Button variant="ghost" onClick={handleLoginClick} size="md">
+                  <LoginButton onClick={handleLoginClick}>
                     Login
-                  </Button>
-                  <Button
-                    variant="solid"
-                    onClick={handleSignupClick}
-                    size="md"
-                    px={8}
-                  >
-                    Sign Up 💕
-                  </Button>
+                  </LoginButton>
+                  <SignUpButton onClick={handleSignupClick}>
+                    Sign Up
+                  </SignUpButton>
                 </>
               )}
             </HStack>
@@ -150,21 +245,21 @@ export const Header: React.FC = () => {
             <HStack gap={2} display={{ base: 'flex', md: 'none' }}>
               {isAuthenticated && user ? (
                 <>
-                  <Text fontSize="sm" fontWeight="600" color="primary.700">
+                  <Text fontSize="13px" fontWeight="600" color={colors.brand[700]}>
                     {user.name.split(' ')[0]}
                   </Text>
-                  <Button variant="ghost" onClick={handleLogout} size="sm">
+                  <LogoutButton onClick={handleLogout} style={{ height: '36px', padding: '0 16px', fontSize: '14px' }}>
                     Logout
-                  </Button>
+                  </LogoutButton>
                 </>
               ) : (
                 <>
-                  <Button variant="ghost" onClick={handleLoginClick} size="sm">
+                  <LoginButton onClick={handleLoginClick} style={{ height: '36px', padding: '0 16px', fontSize: '14px' }}>
                     Login
-                  </Button>
-                  <Button variant="solid" onClick={handleSignupClick} size="sm">
+                  </LoginButton>
+                  <SignUpButton onClick={handleSignupClick} style={{ height: '40px', padding: '0 20px', fontSize: '14px' }}>
                     Sign Up
-                  </Button>
+                  </SignUpButton>
                 </>
               )}
             </HStack>

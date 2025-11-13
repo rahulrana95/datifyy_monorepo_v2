@@ -1,6 +1,7 @@
 /**
- * Auth Modal Component - Enhanced Romantic Design
- * Beautiful login/signup modal with romantic animations and smooth transitions
+ * Auth Modal Component - Clean Modern Design
+ * Beautiful login/signup modal with elegant animations and smooth transitions
+ * Following Datifyy reference design system
  */
 
 import React, { useState } from 'react';
@@ -16,7 +17,7 @@ import {
 } from '@chakra-ui/react';
 import { keyframes } from '@emotion/react';
 import { useAuthStore } from '../store/auth.store';
-import { datifyyTheme } from '../../../theme/datifyy.theme';
+import { colors } from '../../../theme/colors.reference';
 
 // Romantic animations
 const scaleIn = keyframes`
@@ -57,7 +58,7 @@ const Backdrop = styled(Box)`
   bottom: 0;
   background: rgba(23, 23, 23, 0.7);
   backdrop-filter: blur(12px);
-  z-index: ${datifyyTheme.zIndices.modal};
+  z-index: 1400;
   animation: ${fadeIn} 0.3s ease-out;
 `;
 
@@ -66,91 +67,197 @@ const ModalContainer = styled(Box)`
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  z-index: ${datifyyTheme.zIndices.modal + 1};
+  z-index: 1401;
   background: white;
-  border-radius: ${datifyyTheme.radii['3xl']};
-  box-shadow: ${datifyyTheme.shadows.premium};
+  border-radius: 24px;
+  box-shadow: 0 20px 60px rgba(232, 93, 117, 0.15), 0 0 0 1px rgba(232, 93, 117, 0.1);
   width: 90%;
-  max-width: 480px;
+  max-width: 440px;
   max-height: 90vh;
   overflow-y: auto;
   animation: ${scaleIn} 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: ${colors.brand[200]};
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: ${colors.brand[300]};
+  }
 `;
 
 const HeartIcon = styled.span`
-  font-size: 2.5rem;
+  font-size: 2rem;
   display: inline-block;
   animation: ${heartPulse} 2s ease-in-out infinite;
 `;
 
-const StyledInput = styled(Input)`
-  border-radius: ${datifyyTheme.radii.xl};
-  border-width: 2px;
-  border-color: ${datifyyTheme.colors.primary[200]};
-  transition: all 0.3s ease;
+const LabelText = styled(Text)`
+  font-size: 14px;
+  font-weight: 600;
+  color: ${colors.text.primary};
+  margin-bottom: 8px;
+`;
+
+const LinkText = styled(Text)`
+  color: ${colors.brand[500]};
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-block;
 
   &:hover {
-    border-color: ${datifyyTheme.colors.primary[300]};
+    color: ${colors.brand[600]};
+    text-decoration: underline;
+  }
+`;
+
+const SubmitButton = styled(Button)`
+  width: 100%;
+  height: 52px;
+  background: ${colors.gradient.brand};
+  color: white;
+  font-weight: 600;
+  font-size: 16px;
+  border-radius: 12px;
+  border: none;
+  box-shadow: 0 4px 12px rgba(232, 93, 117, 0.25);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:hover:not(:disabled) {
+    box-shadow: 0 6px 20px rgba(232, 93, 117, 0.35);
+    transform: translateY(-2px);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+`;
+
+const StyledInput = styled(Input)`
+  height: 48px;
+  border-radius: 12px;
+  border-width: 2px;
+  border-color: ${colors.gray[200]};
+  background: ${colors.gray[50]};
+  font-size: 15px;
+  padding: 0 16px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &::placeholder {
+    color: ${colors.text.quaternary};
+  }
+
+  &:hover:not(:focus) {
+    border-color: ${colors.brand[300]};
+    background: white;
   }
 
   &:focus {
-    border-color: ${datifyyTheme.colors.primary[500]};
-    box-shadow: 0 0 0 3px ${datifyyTheme.colors.primary[200]};
+    outline: none;
+    border-color: ${colors.brand[500]};
+    background: white;
+    box-shadow: 0 0 0 4px ${colors.brand[100]};
   }
 
   &.error {
-    border-color: #ef4444;
+    border-color: ${colors.nope[500]};
+    background: #fef2f2;
 
     &:focus {
-      border-color: #ef4444;
-      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+      border-color: ${colors.nope[500]};
+      box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
     }
   }
 `;
 
 const TabButton = styled(Button)<{ active?: boolean }>`
   flex: 1;
-  background: ${(props) =>
-    props.active ? datifyyTheme.colors.primary[500] : 'transparent'};
-  color: ${(props) => (props.active ? 'white' : datifyyTheme.colors.text.secondary)};
-  font-weight: 700;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border-radius: ${datifyyTheme.radii.xl};
+  height: 44px;
+  background: ${(props) => (props.active ? colors.brand[500] : 'transparent')} !important;
+  color: ${(props) => (props.active ? 'white' : colors.text.secondary)} !important;
+  font-weight: 600;
+  font-size: 15px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 10px;
+  border: none;
+  box-shadow: none !important;
+  outline: none !important;
 
   &:hover {
-    background: ${(props) =>
-      props.active ? datifyyTheme.colors.primary[600] : datifyyTheme.colors.primary[50]};
-    color: ${(props) => (props.active ? 'white' : datifyyTheme.colors.primary[600])};
+    background: ${(props) => (props.active ? colors.brand[600] : colors.brand[50])} !important;
+    color: ${(props) => (props.active ? 'white' : colors.brand[600])} !important;
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+    background: ${(props) => (props.active ? colors.brand[700] : colors.brand[100])} !important;
+  }
+
+  &:focus {
+    background: ${(props) => (props.active ? colors.brand[500] : 'transparent')} !important;
+    box-shadow: none !important;
+    outline: none !important;
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${colors.brand[500]} !important;
+    outline-offset: 2px;
   }
 `;
 
 const MessageBox = styled(Box)<{ type: 'success' | 'error' }>`
-  padding: 16px;
-  border-radius: ${datifyyTheme.radii.xl};
-  background: ${(props) => (props.type === 'success' ? '#ecfdf5' : '#fef2f2')};
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: ${(props) => (props.type === 'success' ? colors.like[50] : colors.nope[50])};
   color: ${(props) => (props.type === 'success' ? '#065f46' : '#991b1b')};
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 500;
+  line-height: 1.5;
   animation: ${scaleIn} 0.3s ease-out;
-  border: 2px solid ${(props) => (props.type === 'success' ? '#10b981' : '#ef4444')};
+  border: 1px solid ${(props) => (props.type === 'success' ? colors.like[200] : colors.nope[200])};
+  display: flex;
+  align-items: center;
+  gap: 8px;
 `;
 
 const CloseButton = styled(Button)`
-  color: ${datifyyTheme.colors.text.tertiary};
-  font-size: 24px;
+  color: ${colors.text.tertiary};
+  font-size: 20px;
   line-height: 1;
   padding: 0;
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   min-width: auto;
   background: transparent;
-  border-radius: ${datifyyTheme.radii.lg};
-  transition: all 0.3s ease;
+  border-radius: 8px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border: none;
 
   &:hover {
-    background: ${datifyyTheme.colors.primary[50]};
-    color: ${datifyyTheme.colors.primary[600]};
-    transform: scale(1.1);
+    background: ${colors.brand[50]};
+    color: ${colors.brand[600]};
+    transform: scale(1.05);
+  }
+
+  &:active {
+    transform: scale(0.95);
   }
 `;
 
@@ -283,269 +390,240 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
       {/* Modal Content */}
       <ModalContainer onClick={(e: React.MouseEvent) => e.stopPropagation()}>
-        <VStack gap={7} p={{ base: 6, md: 10 }} align="stretch">
+        <VStack gap={0} align="stretch">
           {/* Header */}
-          <Flex justify="space-between" align="center">
-            <Flex align="center" gap={3}>
+          <Flex justify="space-between" align="center" p={6} pb={4}>
+            <Flex align="center" gap={2}>
               <HeartIcon>💝</HeartIcon>
               <Heading
-                size={{ base: 'lg', md: 'xl' }}
-                fontFamily={datifyyTheme.fonts.heading}
-                color={datifyyTheme.colors.text.primary}
+                fontSize={{ base: '22px', md: '24px' }}
+                fontWeight="700"
+                color={colors.text.primary}
               >
-                {showResetPassword ? 'Reset Password' : 'Welcome to Datifyy'}
+                {showResetPassword ? 'Reset Password' : 'Welcome Back'}
               </Heading>
             </Flex>
             <CloseButton onClick={handleClose}>✕</CloseButton>
           </Flex>
 
-          {/* Message */}
-          {message && <MessageBox type={message.type}>{message.text}</MessageBox>}
+          {/* Main Content */}
+          <Box px={6} pb={6}>
+            {/* Message */}
+            {message && (
+              <MessageBox type={message.type}>
+                <span>{message.type === 'success' ? '✓' : '⚠'}</span>
+                {message.text}
+              </MessageBox>
+            )}
 
-          {showResetPassword ? (
-            // Password Reset Form
-            resetEmailSent ? (
-              <VStack gap={4} py={4}>
-                <Text textAlign="center">
-                  We've sent password reset instructions to your email.
-                </Text>
-                <Button
-                  variant="ghost"
-                  onClick={() => {
+            {showResetPassword ? (
+              // Password Reset Form
+              resetEmailSent ? (
+                <VStack gap={5} py={6}>
+                  <Box textAlign="center" fontSize="48px">📧</Box>
+                  <VStack gap={2}>
+                    <Heading size="md" color={colors.text.primary}>Check Your Email</Heading>
+                    <Text textAlign="center" color={colors.text.secondary} fontSize="14px">
+                      We've sent password reset instructions to your email.
+                    </Text>
+                  </VStack>
+                  <LinkText onClick={() => {
                     setShowResetPassword(false);
                     setResetEmailSent(false);
-                  }}
-                >
-                  Back to Login
-                </Button>
-              </VStack>
-            ) : (
-              <form onSubmit={handleResetPassword}>
-                <VStack gap={6} align="stretch">
-                  <Text color="gray.600" fontSize="sm">
-                    Enter your email address and we'll send you instructions to reset your
-                    password.
-                  </Text>
-
-                  <VStack gap={2} align="stretch">
-                    <Text fontSize="sm" fontWeight="medium" color="gray.700">
-                      Email
-                    </Text>
-                    <Input
-                      value={resetEmail}
-                      onChange={(e) => setResetEmail(e.target.value)}
-                      type="email"
-                      placeholder="you@example.com"
-                      borderColor={errors.email ? 'red.500' : undefined}
-                    />
-                    {errors.email && (
-                      <Text color="red.500" fontSize="sm">
-                        {errors.email}
-                      </Text>
-                    )}
-                  </VStack>
-
-                  <Button
-                    type="submit"
-                    disabled={isLoading}
-                    variant="solid"
-                    size="lg"
-                  >
-                    {isLoading ? 'Sending...' : 'Send Reset Link'}
-                  </Button>
-
-                  <Text
-                    color="primary.500"
-                    fontSize="sm"
-                    textAlign="center"
-                    onClick={() => setShowResetPassword(false)}
-                    cursor="pointer"
-                    _hover={{ textDecoration: 'underline' }}
-                  >
+                  }}>
                     Back to Login
-                  </Text>
+                  </LinkText>
                 </VStack>
-              </form>
-            )
-          ) : (
-            // Login/Signup Tabs
-            <>
-              {/* Tab Buttons */}
-              <Flex
-                gap={3}
-                bg={datifyyTheme.colors.primary[50]}
-                p={2}
-                borderRadius={datifyyTheme.radii['2xl']}
-              >
-                <TabButton
-                  active={activeTab === 'login'}
-                  onClick={() => {
-                    setActiveTab('login');
-                    setMessage(null);
-                    setErrors({});
-                  }}
-                >
-                  Login
-                </TabButton>
-                <TabButton
-                  active={activeTab === 'signup'}
-                  onClick={() => {
-                    setActiveTab('signup');
-                    setMessage(null);
-                    setErrors({});
-                  }}
-                >
-                  Sign Up
-                </TabButton>
-              </Flex>
+              ) : (
+                <form onSubmit={handleResetPassword}>
+                  <VStack gap={5} align="stretch" pt={4}>
+                    <Text color={colors.text.secondary} fontSize="14px" lineHeight="1.6">
+                      Enter your email address and we'll send you instructions to reset your password.
+                    </Text>
 
-              {/* Login Form */}
-              {activeTab === 'login' && (
-                <form onSubmit={handleLogin}>
-                  <VStack gap={6} align="stretch">
-                    <VStack gap={2} align="stretch">
-                      <Text fontSize="sm" fontWeight="medium" color="gray.700">
-                        Email
-                      </Text>
-                      <Input
-                        value={loginEmail}
-                        onChange={(e) => setLoginEmail(e.target.value)}
-                        type="email"
-                        placeholder="you@example.com"
-                        borderColor={errors.email ? 'red.500' : undefined}
-                      />
-                      {errors.email && (
-                        <Text color="red.500" fontSize="sm">
-                          {errors.email}
-                        </Text>
-                      )}
-                    </VStack>
-
-                    <VStack gap={2} align="stretch">
-                      <Text
-                        fontSize="sm"
-                        fontWeight="700"
-                        color={datifyyTheme.colors.text.primary}
-                      >
-                        Password
-                      </Text>
+                    <VStack gap={1} align="stretch">
+                      <LabelText>Email Address</LabelText>
                       <StyledInput
-                        value={loginPassword}
-                        onChange={(e) => setLoginPassword(e.target.value)}
-                        type="password"
-                        placeholder="••••••••"
-                        className={errors.password ? 'error' : ''}
-                      />
-                      {errors.password && (
-                        <Text color="#ef4444" fontSize="sm" fontWeight="600">
-                          {errors.password}
-                        </Text>
-                      )}
-                    </VStack>
-
-                    <Text
-                      color={datifyyTheme.colors.primary[600]}
-                      fontSize="sm"
-                      fontWeight="600"
-                      textAlign="right"
-                      onClick={() => setShowResetPassword(true)}
-                      cursor="pointer"
-                      transition="all 0.3s ease"
-                      _hover={{
-                        textDecoration: 'underline',
-                        color: datifyyTheme.colors.primary[700],
-                      }}
-                    >
-                      Forgot password?
-                    </Text>
-
-                    <Button
-                      type="submit"
-                      disabled={isLoading}
-                      variant="solid"
-                      size="lg"
-                    >
-                      {isLoading ? 'Signing in...' : 'Sign In'}
-                    </Button>
-                  </VStack>
-                </form>
-              )}
-
-              {/* Signup Form */}
-              {activeTab === 'signup' && (
-                <form onSubmit={handleSignup}>
-                  <VStack gap={6} align="stretch">
-                    <VStack gap={2} align="stretch">
-                      <Text fontSize="sm" fontWeight="medium" color="gray.700">
-                        Name
-                      </Text>
-                      <Input
-                        value={signupName}
-                        onChange={(e) => setSignupName(e.target.value)}
-                        type="text"
-                        placeholder="John Doe"
-                        borderColor={errors.name ? 'red.500' : undefined}
-                      />
-                      {errors.name && (
-                        <Text color="red.500" fontSize="sm">
-                          {errors.name}
-                        </Text>
-                      )}
-                    </VStack>
-
-                    <VStack gap={2} align="stretch">
-                      <Text fontSize="sm" fontWeight="medium" color="gray.700">
-                        Email
-                      </Text>
-                      <Input
-                        value={signupEmail}
-                        onChange={(e) => setSignupEmail(e.target.value)}
+                        value={resetEmail}
+                        onChange={(e) => setResetEmail(e.target.value)}
                         type="email"
                         placeholder="you@example.com"
-                        borderColor={errors.email ? 'red.500' : undefined}
+                        className={errors.email ? 'error' : ''}
                       />
                       {errors.email && (
-                        <Text color="red.500" fontSize="sm">
+                        <Text color={colors.nope[500]} fontSize="13px" fontWeight="500" mt={1}>
                           {errors.email}
                         </Text>
                       )}
                     </VStack>
 
-                    <VStack gap={2} align="stretch">
-                      <Text fontSize="sm" fontWeight="medium" color="gray.700">
-                        Password
-                      </Text>
-                      <Input
-                        value={signupPassword}
-                        onChange={(e) => setSignupPassword(e.target.value)}
-                        type="password"
-                        placeholder="••••••••"
-                        borderColor={errors.password ? 'red.500' : undefined}
-                      />
-                      {errors.password && (
-                        <Text color="red.500" fontSize="sm">
-                          {errors.password}
-                        </Text>
-                      )}
-                    </VStack>
+                    <SubmitButton type="submit" disabled={isLoading}>
+                      {isLoading ? 'Sending...' : 'Send Reset Link'}
+                    </SubmitButton>
 
-                    <Button
-                      type="submit"
-                      disabled={isLoading}
-                      variant="solid"
-                      size="lg"
-                    >
-                      {isLoading ? 'Creating account...' : 'Create Account'}
-                    </Button>
-
-                    <Text fontSize="xs" color="gray.500" textAlign="center">
-                      By signing up, you agree to our Terms of Service and Privacy Policy
+                    <Text textAlign="center" fontSize="14px" color={colors.text.secondary}>
+                      Remember your password?{' '}
+                      <LinkText as="span" onClick={() => setShowResetPassword(false)}>
+                        Sign in
+                      </LinkText>
                     </Text>
                   </VStack>
                 </form>
-              )}
-            </>
-          )}
+              )
+            ) : (
+              // Login/Signup Tabs
+              <>
+                {/* Tab Buttons */}
+                <Flex
+                  gap={2}
+                  bg={colors.gray[100]}
+                  p={1.5}
+                  borderRadius="12px"
+                  mt={message ? 4 : 0}
+                >
+                  <TabButton
+                    active={activeTab === 'login'}
+                    onClick={() => {
+                      setActiveTab('login');
+                      setMessage(null);
+                      setErrors({});
+                    }}
+                  >
+                    Sign In
+                  </TabButton>
+                  <TabButton
+                    active={activeTab === 'signup'}
+                    onClick={() => {
+                      setActiveTab('signup');
+                      setMessage(null);
+                      setErrors({});
+                    }}
+                  >
+                    Sign Up
+                  </TabButton>
+                </Flex>
+
+                {/* Login Form */}
+                {activeTab === 'login' && (
+                  <form onSubmit={handleLogin}>
+                    <VStack gap={5} align="stretch" pt={5}>
+                      <VStack gap={1} align="stretch">
+                        <LabelText>Email Address</LabelText>
+                        <StyledInput
+                          value={loginEmail}
+                          onChange={(e) => setLoginEmail(e.target.value)}
+                          type="email"
+                          placeholder="you@example.com"
+                          className={errors.email ? 'error' : ''}
+                          autoFocus
+                        />
+                        {errors.email && (
+                          <Text color={colors.nope[500]} fontSize="13px" fontWeight="500" mt={1}>
+                            {errors.email}
+                          </Text>
+                        )}
+                      </VStack>
+
+                      <VStack gap={1} align="stretch">
+                        <Flex justify="space-between" align="center">
+                          <LabelText>Password</LabelText>
+                          <LinkText onClick={() => setShowResetPassword(true)} fontSize="13px">
+                            Forgot?
+                          </LinkText>
+                        </Flex>
+                        <StyledInput
+                          value={loginPassword}
+                          onChange={(e) => setLoginPassword(e.target.value)}
+                          type="password"
+                          placeholder="Enter your password"
+                          className={errors.password ? 'error' : ''}
+                        />
+                        {errors.password && (
+                          <Text color={colors.nope[500]} fontSize="13px" fontWeight="500" mt={1}>
+                            {errors.password}
+                          </Text>
+                        )}
+                      </VStack>
+
+                      <SubmitButton type="submit" disabled={isLoading}>
+                        {isLoading ? 'Signing in...' : 'Sign In'}
+                      </SubmitButton>
+                    </VStack>
+                  </form>
+                )}
+
+                {/* Signup Form */}
+                {activeTab === 'signup' && (
+                  <form onSubmit={handleSignup}>
+                    <VStack gap={5} align="stretch" pt={5}>
+                      <VStack gap={1} align="stretch">
+                        <LabelText>Full Name</LabelText>
+                        <StyledInput
+                          value={signupName}
+                          onChange={(e) => setSignupName(e.target.value)}
+                          type="text"
+                          placeholder="John Doe"
+                          className={errors.name ? 'error' : ''}
+                          autoFocus
+                        />
+                        {errors.name && (
+                          <Text color={colors.nope[500]} fontSize="13px" fontWeight="500" mt={1}>
+                            {errors.name}
+                          </Text>
+                        )}
+                      </VStack>
+
+                      <VStack gap={1} align="stretch">
+                        <LabelText>Email Address</LabelText>
+                        <StyledInput
+                          value={signupEmail}
+                          onChange={(e) => setSignupEmail(e.target.value)}
+                          type="email"
+                          placeholder="you@example.com"
+                          className={errors.email ? 'error' : ''}
+                        />
+                        {errors.email && (
+                          <Text color={colors.nope[500]} fontSize="13px" fontWeight="500" mt={1}>
+                            {errors.email}
+                          </Text>
+                        )}
+                      </VStack>
+
+                      <VStack gap={1} align="stretch">
+                        <LabelText>Password</LabelText>
+                        <StyledInput
+                          value={signupPassword}
+                          onChange={(e) => setSignupPassword(e.target.value)}
+                          type="password"
+                          placeholder="Create a strong password"
+                          className={errors.password ? 'error' : ''}
+                        />
+                        {errors.password && (
+                          <Text color={colors.nope[500]} fontSize="13px" fontWeight="500" mt={1}>
+                            {errors.password}
+                          </Text>
+                        )}
+                        <Text fontSize="12px" color={colors.text.tertiary} mt={1}>
+                          Must be at least 8 characters
+                        </Text>
+                      </VStack>
+
+                      <SubmitButton type="submit" disabled={isLoading}>
+                        {isLoading ? 'Creating account...' : 'Create Account'}
+                      </SubmitButton>
+
+                      <Text fontSize="12px" color={colors.text.tertiary} textAlign="center" lineHeight="1.6">
+                        By signing up, you agree to our{' '}
+                        <LinkText as="span" fontSize="12px">Terms</LinkText>
+                        {' '}and{' '}
+                        <LinkText as="span" fontSize="12px">Privacy Policy</LinkText>
+                      </Text>
+                    </VStack>
+                  </form>
+                )}
+              </>
+            )}
+          </Box>
         </VStack>
       </ModalContainer>
     </>

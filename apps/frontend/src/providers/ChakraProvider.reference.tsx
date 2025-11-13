@@ -601,6 +601,23 @@ const datifyyReferenceSystem = createSystem(defaultConfig, {
         full: { value: '9999px' },
       },
     },
+    semanticTokens: {
+      colors: {
+        colorPalette: {
+          DEFAULT: { value: colors.brand[500] },
+          50: { value: colors.brand[50] },
+          100: { value: colors.brand[100] },
+          200: { value: colors.brand[200] },
+          300: { value: colors.brand[300] },
+          400: { value: colors.brand[400] },
+          500: { value: colors.brand[500] },
+          600: { value: colors.brand[600] },
+          700: { value: colors.brand[700] },
+          800: { value: colors.brand[800] },
+          900: { value: colors.brand[900] },
+        },
+      },
+    },
     recipes: {
       button: buttonRecipe,
       card: cardRecipe,
