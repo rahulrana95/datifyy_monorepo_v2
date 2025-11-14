@@ -1,21 +1,13 @@
-/**
- * Main Application Component
- * Datifyy Dating Platform - Reference Design
- */
-
 import React from 'react';
 import './App.css';
-import { LandingPageReference } from './pages/LandingPage.reference';
-import { Header } from './shared/components/Header';
-import { Box } from '@chakra-ui/react';
 
-const App: React.FC = () => {
+function App() {
   return (
-    <Box w="full" minH="100vh">
-      <Header />
-      <LandingPageReference />
-    </Box>
+    <div className="App">
+      <h1>Datifyy</h1>
+      <p>Starting fresh...</p>
+    </div>
   );
-};
+}
 
 export default App;
