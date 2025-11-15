@@ -158,15 +158,15 @@ export const colors = {
 
   // Background Colors - Layered elegance
   background: {
-    default: '#fafafa',       // Base page background
-    paper: '#ffffff',         // Card/surface background
+    default: '#f0f0f0',       // Base page background (20% darker)
+    paper: '#fafafa',         // Card/surface background (20% darker)
     elevated: '#ffffff',      // Elevated surfaces
     overlay: 'rgba(0, 0, 0, 0.5)',  // Modal overlay
-    hover: '#f5f5f5',         // Hover states
-    pressed: '#e5e5e5',       // Active/pressed states
-    brand: '#fff5f7',         // Branded backgrounds
-    brandSubtle: '#ffe3e8',   // Very subtle brand tint
-    premium: '#faf5ff',       // Premium feature backgrounds
+    hover: '#e8e8e8',         // Hover states (darker)
+    pressed: '#d8d8d8',       // Active/pressed states (darker)
+    brand: '#ffe3e8',         // Branded backgrounds (slightly darker pink)
+    brandSubtle: '#ffc7d3',   // Very subtle brand tint (darker)
+    premium: '#f3e8ff',       // Premium feature backgrounds (darker)
   },
 
   // Border Colors - Subtle definition

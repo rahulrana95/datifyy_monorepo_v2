@@ -5,7 +5,7 @@
 
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ChakraProvider } from './providers/ChakraProvider';
-import { LandingPage } from './pages/LandingPage';
+import { LandingPage } from './pages/LandingPage/LandingPage';
 import { ThemePreview } from './pages/ThemePreview/ThemePreview';
 
 function App() {
