@@ -71,16 +71,35 @@ export const Hero = ({ onGetStarted }: HeroProps) => {
             <br />
             Real Connections.
           </Heading>
-          <Text
-            fontSize={{ base: 'md', sm: 'lg', md: 'xl', lg: '2xl' }}
-            color="fg"
-            fontWeight="medium"
-            maxW={{ base: '100%', md: '750px' }}
-            lineHeight={{ base: '1.6', md: '1.7' }}
-            px={{ base: 2, md: 0 }}
+          <Box
+            bg="white"
+            px={{ base: 6, md: 8, lg: 10 }}
+            py={{ base: 5, md: 6, lg: 7 }}
+            borderRadius="3xl"
+            boxShadow="0 10px 40px rgba(0, 0, 0, 0.12)"
+            maxW={{ base: '95%', md: '750px' }}
+            position="relative"
+            overflow="hidden"
+            _before={{
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: '4px',
+              bgGradient: 'linear(to-r, brand.500, rose.500, premium.500)',
+            }}
           >
-            Curated matches, verified profiles, and meaningful dates. Experience dating built on trust, safety, and real human connections.
-          </Text>
+            <Text
+              fontSize={{ base: 'md', sm: 'lg', md: 'xl', lg: '2xl' }}
+              color="fg"
+              fontWeight="semibold"
+              lineHeight={{ base: '1.6', md: '1.7' }}
+              textAlign="center"
+            >
+              Curated matches, verified profiles, and meaningful dates. Experience dating built on trust, safety, and real human connections.
+            </Text>
+          </Box>
         </VStack>
 
         {/* CTA Buttons */}
