@@ -3,9 +3,20 @@
  * 100% test coverage for AuthService
  */
 
+import { create } from '@bufbuild/protobuf';
 import { ApiClient } from '../base';
 import { AuthService } from './authService';
 import type { ApiResponse } from '../base/types';
+import {
+  EmailPasswordCredentialsSchema,
+  DeviceInfoSchema,
+  PhoneOTPCredentialsSchema,
+  OAuthCredentialsSchema,
+  VerificationRequestSchema,
+  PasswordResetRequestSchema,
+  PasswordResetConfirmSchema,
+} from '../../gen/auth/v1/messages_pb';
+import { PaginationRequestSchema } from '../../gen/common/v1/types_pb';
 
 // Mock the ApiClient
 jest.mock('../base');
@@ -38,11 +49,11 @@ describe('AuthService', () => {
     describe('registerWithEmail', () => {
       it('should register user with email', async () => {
         const mockRequest = {
-          credentials: {
+          credentials: create(EmailPasswordCredentialsSchema, {
             email: 'test@example.com',
             password: 'password123',
             name: 'Test User',
-          },
+          }),
         };
 
         const mockResponse: ApiResponse = {
@@ -74,7 +85,7 @@ describe('AuthService', () => {
         const mockRequest = {
           phoneNumber: '+1234567890',
           name: 'Test User',
-          deviceInfo: { platform: 1, deviceName: 'iPhone' },
+          deviceInfo: create(DeviceInfoSchema, { platform: 1, deviceName: 'iPhone' }),
         };
 
         const mockResponse: ApiResponse = {
@@ -109,10 +120,10 @@ describe('AuthService', () => {
     describe('loginWithEmail', () => {
       it('should login user with email', async () => {
         const mockRequest = {
-          credentials: {
+          credentials: create(EmailPasswordCredentialsSchema, {
             email: 'test@example.com',
             password: 'password123',
-          },
+          }),
         };
 
         const mockResponse: ApiResponse = {
@@ -142,7 +153,7 @@ describe('AuthService', () => {
       it('should request phone OTP', async () => {
         const mockRequest = {
           phoneNumber: '+1234567890',
-          deviceInfo: { platform: 1, deviceName: 'iPhone' },
+          deviceInfo: create(DeviceInfoSchema, { platform: 1, deviceName: 'iPhone' }),
         };
 
         const mockResponse: ApiResponse = {
@@ -170,10 +181,10 @@ describe('AuthService', () => {
     describe('loginWithPhone', () => {
       it('should login user with phone', async () => {
         const mockRequest = {
-          credentials: {
+          credentials: create(PhoneOTPCredentialsSchema, {
             phoneNumber: '+1234567890',
-            code: '123456',
-          },
+            otpCode: '123456',
+          }),
         };
 
         const mockResponse: ApiResponse = {
@@ -202,10 +213,10 @@ describe('AuthService', () => {
     describe('loginWithOAuth', () => {
       it('should login user with OAuth', async () => {
         const mockRequest = {
-          credentials: {
-            provider: 'google',
+          credentials: create(OAuthCredentialsSchema, {
+            provider: 1,
             accessToken: 'oauth-token',
-          },
+          }),
         };
 
         const mockResponse: ApiResponse = {

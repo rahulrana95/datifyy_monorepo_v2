@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@ark-ui/react": "^5.28.0",
     "@bufbuild/protobuf": "^2.10.0",
     "@chakra-ui/react": "^3.29.0",
     "@connectrpc/connect": "^2.1.0",
@@ -59,5 +60,20 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "jest": {
+    "transformIgnorePatterns": [
+      "node_modules/(?!(@chakra-ui|@ark-ui|@zag-js|proxy-compare|uqr)/)"
+    ],
+    "moduleNameMapper": {
+      "^@ark-ui/react/anatomy$": "<rootDir>/node_modules/@ark-ui/react/dist/components/anatomy.cjs",
+      "^@ark-ui/react/factory$": "<rootDir>/node_modules/@ark-ui/react/dist/components/factory.cjs",
+      "^@ark-ui/react/environment$": "<rootDir>/node_modules/@ark-ui/react/dist/providers/environment/index.cjs",
+      "^@ark-ui/react/locale$": "<rootDir>/node_modules/@ark-ui/react/dist/providers/locale/index.cjs",
+      "^@ark-ui/react/(.+)$": "<rootDir>/node_modules/@ark-ui/react/dist/components/$1/index.cjs",
+      "^@ark-ui/react$": "<rootDir>/node_modules/@ark-ui/react/dist/index.cjs",
+      "^@bufbuild/protobuf/(.+)$": "<rootDir>/node_modules/@bufbuild/protobuf/dist/cjs/$1",
+      "^@chakra-ui/react$": "<rootDir>/node_modules/@chakra-ui/react/dist/cjs/index.cjs"
+    }
   }
 }

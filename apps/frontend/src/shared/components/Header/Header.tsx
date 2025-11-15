@@ -10,11 +10,11 @@ import { Logo } from '../Logo/Logo';
 
 interface HeaderProps {
   isAuthenticated?: boolean;
-  onLogin?: () => void;
-  onSignup?: () => void;
+  onOpenLogin?: () => void;
+  onOpenSignup?: () => void;
 }
 
-export const Header = ({ isAuthenticated = false, onLogin, onSignup }: HeaderProps) => {
+export const Header = ({ isAuthenticated = false, onOpenLogin, onOpenSignup }: HeaderProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
@@ -51,7 +51,7 @@ export const Header = ({ isAuthenticated = false, onLogin, onSignup }: HeaderPro
                 color="brand.600"
                 _hover={{ bg: 'brand.50', color: 'brand.700' }}
                 _active={{ bg: 'brand.100' }}
-                onClick={onLogin}
+                onClick={onOpenLogin}
               >
                 Login
               </Button>
@@ -62,7 +62,7 @@ export const Header = ({ isAuthenticated = false, onLogin, onSignup }: HeaderPro
                 _active={{ bg: 'brand.700' }}
                 borderRadius="full"
                 px={6}
-                onClick={onSignup}
+                onClick={onOpenSignup}
               >
                 Get Started
               </Button>
@@ -121,7 +121,10 @@ export const Header = ({ isAuthenticated = false, onLogin, onSignup }: HeaderPro
                   _active={{ bg: 'brand.100' }}
                   w="full"
                   justifyContent="flex-start"
-                  onClick={onLogin}
+                  onClick={() => {
+                    onOpenLogin?.();
+                    setIsMobileMenuOpen(false);
+                  }}
                 >
                   Login
                 </Button>
@@ -130,7 +133,10 @@ export const Header = ({ isAuthenticated = false, onLogin, onSignup }: HeaderPro
                   color="white"
                   _hover={{ bg: 'brand.600' }}
                   w="full"
-                  onClick={onSignup}
+                  onClick={() => {
+                    onOpenSignup?.();
+                    setIsMobileMenuOpen(false);
+                  }}
                 >
                   Get Started
                 </Button>
