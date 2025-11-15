@@ -1,0 +1,463 @@
+{
+  "info": {
+    "name": "Datifyy API - REST",
+    "_postman_id": "datifyy-rest-api-collection",
+    "description": "REST API collection for Datifyy dating platform (HTTP endpoints on port 8080)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refresh_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "session_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health & Status",
+      "item": [
+        {
+          "name": "Root - Service Info",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/",
+              "host": ["{{base_url}}"],
+              "path": [""]
+            },
+            "description": "Get API service information and status"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"service\": \"Datifyy Backend API\",\n  \"version\": \"1.0.0\",\n  \"timestamp\": \"2025-11-15T17:11:24.030435637Z\",\n  \"endpoints\": {\n    \"grpc\": \":9090\",\n    \"http\": \":8080\"\n  },\n  \"status\": {\n    \"database\": true,\n    \"redis\": true\n  },\n  \"available_services\": [\n    \"AuthService (gRPC)\",\n    \"UserService (gRPC)\"\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Health Check",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            },
+            "description": "Simple health check endpoint"
+          },
+          "response": []
+        },
+        {
+          "name": "Ready Check",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/ready",
+              "host": ["{{base_url}}"],
+              "path": ["ready"]
+            },
+            "description": "Check if database and Redis are ready"
+          },
+          "response": []
+        },
+        {
+          "name": "Test Database",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/test-db",
+              "host": ["{{base_url}}"],
+              "path": ["api", "test-db"]
+            },
+            "description": "Test database connection"
+          },
+          "response": []
+        },
+        {
+          "name": "Test Redis",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/test-redis",
+              "host": ["{{base_url}}"],
+              "path": ["api", "test-redis"]
+            },
+            "description": "Test Redis connection"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Auth - REST",
+      "item": [
+        {
+          "name": "Register with Email",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('access_token', jsonData.tokens.access_token.token);",
+                  "    pm.collectionVariables.set('refresh_token', jsonData.tokens.refresh_token.token);",
+                  "    pm.collectionVariables.set('user_id', jsonData.user.user_id);",
+                  "    pm.collectionVariables.set('session_id', jsonData.session.session_id);",
+                  "    ",
+                  "    pm.test('Status code is 201', function () {",
+                  "        pm.response.to.have.status(201);",
+                  "    });",
+                  "    ",
+                  "    pm.test('Response has tokens', function () {",
+                  "        pm.expect(jsonData.tokens).to.exist;",
+                  "        pm.expect(jsonData.tokens.access_token.token).to.be.a('string');",
+                  "    });",
+                  "    ",
+                  "    pm.test('User created', function () {",
+                  "        pm.expect(jsonData.user).to.exist;",
+                  "        pm.expect(jsonData.user.email).to.be.a('string');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"SecurePass123!\",\n  \"name\": \"John Doe\",\n  \"device_info\": {\n    \"platform\": 1,\n    \"device_name\": \"Chrome on MacBook Pro\",\n    \"os_version\": \"macOS 14.0\",\n    \"device_id\": \"device_12345\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/register/email",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "register", "email"]
+            },
+            "description": "Register a new user with email and password. Returns user profile, authentication tokens, and session info.\n\n**Platform values:**\n- 0: UNSPECIFIED\n- 1: WEB\n- 2: IOS\n- 3: ANDROID\n- 4: DESKTOP"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"SecurePass123!\",\n  \"name\": \"John Doe\",\n  \"device_info\": {\n    \"platform\": 1,\n    \"device_name\": \"Chrome on MacBook Pro\",\n    \"os_version\": \"macOS 14.0\",\n    \"device_id\": \"device_12345\"\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/auth/register/email",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "v1", "auth", "register", "email"]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"user\": {\n    \"user_id\": \"123\",\n    \"email\": \"john.doe@example.com\",\n    \"name\": \"John Doe\",\n    \"account_status\": \"ACCOUNT_STATUS_PENDING\",\n    \"email_verified\": \"VERIFICATION_STATUS_UNVERIFIED\",\n    \"created_at\": {\n      \"seconds\": 1700000000,\n      \"nanos\": 0\n    }\n  },\n  \"tokens\": {\n    \"access_token\": {\n      \"token\": \"access_token_123_1700000000\",\n      \"token_type\": \"Bearer\",\n      \"expires_at\": {\n        \"seconds\": 1700003600,\n        \"nanos\": 0\n      }\n    },\n    \"refresh_token\": {\n      \"token\": \"refresh_token_123_abc\",\n      \"expires_at\": {\n        \"seconds\": 1702592000,\n        \"nanos\": 0\n      }\n    }\n  },\n  \"session\": {\n    \"session_id\": \"sess_123_1700000000\",\n    \"user_id\": \"123\"\n  },\n  \"requires_email_verification\": true\n}"
+            }
+          ]
+        },
+        {
+          "name": "Login with Email",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('access_token', jsonData.tokens.access_token.token);",
+                  "    pm.collectionVariables.set('refresh_token', jsonData.tokens.refresh_token.token);",
+                  "    pm.collectionVariables.set('user_id', jsonData.user.user_id);",
+                  "    pm.collectionVariables.set('session_id', jsonData.session.session_id);",
+                  "    ",
+                  "    pm.test('Login successful', function () {",
+                  "        pm.response.to.have.status(200);",
+                  "        pm.expect(jsonData.tokens).to.exist;",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"SecurePass123!\",\n  \"device_info\": {\n    \"platform\": 1,\n    \"device_name\": \"Chrome on MacBook Pro\",\n    \"os_version\": \"macOS 14.0\",\n    \"device_id\": \"device_12345\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/login/email",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "login", "email"]
+            },
+            "description": "Login with email and password\n\n**Platform values:**\n- 0: UNSPECIFIED\n- 1: WEB\n- 2: IOS\n- 3: ANDROID\n- 4: DESKTOP"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"user\": {\n    \"user_id\": \"123\",\n    \"email\": \"john.doe@example.com\",\n    \"name\": \"John Doe\",\n    \"account_status\": \"ACCOUNT_STATUS_ACTIVE\",\n    \"email_verified\": \"VERIFICATION_STATUS_VERIFIED\",\n    \"created_at\": {\n      \"seconds\": 1700000000,\n      \"nanos\": 0\n    }\n  },\n  \"tokens\": {\n    \"access_token\": {\n      \"token\": \"access_token_123_1700086400\",\n      \"token_type\": \"Bearer\",\n      \"expires_at\": {\n        \"seconds\": 1700090000,\n        \"nanos\": 0\n      }\n    },\n    \"refresh_token\": {\n      \"token\": \"refresh_token_123_def\",\n      \"expires_at\": {\n        \"seconds\": 1702678400,\n        \"nanos\": 0\n      }\n    }\n  },\n  \"session\": {\n    \"session_id\": \"sess_123_1700086400\",\n    \"user_id\": \"123\"\n  }\n}"
+            },
+            {
+              "name": "Invalid Credentials",
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "text/plain"
+                }
+              ],
+              "cookie": [],
+              "body": "Login failed: invalid email or password"
+            }
+          ]
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('access_token', jsonData.tokens.access_token.token);",
+                  "    pm.collectionVariables.set('refresh_token', jsonData.tokens.refresh_token.token);",
+                  "    ",
+                  "    pm.test('Tokens refreshed', function () {",
+                  "        pm.response.to.have.status(200);",
+                  "        pm.expect(jsonData.tokens.access_token.token).to.be.a('string');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refresh_token}}\",\n  \"device_info\": {\n    \"platform\": 1,\n    \"device_name\": \"Chrome on MacBook Pro\",\n    \"os_version\": \"macOS 14.0\",\n    \"device_id\": \"device_12345\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/token/refresh",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "token", "refresh"]
+            },
+            "description": "Refresh access token using refresh token"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"tokens\": {\n    \"access_token\": {\n      \"token\": \"access_token_123_1700090000\",\n      \"token_type\": \"Bearer\",\n      \"expires_at\": {\n        \"seconds\": 1700093600,\n        \"nanos\": 0\n      }\n    },\n    \"refresh_token\": {\n      \"token\": \"refresh_token_123_ghi\",\n      \"expires_at\": {\n        \"seconds\": 1702682000,\n        \"nanos\": 0\n      }\n    }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Revoke Token (Logout)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refresh_token}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/token/revoke",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "token", "revoke"]
+            },
+            "description": "Revoke a refresh token (logout)"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Token revoked successfully\"\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Pre-request script to add Authorization header if access_token exists",
+          "const accessToken = pm.collectionVariables.get('access_token');",
+          "",
+          "if (accessToken && accessToken !== '') {",
+          "    pm.request.headers.add({",
+          "        key: 'Authorization',",
+          "        value: 'Bearer ' + accessToken",
+          "    });",
+          "}"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global test script",
+          "pm.test('Response time is less than 3000ms', function () {",
+          "    pm.expect(pm.response.responseTime).to.be.below(3000);",
+          "});",
+          "",
+          "if (pm.response.code >= 200 && pm.response.code < 300) {",
+          "    pm.test('Successful response', function () {",
+          "        pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+          "    });",
+          "}"
+        ]
+      }
+    }
+  ]
+}
