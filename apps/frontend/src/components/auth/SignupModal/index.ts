@@ -1,2 +1,2 @@
 export { SignupModal } from './SignupModal';
-export type { SignupModalProps, SignupModalTokens } from './SignupModal';
+export type { SignupModalProps } from './SignupModal';

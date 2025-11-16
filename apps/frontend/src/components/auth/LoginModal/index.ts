@@ -4,4 +4,4 @@
  */
 
 export { LoginModal } from './LoginModal';
-export type { LoginModalProps, LoginModalTokens } from './LoginModal';
+export type { LoginModalProps } from './LoginModal';

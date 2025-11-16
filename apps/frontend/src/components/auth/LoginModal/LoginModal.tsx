@@ -14,25 +14,16 @@ import {
   Link,
   Stack,
   Portal,
-  IconButton, 
+  IconButton,
 } from '@chakra-ui/react';
-import { create } from '@bufbuild/protobuf';
-import { AuthService } from '../../../services/auth';
-import { ApiClient } from '../../../services/base';
-import type { TokenPair } from '../../../gen/auth/v1/messages_pb';
-import { EmailPasswordCredentialsSchema } from '../../../gen/auth/v1/messages_pb';
-
-export interface LoginModalTokens {
-  accessToken: string;
-  refreshToken: string;
-}
+import { useAuthStore } from '../../../stores/authStore';
 
 export interface LoginModalProps {
   open: boolean;
   onClose: () => void;
   onForgotPassword: () => void;
   onSignup: () => void;
-  onSuccess?: (tokens: LoginModalTokens) => void;
+  onSuccess?: () => void;
 }
 
 export const LoginModal = ({
@@ -44,56 +35,27 @@ export const LoginModal = ({
 }: LoginModalProps) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
 
-  const extractTokens = (tokenPair: TokenPair): LoginModalTokens | null => {
-    if (!tokenPair.accessToken?.token || !tokenPair.refreshToken?.token) {
-      return null;
-    }
-    return {
-      accessToken: tokenPair.accessToken.token,
-      refreshToken: tokenPair.refreshToken.token,
-    };
-  };
+  // Use Zustand store
+  const { login, isLoading, error, clearError } = useAuthStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setLoading(true);
+    clearError();
 
     try {
-      // TODO: Replace with actual API base URL from config
-      const apiClient = new ApiClient({ baseURL: process.env.REACT_APP_API_URL || 'http://localhost:8080' });
-      const authService = new AuthService(apiClient);
-
-      const response = await authService.loginWithEmail({
-        credentials: create(EmailPasswordCredentialsSchema, {
-          email,
-          password,
-          name: '',
-        }),
-      });
-
-      if (response.tokens) {
-        const tokens = extractTokens(response.tokens);
-        if (tokens) {
-          onSuccess?.(tokens);
-          onClose();
-        }
-      }
+      await login(email, password);
+      onSuccess?.();
+      onClose();
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Login failed. Please try again.';
-      setError(errorMessage);
-    } finally {
-      setLoading(false);
+      // Error is handled by the store
     }
   };
 
   const handleClose = () => {
     setEmail('');
     setPassword('');
-    setError('');
+    clearError();
     onClose();
   };
 
@@ -113,9 +75,9 @@ export const LoginModal = ({
     if (!open) {
       setEmail('');
       setPassword('');
-      setError('');
+      clearError();
     }
-  }, [open]);
+  }, [open, clearError]);
 
   if (!open) return null;
 
@@ -246,10 +208,10 @@ export const LoginModal = ({
               color="white"
               _hover={{ bg: 'brand.600' }}
               _active={{ bg: 'brand.700' }}
-              loading={loading}
+              loading={isLoading}
               w="full"
             >
-              {loading ? 'Signing in...' : 'Sign In'}
+              {isLoading ? 'Signing in...' : 'Sign In'}
             </Button>
 
             <Box textAlign="center">

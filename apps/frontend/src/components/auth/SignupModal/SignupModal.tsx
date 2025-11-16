@@ -16,22 +16,13 @@ import {
   Portal,
   IconButton,
 } from '@chakra-ui/react';
-import { create } from '@bufbuild/protobuf';
-import { AuthService } from '../../../services/auth';
-import { ApiClient } from '../../../services/base';
-import type { TokenPair } from '../../../gen/auth/v1/messages_pb';
-import { EmailPasswordCredentialsSchema } from '../../../gen/auth/v1/messages_pb';
-
-export interface SignupModalTokens {
-  accessToken: string;
-  refreshToken: string;
-}
+import { useAuthStore } from '../../../stores/authStore';
 
 export interface SignupModalProps {
   open: boolean;
   onClose: () => void;
   onLogin: () => void;
-  onSuccess?: (tokens: SignupModalTokens) => void;
+  onSuccess?: () => void;
 }
 
 export const SignupModal = ({
@@ -44,62 +35,34 @@ export const SignupModal = ({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [validationError, setValidationError] = useState('');
 
-  const extractTokens = (tokenPair: TokenPair): SignupModalTokens | null => {
-    if (!tokenPair.accessToken?.token || !tokenPair.refreshToken?.token) {
-      return null;
-    }
-    return {
-      accessToken: tokenPair.accessToken.token,
-      refreshToken: tokenPair.refreshToken.token,
-    };
-  };
+  // Use Zustand store
+  const { signup, isLoading, error, clearError } = useAuthStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setValidationError('');
+    clearError();
 
     // Validate passwords match
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setValidationError('Passwords do not match');
       return;
     }
 
     // Validate password strength
     if (password.length < 8) {
-      setError('Password must be at least 8 characters long');
+      setValidationError('Password must be at least 8 characters long');
       return;
     }
 
-    setLoading(true);
-
     try {
-      // TODO: Replace with actual API base URL from config
-      const apiClient = new ApiClient({ baseURL: process.env.REACT_APP_API_URL || 'http://localhost:8080' });
-      const authService = new AuthService(apiClient);
-
-      const response = await authService.registerWithEmail({
-        credentials: create(EmailPasswordCredentialsSchema, {
-          email,
-          password,
-          name,
-        }),
-      });
-
-      if (response.tokens) {
-        const tokens = extractTokens(response.tokens);
-        if (tokens) {
-          onSuccess?.(tokens);
-          onClose();
-        }
-      }
+      await signup(email, password, name);
+      onSuccess?.();
+      onClose();
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Signup failed. Please try again.';
-      setError(errorMessage);
-    } finally {
-      setLoading(false);
+      // Error is handled by the store
     }
   };
 
@@ -108,7 +71,8 @@ export const SignupModal = ({
     setEmail('');
     setPassword('');
     setConfirmPassword('');
-    setError('');
+    setValidationError('');
+    clearError();
     onClose();
   };
 
@@ -130,9 +94,10 @@ export const SignupModal = ({
       setEmail('');
       setPassword('');
       setConfirmPassword('');
-      setError('');
+      setValidationError('');
+      clearError();
     }
-  }, [open]);
+  }, [open, clearError]);
 
   if (!open) return null;
 
@@ -260,7 +225,7 @@ export const SignupModal = ({
               />
             </Stack>
 
-            {error && (
+            {(validationError || error) && (
               <Box
                 bg="red.50"
                 borderColor="red.300"
@@ -269,7 +234,7 @@ export const SignupModal = ({
                 p={3}
               >
                 <Text color="red.700" fontSize="sm">
-                  {error}
+                  {validationError || error}
                 </Text>
               </Box>
             )}
@@ -281,10 +246,10 @@ export const SignupModal = ({
               color="white"
               _hover={{ bg: 'brand.600' }}
               _active={{ bg: 'brand.700' }}
-              loading={loading}
+              loading={isLoading}
               w="full"
             >
-              {loading ? 'Creating account...' : 'Sign Up'}
+              {isLoading ? 'Creating account...' : 'Sign Up'}
             </Button>
 
             <Box textAlign="center">

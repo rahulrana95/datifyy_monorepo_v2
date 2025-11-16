@@ -12,8 +12,8 @@ import { ProfileCards } from './components/ProfileCards';
 import { HowItWorks } from './components/HowItWorks';
 import { CTASection } from './components/CTASection';
 import { Footer } from './components/Footer';
-import { LoginModal, type LoginModalTokens } from '../../components/auth/LoginModal';
-import { SignupModal, type SignupModalTokens } from '../../components/auth/SignupModal';
+import { LoginModal } from '../../components/auth/LoginModal';
+import { SignupModal } from '../../components/auth/SignupModal';
 import { ForgotPasswordModal } from '../../components/auth/ForgotPasswordModal';
 
 type ModalType = 'login' | 'signup' | 'forgotPassword' | null;
@@ -21,10 +21,10 @@ type ModalType = 'login' | 'signup' | 'forgotPassword' | null;
 export const LandingPage = () => {
   const [activeModal, setActiveModal] = useState<ModalType>(null);
 
-  const handleAuthSuccess = (tokens: LoginModalTokens | SignupModalTokens) => {
+  const handleAuthSuccess = () => {
     setActiveModal(null);
-    // TODO: Store tokens and redirect to dashboard
-    console.log('Authentication successful:', tokens);
+    // TODO: Redirect to dashboard (tokens are managed by Zustand store)
+    console.log('Authentication successful');
   };
 
   const handleGetStarted = () => {

@@ -16,10 +16,7 @@ import {
   Portal,
   IconButton,
 } from '@chakra-ui/react';
-import { create } from '@bufbuild/protobuf';
-import { AuthService } from '../../../services/auth';
-import { ApiClient } from '../../../services/base';
-import { PasswordResetRequestSchema } from '../../../gen/auth/v1/messages_pb';
+import { useAuthStore } from '../../../stores/authStore';
 
 export interface ForgotPasswordModalProps {
   open: boolean;
@@ -33,40 +30,28 @@ export const ForgotPasswordModal = ({
   onLogin,
 }: ForgotPasswordModalProps) => {
   const [email, setEmail] = useState('');
-  const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-  const [loading, setLoading] = useState(false);
+
+  // Use Zustand store
+  const { requestPasswordReset, isLoading, error, clearError } = useAuthStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    clearError();
     setSuccess(false);
-    setLoading(true);
 
     try {
-      // TODO: Replace with actual API base URL from config
-      const apiClient = new ApiClient({ baseURL: process.env.REACT_APP_API_URL || 'http://localhost:8080' });
-      const authService = new AuthService(apiClient);
-
-      await authService.requestPasswordReset({
-        resetRequest: create(PasswordResetRequestSchema, {
-          email,
-        }),
-      });
-
+      await requestPasswordReset(email);
       setSuccess(true);
       setEmail('');
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to send reset email. Please try again.';
-      setError(errorMessage);
-    } finally {
-      setLoading(false);
+      // Error is handled by the store
     }
   };
 
   const handleClose = () => {
     setEmail('');
-    setError('');
+    clearError();
     setSuccess(false);
     onClose();
   };
@@ -228,10 +213,10 @@ export const ForgotPasswordModal = ({
                 color="white"
                 _hover={{ bg: 'brand.600' }}
                 _active={{ bg: 'brand.700' }}
-                loading={loading}
+                loading={isLoading}
                 w="full"
               >
-                {loading ? 'Sending...' : 'Send Reset Link'}
+                {isLoading ? 'Sending...' : 'Send Reset Link'}
               </Button>
 
               <Box textAlign="center">
