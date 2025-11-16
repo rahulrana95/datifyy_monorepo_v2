@@ -3,19 +3,31 @@
  * Consistent header for all pages with logo and auth buttons
  */
 
-import { Box, Flex, HStack, Button, IconButton } from '@chakra-ui/react';
+import {
+  Box,
+  Flex,
+  HStack,
+  Button,
+  IconButton,
+  Text,
+  VStack,
+  Circle,
+} from '@chakra-ui/react';
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Logo } from '../Logo/Logo';
+import { useAuthStore } from '../../../stores/authStore';
 
 interface HeaderProps {
-  isAuthenticated?: boolean;
   onOpenLogin?: () => void;
   onOpenSignup?: () => void;
 }
 
-export const Header = ({ isAuthenticated = false, onOpenLogin, onOpenSignup }: HeaderProps) => {
+export const Header = ({ onOpenLogin, onOpenSignup }: HeaderProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const { user, isAuthenticated, logout } = useAuthStore();
+  const navigate = useNavigate();
 
   return (
     <Box
@@ -68,26 +80,90 @@ export const Header = ({ isAuthenticated = false, onOpenLogin, onOpenSignup }: H
               </Button>
             </>
           ) : (
-            <>
-              <Link to="/dashboard">
-                <Button
-                  variant="ghost"
-                  color="fg"
-                  _hover={{ bg: 'brand.50', color: 'brand.600' }}
+            <Box position="relative">
+              <Button
+                bg="transparent"
+                _hover={{ bg: 'brand.50' }}
+                _active={{ bg: 'brand.100' }}
+                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+              >
+                <HStack gap={2}>
+                  <Circle size="32px" bg="brand.500" color="white" fontWeight="bold" fontSize="sm">
+                    {(user?.name || user?.email || 'U').charAt(0).toUpperCase()}
+                  </Circle>
+                  <Text fontWeight="medium" color="fg">
+                    {user?.name || user?.email?.split('@')[0]}
+                  </Text>
+                </HStack>
+              </Button>
+              {isUserMenuOpen && (
+                <Box
+                  position="absolute"
+                  top="100%"
+                  right={0}
+                  mt={2}
+                  bg="white"
+                  borderWidth="1px"
+                  borderColor="gray.200"
+                  borderRadius="md"
+                  boxShadow="lg"
+                  minW="200px"
+                  zIndex={1000}
                 >
-                  Dashboard
-                </Button>
-              </Link>
-              <Link to="/profile">
-                <Button
-                  variant="ghost"
-                  color="fg"
-                  _hover={{ bg: 'brand.50', color: 'brand.600' }}
-                >
-                  Profile
-                </Button>
-              </Link>
-            </>
+                  <VStack gap={0} align="stretch">
+                    <Button
+                      bg="transparent"
+                      color="fg"
+                      justifyContent="flex-start"
+                      _hover={{ bg: 'brand.50', color: 'brand.600' }}
+                      onClick={() => {
+                        navigate('/profile');
+                        setIsUserMenuOpen(false);
+                      }}
+                    >
+                      Profile
+                    </Button>
+                    <Button
+                      bg="transparent"
+                      color="fg"
+                      justifyContent="flex-start"
+                      _hover={{ bg: 'brand.50', color: 'brand.600' }}
+                      onClick={() => {
+                        navigate('/partner-preference');
+                        setIsUserMenuOpen(false);
+                      }}
+                    >
+                      Partner Preference
+                    </Button>
+                    <Button
+                      bg="transparent"
+                      color="fg"
+                      justifyContent="flex-start"
+                      _hover={{ bg: 'brand.50', color: 'brand.600' }}
+                      onClick={() => {
+                        navigate('/settings');
+                        setIsUserMenuOpen(false);
+                      }}
+                    >
+                      Settings
+                    </Button>
+                    <Button
+                      bg="transparent"
+                      color="red.500"
+                      justifyContent="flex-start"
+                      _hover={{ bg: 'red.50', color: 'red.600' }}
+                      onClick={async () => {
+                        await logout();
+                        navigate('/');
+                        setIsUserMenuOpen(false);
+                      }}
+                    >
+                      Logout
+                    </Button>
+                  </VStack>
+                </Box>
+              )}
+            </Box>
           )}
         </HStack>
 
@@ -143,16 +219,69 @@ export const Header = ({ isAuthenticated = false, onOpenLogin, onOpenSignup }: H
               </>
             ) : (
               <>
-                <Link to="/dashboard">
-                  <Button variant="ghost" color="fg" w="full" justifyContent="flex-start">
-                    Dashboard
-                  </Button>
-                </Link>
-                <Link to="/profile">
-                  <Button variant="ghost" color="fg" w="full" justifyContent="flex-start">
-                    Profile
-                  </Button>
-                </Link>
+                <Box px={3} py={2} borderBottomWidth="1px" borderColor="border">
+                  <HStack gap={2}>
+                    <Circle size="32px" bg="brand.500" color="white" fontWeight="bold" fontSize="sm">
+                      {(user?.name || user?.email || 'U').charAt(0).toUpperCase()}
+                    </Circle>
+                    <Text fontWeight="medium" color="fg">
+                      {user?.name || user?.email?.split('@')[0]}
+                    </Text>
+                  </HStack>
+                </Box>
+                <Button
+                  bg="transparent"
+                  color="fg"
+                  w="full"
+                  justifyContent="flex-start"
+                  _hover={{ bg: 'brand.50', color: 'brand.600' }}
+                  onClick={() => {
+                    navigate('/profile');
+                    setIsMobileMenuOpen(false);
+                  }}
+                >
+                  Profile
+                </Button>
+                <Button
+                  bg="transparent"
+                  color="fg"
+                  w="full"
+                  justifyContent="flex-start"
+                  _hover={{ bg: 'brand.50', color: 'brand.600' }}
+                  onClick={() => {
+                    navigate('/partner-preference');
+                    setIsMobileMenuOpen(false);
+                  }}
+                >
+                  Partner Preference
+                </Button>
+                <Button
+                  bg="transparent"
+                  color="fg"
+                  w="full"
+                  justifyContent="flex-start"
+                  _hover={{ bg: 'brand.50', color: 'brand.600' }}
+                  onClick={() => {
+                    navigate('/settings');
+                    setIsMobileMenuOpen(false);
+                  }}
+                >
+                  Settings
+                </Button>
+                <Button
+                  bg="transparent"
+                  color="red.500"
+                  w="full"
+                  justifyContent="flex-start"
+                  _hover={{ bg: 'red.50', color: 'red.600' }}
+                  onClick={async () => {
+                    await logout();
+                    navigate('/');
+                    setIsMobileMenuOpen(false);
+                  }}
+                >
+                  Logout
+                </Button>
               </>
             )}
           </Flex>

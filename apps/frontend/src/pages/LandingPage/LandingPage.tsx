@@ -34,7 +34,6 @@ export const LandingPage = () => {
   return (
     <Box minH="100vh" bg="bg">
       <Header
-        isAuthenticated={false}
         onOpenLogin={() => setActiveModal('login')}
         onOpenSignup={() => setActiveModal('signup')}
       />
