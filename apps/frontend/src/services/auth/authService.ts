@@ -4,6 +4,36 @@
  */
 
 import { ApiClient } from '../base';
+import {
+  transformLoginRequest,
+  transformRegisterRequest,
+  transformRegisterWithPhoneRequest,
+  transformRequestPhoneOTPRequest,
+  transformLoginWithPhoneRequest,
+  transformLoginWithOAuthRequest,
+  transformRefreshTokenRequest,
+  transformRevokeTokenRequest,
+  transformValidateTokenRequest,
+  transformSendEmailVerificationRequest,
+  transformVerifyEmailRequest,
+  transformSendPhoneVerificationRequest,
+  transformVerifyPhoneRequest,
+  transformResendVerificationCodeRequest,
+  transformRequestPasswordResetRequest,
+  transformConfirmPasswordResetRequest,
+  transformChangePasswordRequest,
+  transformRevokeSessionRequest,
+  transformRevokeAllSessionsRequest,
+  transformTrustDeviceRequest,
+  transformRevokeDeviceRequest,
+  transformLogoutRequest,
+  transformLogoutAllRequest,
+  transformAuthResponse,
+  transformVerificationResponse,
+  transformSessionListResponse,
+  transformDeviceListResponse,
+  transformSuccessResponse,
+} from './authRestAdapter';
 import type {
   RegisterWithEmailRequest,
   RegisterWithEmailResponse,
@@ -130,21 +160,23 @@ export class AuthService implements IAuthService {
   // ============================================================================
 
   async registerWithEmail(request: PlainMessage<RegisterWithEmailRequest>): Promise<RegisterWithEmailResponse> {
-    const response = await this.apiClient.post<RegisterWithEmailResponse>(
+    const restRequest = transformRegisterRequest(request);
+    const response = await this.apiClient.post(
       `${this.basePath}/register/email`,
-      request,
+      restRequest,
       { skipAuth: true }
     );
-    return response.data;
+    return transformAuthResponse(response.data) as unknown as RegisterWithEmailResponse;
   }
 
   async registerWithPhone(request: PlainMessage<RegisterWithPhoneRequest>): Promise<RegisterWithPhoneResponse> {
-    const response = await this.apiClient.post<RegisterWithPhoneResponse>(
+    const restRequest = transformRegisterWithPhoneRequest(request);
+    const response = await this.apiClient.post(
       `${this.basePath}/register/phone`,
-      request,
+      restRequest,
       { skipAuth: true }
     );
-    return response.data;
+    return transformAuthResponse(response.data) as unknown as RegisterWithPhoneResponse;
   }
 
   // ============================================================================
@@ -152,39 +184,43 @@ export class AuthService implements IAuthService {
   // ============================================================================
 
   async loginWithEmail(request: PlainMessage<LoginWithEmailRequest>): Promise<LoginWithEmailResponse> {
-    const response = await this.apiClient.post<LoginWithEmailResponse>(
+    const restRequest = transformLoginRequest(request);
+    const response = await this.apiClient.post(
       `${this.basePath}/login/email`,
-      request,
+      restRequest,
       { skipAuth: true }
     );
-    return response.data;
+    return transformAuthResponse(response.data) as unknown as LoginWithEmailResponse;
   }
 
   async requestPhoneOTP(request: PlainMessage<RequestPhoneOTPRequest>): Promise<RequestPhoneOTPResponse> {
-    const response = await this.apiClient.post<RequestPhoneOTPResponse>(
+    const restRequest = transformRequestPhoneOTPRequest(request);
+    const response = await this.apiClient.post(
       `${this.basePath}/otp/request`,
-      request,
+      restRequest,
       { skipAuth: true }
     );
-    return response.data;
+    return transformSuccessResponse(response.data) as unknown as RequestPhoneOTPResponse;
   }
 
   async loginWithPhone(request: PlainMessage<LoginWithPhoneRequest>): Promise<LoginWithPhoneResponse> {
-    const response = await this.apiClient.post<LoginWithPhoneResponse>(
+    const restRequest = transformLoginWithPhoneRequest(request);
+    const response = await this.apiClient.post(
       `${this.basePath}/login/phone`,
-      request,
+      restRequest,
       { skipAuth: true }
     );
-    return response.data;
+    return transformAuthResponse(response.data) as unknown as LoginWithPhoneResponse;
   }
 
   async loginWithOAuth(request: PlainMessage<LoginWithOAuthRequest>): Promise<LoginWithOAuthResponse> {
-    const response = await this.apiClient.post<LoginWithOAuthResponse>(
+    const restRequest = transformLoginWithOAuthRequest(request);
+    const response = await this.apiClient.post(
       `${this.basePath}/login/oauth`,
-      request,
+      restRequest,
       { skipAuth: true }
     );
-    return response.data;
+    return transformAuthResponse(response.data) as unknown as LoginWithOAuthResponse;
   }
 
   // ============================================================================
@@ -192,28 +228,33 @@ export class AuthService implements IAuthService {
   // ============================================================================
 
   async refreshToken(request: PlainMessage<RefreshTokenRequest>): Promise<RefreshTokenResponse> {
-    const response = await this.apiClient.post<RefreshTokenResponse>(
+    const restRequest = transformRefreshTokenRequest(request);
+    const response = await this.apiClient.post(
       `${this.basePath}/token/refresh`,
-      request,
+      restRequest,
       { skipAuth: true }
     );
-    return response.data;
+    const transformed = transformAuthResponse(response.data);
+    return { tokens: transformed.tokens } as unknown as RefreshTokenResponse;
   }
 
   async revokeToken(request: PlainMessage<RevokeTokenRequest>): Promise<RevokeTokenResponse> {
-    const response = await this.apiClient.post<RevokeTokenResponse>(
+    const restRequest = transformRevokeTokenRequest(request);
+    const response = await this.apiClient.post(
       `${this.basePath}/token/revoke`,
-      request
+      restRequest
     );
-    return response.data;
+    const data = response.data as { message?: string };
+    return { success: true, message: data.message || 'Token revoked successfully' } as unknown as RevokeTokenResponse;
   }
 
   async validateToken(request: PlainMessage<ValidateTokenRequest>): Promise<ValidateTokenResponse> {
-    const response = await this.apiClient.post<ValidateTokenResponse>(
+    const restRequest = transformValidateTokenRequest(request);
+    const response = await this.apiClient.post(
       `${this.basePath}/token/validate`,
-      request
+      restRequest
     );
-    return response.data;
+    return transformSuccessResponse(response.data) as unknown as ValidateTokenResponse;
   }
 
   // ============================================================================
@@ -221,20 +262,22 @@ export class AuthService implements IAuthService {
   // ============================================================================
 
   async sendEmailVerification(request: PlainMessage<SendEmailVerificationRequest>): Promise<SendEmailVerificationResponse> {
-    const response = await this.apiClient.post<SendEmailVerificationResponse>(
+    const restRequest = transformSendEmailVerificationRequest(request);
+    const response = await this.apiClient.post(
       `${this.basePath}/verification/email/send`,
-      request
+      restRequest
     );
-    return response.data;
+    return transformSuccessResponse(response.data) as unknown as SendEmailVerificationResponse;
   }
 
   async verifyEmail(request: PlainMessage<VerifyEmailRequest>): Promise<VerifyEmailResponse> {
-    const response = await this.apiClient.post<VerifyEmailResponse>(
+    const restRequest = transformVerifyEmailRequest(request);
+    const response = await this.apiClient.post(
       `${this.basePath}/verification/email/verify`,
-      request,
+      restRequest,
       { skipAuth: true }
     );
-    return response.data;
+    return transformVerificationResponse(response.data) as unknown as VerifyEmailResponse;
   }
 
   // ============================================================================
@@ -242,20 +285,22 @@ export class AuthService implements IAuthService {
   // ============================================================================
 
   async sendPhoneVerification(request: PlainMessage<SendPhoneVerificationRequest>): Promise<SendPhoneVerificationResponse> {
-    const response = await this.apiClient.post<SendPhoneVerificationResponse>(
+    const restRequest = transformSendPhoneVerificationRequest(request);
+    const response = await this.apiClient.post(
       `${this.basePath}/verification/phone/send`,
-      request
+      restRequest
     );
-    return response.data;
+    return transformSuccessResponse(response.data) as unknown as SendPhoneVerificationResponse;
   }
 
   async verifyPhone(request: PlainMessage<VerifyPhoneRequest>): Promise<VerifyPhoneResponse> {
-    const response = await this.apiClient.post<VerifyPhoneResponse>(
+    const restRequest = transformVerifyPhoneRequest(request);
+    const response = await this.apiClient.post(
       `${this.basePath}/verification/phone/verify`,
-      request,
+      restRequest,
       { skipAuth: true }
     );
-    return response.data;
+    return transformVerificationResponse(response.data) as unknown as VerifyPhoneResponse;
   }
 
   // ============================================================================
@@ -263,12 +308,13 @@ export class AuthService implements IAuthService {
   // ============================================================================
 
   async resendVerificationCode(request: PlainMessage<ResendVerificationCodeRequest>): Promise<ResendVerificationCodeResponse> {
-    const response = await this.apiClient.post<ResendVerificationCodeResponse>(
+    const restRequest = transformResendVerificationCodeRequest(request);
+    const response = await this.apiClient.post(
       `${this.basePath}/verification/resend`,
-      request,
+      restRequest,
       { skipAuth: true }
     );
-    return response.data;
+    return transformSuccessResponse(response.data) as unknown as ResendVerificationCodeResponse;
   }
 
   // ============================================================================
@@ -276,29 +322,32 @@ export class AuthService implements IAuthService {
   // ============================================================================
 
   async requestPasswordReset(request: PlainMessage<RequestPasswordResetRequest>): Promise<RequestPasswordResetResponse> {
-    const response = await this.apiClient.post<RequestPasswordResetResponse>(
+    const restRequest = transformRequestPasswordResetRequest(request);
+    const response = await this.apiClient.post(
       `${this.basePath}/password/reset/request`,
-      request,
+      restRequest,
       { skipAuth: true }
     );
-    return response.data;
+    return transformSuccessResponse(response.data) as unknown as RequestPasswordResetResponse;
   }
 
   async confirmPasswordReset(request: PlainMessage<ConfirmPasswordResetRequest>): Promise<ConfirmPasswordResetResponse> {
-    const response = await this.apiClient.post<ConfirmPasswordResetResponse>(
+    const restRequest = transformConfirmPasswordResetRequest(request);
+    const response = await this.apiClient.post(
       `${this.basePath}/password/reset/confirm`,
-      request,
+      restRequest,
       { skipAuth: true }
     );
-    return response.data;
+    return transformSuccessResponse(response.data) as unknown as ConfirmPasswordResetResponse;
   }
 
   async changePassword(request: PlainMessage<ChangePasswordRequest>): Promise<ChangePasswordResponse> {
-    const response = await this.apiClient.post<ChangePasswordResponse>(
+    const restRequest = transformChangePasswordRequest(request);
+    const response = await this.apiClient.post(
       `${this.basePath}/password/change`,
-      request
+      restRequest
     );
-    return response.data;
+    return transformSuccessResponse(response.data) as unknown as ChangePasswordResponse;
   }
 
   // ============================================================================
@@ -306,39 +355,55 @@ export class AuthService implements IAuthService {
   // ============================================================================
 
   async getCurrentSession(_request: PlainMessage<GetCurrentSessionRequest>): Promise<GetCurrentSessionResponse> {
-    const response = await this.apiClient.get<GetCurrentSessionResponse>(
+    const response = await this.apiClient.get(
       `${this.basePath}/session/current`
     );
-    return response.data;
+    // Transform session response
+    const session = response.data as any;
+    return {
+      session: {
+        sessionId: session.session_id,
+        userId: session.user_id,
+        deviceInfo: session.device_info,
+        createdAt: session.created_at,
+        lastActiveAt: session.last_active_at,
+        expiresAt: session.expires_at,
+        ipAddress: session.ip_address,
+        location: session.location,
+        isCurrent: session.is_current,
+      }
+    } as unknown as GetCurrentSessionResponse;
   }
 
   async listSessions(request: PlainMessage<ListSessionsRequest>): Promise<ListSessionsResponse> {
     const params = request.pagination ? {
       page: request.pagination.page,
-      pageSize: request.pagination.pageSize,
+      page_size: request.pagination.pageSize,
     } : undefined;
 
-    const response = await this.apiClient.get<ListSessionsResponse>(
+    const response = await this.apiClient.get(
       `${this.basePath}/sessions`,
       { params }
     );
-    return response.data;
+    return transformSessionListResponse(response.data) as unknown as ListSessionsResponse;
   }
 
   async revokeSession(request: PlainMessage<RevokeSessionRequest>): Promise<RevokeSessionResponse> {
-    const response = await this.apiClient.post<RevokeSessionResponse>(
+    const restRequest = transformRevokeSessionRequest(request);
+    const response = await this.apiClient.post(
       `${this.basePath}/session/revoke`,
-      request
+      restRequest
     );
-    return response.data;
+    return transformSuccessResponse(response.data) as unknown as RevokeSessionResponse;
   }
 
   async revokeAllSessions(request: PlainMessage<RevokeAllSessionsRequest>): Promise<RevokeAllSessionsResponse> {
-    const response = await this.apiClient.post<RevokeAllSessionsResponse>(
+    const restRequest = transformRevokeAllSessionsRequest(request);
+    const response = await this.apiClient.post(
       `${this.basePath}/sessions/revoke-all`,
-      request
+      restRequest
     );
-    return response.data;
+    return transformSuccessResponse(response.data) as unknown as RevokeAllSessionsResponse;
   }
 
   // ============================================================================
@@ -348,30 +413,32 @@ export class AuthService implements IAuthService {
   async listDevices(request: PlainMessage<ListDevicesRequest>): Promise<ListDevicesResponse> {
     const params = request.pagination ? {
       page: request.pagination.page,
-      pageSize: request.pagination.pageSize,
+      page_size: request.pagination.pageSize,
     } : undefined;
 
-    const response = await this.apiClient.get<ListDevicesResponse>(
+    const response = await this.apiClient.get(
       `${this.basePath}/devices`,
       { params }
     );
-    return response.data;
+    return transformDeviceListResponse(response.data) as unknown as ListDevicesResponse;
   }
 
   async trustDevice(request: PlainMessage<TrustDeviceRequest>): Promise<TrustDeviceResponse> {
-    const response = await this.apiClient.post<TrustDeviceResponse>(
+    const restRequest = transformTrustDeviceRequest(request);
+    const response = await this.apiClient.post(
       `${this.basePath}/device/trust`,
-      request
+      restRequest
     );
-    return response.data;
+    return transformSuccessResponse(response.data) as unknown as TrustDeviceResponse;
   }
 
   async revokeDevice(request: PlainMessage<RevokeDeviceRequest>): Promise<RevokeDeviceResponse> {
-    const response = await this.apiClient.post<RevokeDeviceResponse>(
+    const restRequest = transformRevokeDeviceRequest(request);
+    const response = await this.apiClient.post(
       `${this.basePath}/device/revoke`,
-      request
+      restRequest
     );
-    return response.data;
+    return transformSuccessResponse(response.data) as unknown as RevokeDeviceResponse;
   }
 
   // ============================================================================
@@ -379,18 +446,20 @@ export class AuthService implements IAuthService {
   // ============================================================================
 
   async logout(request: PlainMessage<LogoutRequest>): Promise<LogoutResponse> {
-    const response = await this.apiClient.post<LogoutResponse>(
+    const restRequest = transformLogoutRequest(request);
+    const response = await this.apiClient.post(
       `${this.basePath}/logout`,
-      request
+      restRequest
     );
-    return response.data;
+    return transformSuccessResponse(response.data) as unknown as LogoutResponse;
   }
 
   async logoutAll(request: PlainMessage<LogoutAllRequest>): Promise<LogoutAllResponse> {
-    const response = await this.apiClient.post<LogoutAllResponse>(
+    const restRequest = transformLogoutAllRequest(request);
+    const response = await this.apiClient.post(
       `${this.basePath}/logout/all`,
-      request
+      restRequest
     );
-    return response.data;
+    return transformSuccessResponse(response.data) as unknown as LogoutAllResponse;
   }
 }
