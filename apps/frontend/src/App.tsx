@@ -7,6 +7,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ChakraProvider } from './providers/ChakraProvider';
 import { LandingPage } from './pages/LandingPage/LandingPage';
 import { ThemePreview } from './pages/ThemePreview/ThemePreview';
+import { ProfilePage } from './pages/ProfilePage';
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
       <Router>
         <Routes>
           <Route path="/" element={<LandingPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
           <Route path="/theme-components" element={<ThemePreview />} />
         </Routes>
       </Router>
