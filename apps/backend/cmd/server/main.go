@@ -160,6 +160,10 @@ func startHTTPServer(port string, server *Server, db *sql.DB, redisClient *redis
 	mux.HandleFunc("/api/v1/auth/token/refresh", createRefreshTokenHandler(authService))
 	mux.HandleFunc("/api/v1/auth/token/revoke", createRevokeTokenHandler(authService))
 
+	// User REST endpoints (wrapper around gRPC)
+	userService := service.NewUserService(db, redisClient)
+	mux.HandleFunc("/api/v1/user/me", createUserProfileHandler(userService))
+
 	// Add CORS middleware
 	handler := enableCORS(mux)
 
@@ -466,6 +470,220 @@ func createRevokeTokenHandler(authService *service.AuthService) http.HandlerFunc
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(jsonResp)
 	}
+}
+
+// createUserProfileHandler creates HTTP handler for user profile (GET and PUT)
+func createUserProfileHandler(userService *service.UserService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Extract access token from Authorization header
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" {
+			http.Error(w, "Authorization header required", http.StatusUnauthorized)
+			return
+		}
+
+		// Remove "Bearer " prefix
+		accessToken := authHeader
+		if len(authHeader) > 7 && authHeader[:7] == "Bearer " {
+			accessToken = authHeader[7:]
+		}
+
+		// Parse access token to get user ID
+		var userID int
+		var timestamp int64
+		_, err := fmt.Sscanf(accessToken, "access_token_%d_%d", &userID, &timestamp)
+		if err != nil {
+			http.Error(w, "Invalid access token format", http.StatusUnauthorized)
+			return
+		}
+
+		// Add userID to context
+		ctx := context.WithValue(r.Context(), "userID", userID)
+
+		// Handle GET request (GetMyProfile)
+		if r.Method == http.MethodGet {
+			grpcReq := &userpb.GetMyProfileRequest{}
+
+			// Call gRPC service
+			resp, err := userService.GetMyProfile(ctx, grpcReq)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("Failed to get profile: %v", err), http.StatusInternalServerError)
+				return
+			}
+
+			// Convert response to JSON
+			jsonResp := map[string]interface{}{
+				"profile": convertUserProfileToJSON(resp.Profile),
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(jsonResp)
+			return
+		}
+
+		// Handle PUT request (UpdateProfile)
+		if r.Method == http.MethodPut {
+			// Parse JSON request
+			var reqBody struct {
+				BasicInfo      *userpb.BasicInfo      `json:"basic_info"`
+				ProfileDetails *userpb.ProfileDetails `json:"profile_details"`
+				LifestyleInfo  *userpb.LifestyleInfo  `json:"lifestyle_info"`
+				Prompts        []*userpb.ProfilePrompt `json:"prompts"`
+				UpdateFields   []string               `json:"update_fields"`
+			}
+
+			if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+				http.Error(w, fmt.Sprintf("Invalid JSON: %v", err), http.StatusBadRequest)
+				return
+			}
+
+			// Convert to gRPC request
+			grpcReq := &userpb.UpdateProfileRequest{
+				ProfileDetails: reqBody.ProfileDetails,
+				LifestyleInfo:  reqBody.LifestyleInfo,
+				Prompts:        reqBody.Prompts,
+				UpdateFields:   reqBody.UpdateFields,
+			}
+
+			// Call gRPC service
+			resp, err := userService.UpdateProfile(ctx, grpcReq)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("Failed to update profile: %v", err), http.StatusBadRequest)
+				return
+			}
+
+			// Convert response to JSON
+			jsonResp := map[string]interface{}{
+				"profile": convertUserProfileToJSON(resp.Profile),
+				"message": resp.Message,
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(jsonResp)
+			return
+		}
+
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+// convertUserProfileToJSON converts UserProfile protobuf to JSON-compatible map
+func convertUserProfileToJSON(profile *userpb.UserProfile) map[string]interface{} {
+	if profile == nil {
+		return nil
+	}
+
+	result := map[string]interface{}{
+		"user_id":               profile.UserId,
+		"completion_percentage": profile.CompletionPercentage,
+		"is_public":             profile.IsPublic,
+		"is_verified":           profile.IsVerified,
+	}
+
+	// Basic Info
+	if profile.BasicInfo != nil {
+		result["basic_info"] = map[string]interface{}{
+			"name":         profile.BasicInfo.Name,
+			"email":        profile.BasicInfo.Email,
+			"phone_number": profile.BasicInfo.PhoneNumber,
+			"age":          profile.BasicInfo.Age,
+			"gender":       profile.BasicInfo.Gender.String(),
+		}
+		if profile.BasicInfo.DateOfBirth != nil {
+			result["basic_info"].(map[string]interface{})["date_of_birth"] = map[string]int64{
+				"seconds": profile.BasicInfo.DateOfBirth.Seconds,
+				"nanos":   int64(profile.BasicInfo.DateOfBirth.Nanos),
+			}
+		}
+	}
+
+	// Profile Details
+	if profile.ProfileDetails != nil {
+		result["profile_details"] = map[string]interface{}{
+			"bio":       profile.ProfileDetails.Bio,
+			"company":   profile.ProfileDetails.Company,
+			"job_title": profile.ProfileDetails.JobTitle,
+			"school":    profile.ProfileDetails.School,
+			"height":    profile.ProfileDetails.Height,
+			"hometown":  profile.ProfileDetails.Hometown,
+		}
+	}
+
+	// Lifestyle Info
+	if profile.LifestyleInfo != nil {
+		result["lifestyle_info"] = map[string]interface{}{
+			"drinking":            profile.LifestyleInfo.Drinking.String(),
+			"smoking":             profile.LifestyleInfo.Smoking.String(),
+			"workout":             profile.LifestyleInfo.Workout.String(),
+			"dietary_preference":  profile.LifestyleInfo.DietaryPreference.String(),
+			"religion":            profile.LifestyleInfo.Religion.String(),
+			"religion_importance": profile.LifestyleInfo.ReligionImportance.String(),
+			"political_view":      profile.LifestyleInfo.PoliticalView.String(),
+			"pets":                profile.LifestyleInfo.Pets.String(),
+			"children":            profile.LifestyleInfo.Children.String(),
+			"personality_type":    profile.LifestyleInfo.PersonalityType,
+			"communication_style": profile.LifestyleInfo.CommunicationStyle.String(),
+			"love_language":       profile.LifestyleInfo.LoveLanguage.String(),
+			"sleep_schedule":      profile.LifestyleInfo.SleepSchedule.String(),
+		}
+	}
+
+	// Photos
+	if len(profile.Photos) > 0 {
+		photos := make([]map[string]interface{}, len(profile.Photos))
+		for i, photo := range profile.Photos {
+			photos[i] = map[string]interface{}{
+				"photo_id":      photo.PhotoId,
+				"url":           photo.Url,
+				"thumbnail_url": photo.ThumbnailUrl,
+				"order":         photo.Order,
+				"is_primary":    photo.IsPrimary,
+				"caption":       photo.Caption,
+			}
+		}
+		result["photos"] = photos
+	}
+
+	// Prompts
+	if len(profile.Prompts) > 0 {
+		result["prompts"] = profile.Prompts
+	}
+
+	// Partner Preferences
+	if profile.PartnerPreferences != nil {
+		result["partner_preferences"] = profile.PartnerPreferences
+	}
+
+	// User Preferences
+	if profile.UserPreferences != nil {
+		result["user_preferences"] = profile.UserPreferences
+	}
+
+	// Metadata
+	if profile.Metadata != nil {
+		result["metadata"] = map[string]interface{}{
+			"status":         profile.Metadata.Status.String(),
+			"email_verified": profile.Metadata.EmailVerified.String(),
+			"phone_verified": profile.Metadata.PhoneVerified.String(),
+			"is_verified":    profile.Metadata.IsVerified,
+		}
+		if profile.Metadata.CreatedAt != nil {
+			result["metadata"].(map[string]interface{})["created_at"] = map[string]int64{
+				"seconds": profile.Metadata.CreatedAt.Seconds,
+				"nanos":   int64(profile.Metadata.CreatedAt.Nanos),
+			}
+		}
+		if profile.Metadata.UpdatedAt != nil {
+			result["metadata"].(map[string]interface{})["updated_at"] = map[string]int64{
+				"seconds": profile.Metadata.UpdatedAt.Seconds,
+				"nanos":   int64(profile.Metadata.UpdatedAt.Nanos),
+			}
+		}
+	}
+
+	return result
 }
 
 func enableCORS(next http.Handler) http.Handler {
