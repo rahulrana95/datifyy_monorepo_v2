@@ -142,9 +142,24 @@ func (s *UserService) UpdateProfile(
 
 	// Build update map based on update_fields
 	updates := make(map[string]interface{})
+	basicInfoUpdates := make(map[string]interface{})
 
 	for _, field := range req.UpdateFields {
 		switch field {
+		// Basic info fields (stored in users table)
+		case "name":
+			if req.BasicInfo != nil {
+				basicInfoUpdates["name"] = req.BasicInfo.Name
+			}
+		case "gender":
+			if req.BasicInfo != nil {
+				basicInfoUpdates["gender"] = req.BasicInfo.Gender.String()
+			}
+		case "phone_number":
+			if req.BasicInfo != nil {
+				basicInfoUpdates["phone_number"] = req.BasicInfo.PhoneNumber
+			}
+		// Profile details fields (stored in user_profiles table)
 		case "bio":
 			if req.ProfileDetails != nil {
 				updates["bio"] = req.ProfileDetails.Bio
@@ -257,6 +272,14 @@ func (s *UserService) UpdateProfile(
 			if req.LifestyleInfo != nil {
 				updates["sleep_schedule"] = req.LifestyleInfo.SleepSchedule.String()
 			}
+		}
+	}
+
+	// Update basic info in users table
+	if len(basicInfoUpdates) > 0 {
+		err = s.userRepo.UpdateBasicInfo(ctx, userID, basicInfoUpdates)
+		if err != nil {
+			return nil, status.Error(codes.Internal, "failed to update basic info")
 		}
 	}
 

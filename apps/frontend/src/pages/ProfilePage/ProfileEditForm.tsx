@@ -24,6 +24,123 @@ interface ProfileEditFormProps {
   onCancel: () => void;
 }
 
+// Enum to integer mapping (protobuf enum values)
+const enumToInt = (value: string, enumMap: Record<string, number>): number => {
+  return enumMap[value] ?? 0;
+};
+
+const GENDER_MAP: Record<string, number> = {
+  'GENDER_UNSPECIFIED': 0,
+  'GENDER_MALE': 1,
+  'GENDER_FEMALE': 2,
+  'GENDER_NON_BINARY': 3,
+};
+
+const DRINKING_MAP: Record<string, number> = {
+  'DRINKING_UNSPECIFIED': 0,
+  'DRINKING_NEVER': 1,
+  'DRINKING_RARELY': 2,
+  'DRINKING_SOCIALLY': 3,
+  'DRINKING_OFTEN': 4,
+};
+
+const SMOKING_MAP: Record<string, number> = {
+  'SMOKING_UNSPECIFIED': 0,
+  'SMOKING_NEVER': 1,
+  'SMOKING_RARELY': 2,
+  'SMOKING_SOCIALLY': 3,
+  'SMOKING_OFTEN': 4,
+};
+
+const WORKOUT_MAP: Record<string, number> = {
+  'WORKOUT_UNSPECIFIED': 0,
+  'WORKOUT_NEVER': 1,
+  'WORKOUT_RARELY': 2,
+  'WORKOUT_SOMETIMES': 3,
+  'WORKOUT_OFTEN': 4,
+  'WORKOUT_DAILY': 5,
+};
+
+const DIETARY_MAP: Record<string, number> = {
+  'DIETARY_UNSPECIFIED': 0,
+  'DIETARY_OMNIVORE': 1,
+  'DIETARY_VEGETARIAN': 2,
+  'DIETARY_VEGAN': 3,
+  'DIETARY_PESCATARIAN': 4,
+  'DIETARY_HALAL': 5,
+  'DIETARY_KOSHER': 6,
+};
+
+const RELIGION_MAP: Record<string, number> = {
+  'RELIGION_UNSPECIFIED': 0,
+  'RELIGION_CHRISTIAN': 1,
+  'RELIGION_MUSLIM': 2,
+  'RELIGION_JEWISH': 3,
+  'RELIGION_HINDU': 4,
+  'RELIGION_BUDDHIST': 5,
+  'RELIGION_ATHEIST': 6,
+  'RELIGION_AGNOSTIC': 7,
+  'RELIGION_OTHER': 8,
+};
+
+const IMPORTANCE_MAP: Record<string, number> = {
+  'IMPORTANCE_UNSPECIFIED': 0,
+  'IMPORTANCE_NOT_IMPORTANT': 1,
+  'IMPORTANCE_SOMEWHAT': 2,
+  'IMPORTANCE_IMPORTANT': 3,
+  'IMPORTANCE_VERY_IMPORTANT': 4,
+};
+
+const POLITICAL_MAP: Record<string, number> = {
+  'POLITICAL_UNSPECIFIED': 0,
+  'POLITICAL_LIBERAL': 1,
+  'POLITICAL_MODERATE': 2,
+  'POLITICAL_CONSERVATIVE': 3,
+  'POLITICAL_APOLITICAL': 4,
+};
+
+const PET_MAP: Record<string, number> = {
+  'PET_UNSPECIFIED': 0,
+  'PET_NONE': 1,
+  'PET_DOG': 2,
+  'PET_CAT': 3,
+  'PET_BOTH': 4,
+  'PET_OTHER': 5,
+};
+
+const CHILDREN_MAP: Record<string, number> = {
+  'CHILDREN_UNSPECIFIED': 0,
+  'CHILDREN_WANT': 1,
+  'CHILDREN_DONT_WANT': 2,
+  'CHILDREN_HAVE_AND_WANT_MORE': 3,
+  'CHILDREN_HAVE_DONT_WANT_MORE': 4,
+  'CHILDREN_NOT_SURE': 5,
+};
+
+const COMMUNICATION_MAP: Record<string, number> = {
+  'COMMUNICATION_UNSPECIFIED': 0,
+  'COMMUNICATION_BIG_TIME_TEXTER': 1,
+  'COMMUNICATION_PHONE_CALLER': 2,
+  'COMMUNICATION_VIDEO_CHATTER': 3,
+  'COMMUNICATION_IN_PERSON': 4,
+};
+
+const LOVE_LANGUAGE_MAP: Record<string, number> = {
+  'LOVE_LANGUAGE_UNSPECIFIED': 0,
+  'LOVE_LANGUAGE_WORDS_OF_AFFIRMATION': 1,
+  'LOVE_LANGUAGE_QUALITY_TIME': 2,
+  'LOVE_LANGUAGE_RECEIVING_GIFTS': 3,
+  'LOVE_LANGUAGE_ACTS_OF_SERVICE': 4,
+  'LOVE_LANGUAGE_PHYSICAL_TOUCH': 5,
+};
+
+const SLEEP_SCHEDULE_MAP: Record<string, number> = {
+  'SLEEP_SCHEDULE_UNSPECIFIED': 0,
+  'SLEEP_SCHEDULE_EARLY_BIRD': 1,
+  'SLEEP_SCHEDULE_NIGHT_OWL': 2,
+  'SLEEP_SCHEDULE_IN_A_SPECTRUM': 3,
+};
+
 // Simple form field wrapper
 const FormField = ({ label, children }: { label: string; children: React.ReactNode }) => (
   <Box>
@@ -73,13 +190,13 @@ export const ProfileEditForm = ({ profile, onSave, onCancel }: ProfileEditFormPr
       sleepSchedule: lifestyleInfo?.sleep_schedule || lifestyleInfo?.sleepSchedule || 'SLEEP_SCHEDULE_UNSPECIFIED',
     },
     onSubmit: async ({ value }) => {
-      // Transform form values back to UserProfile structure
+      // Transform form values back to UserProfile structure with integer enums
       const updates: any = {
         basic_info: {
           name: value.name,
           email: value.email,
           phone_number: value.phoneNumber,
-          gender: value.gender,
+          gender: enumToInt(value.gender, GENDER_MAP),
           pronouns: value.pronouns,
           age: basicInfo?.age || 0,
         },
@@ -92,20 +209,42 @@ export const ProfileEditForm = ({ profile, onSave, onCancel }: ProfileEditFormPr
           hometown: value.hometown,
         },
         lifestyle_info: {
-          drinking: value.drinking,
-          smoking: value.smoking,
-          workout: value.workout,
-          dietary_preference: value.dietaryPreference,
-          religion: value.religion,
-          religion_importance: value.religionImportance,
-          political_view: value.politicalView,
-          pets: value.pets,
-          children: value.children,
+          drinking: enumToInt(value.drinking, DRINKING_MAP),
+          smoking: enumToInt(value.smoking, SMOKING_MAP),
+          workout: enumToInt(value.workout, WORKOUT_MAP),
+          dietary_preference: enumToInt(value.dietaryPreference, DIETARY_MAP),
+          religion: enumToInt(value.religion, RELIGION_MAP),
+          religion_importance: enumToInt(value.religionImportance, IMPORTANCE_MAP),
+          political_view: enumToInt(value.politicalView, POLITICAL_MAP),
+          pets: enumToInt(value.pets, PET_MAP),
+          children: enumToInt(value.children, CHILDREN_MAP),
           personality_type: value.personalityType,
-          communication_style: value.communicationStyle,
-          love_language: value.loveLanguage,
-          sleep_schedule: value.sleepSchedule,
+          communication_style: enumToInt(value.communicationStyle, COMMUNICATION_MAP),
+          love_language: enumToInt(value.loveLanguage, LOVE_LANGUAGE_MAP),
+          sleep_schedule: enumToInt(value.sleepSchedule, SLEEP_SCHEDULE_MAP),
         },
+        // Add update_fields to specify which fields to update (simple names, not paths)
+        update_fields: [
+          'bio',
+          'height',
+          'job_title',
+          'company',
+          'school',
+          'hometown',
+          'drinking',
+          'smoking',
+          'workout',
+          'dietary_preference',
+          'religion',
+          'religion_importance',
+          'political_view',
+          'pets',
+          'children',
+          'personality_type',
+          'communication_style',
+          'love_language',
+          'sleep_schedule',
+        ],
       };
 
       await onSave(updates);
@@ -452,10 +591,23 @@ export const ProfileEditForm = ({ profile, onSave, onCancel }: ProfileEditFormPr
 
         {/* Action Buttons */}
         <HStack justify="flex-end" gap={4}>
-          <Button variant="outline" onClick={onCancel}>
+          <Button
+            bg="white"
+            borderWidth="1px"
+            borderColor="brand.500"
+            color="brand.600"
+            _hover={{ bg: 'brand.50', borderColor: 'brand.600' }}
+            onClick={onCancel}
+          >
             Cancel
           </Button>
-          <Button type="submit" colorScheme="blue">
+          <Button
+            type="submit"
+            bg="brand.500"
+            color="white"
+            _hover={{ bg: 'brand.600' }}
+            _active={{ bg: 'brand.700' }}
+          >
             Save Changes
           </Button>
         </HStack>

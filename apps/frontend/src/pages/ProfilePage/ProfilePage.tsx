@@ -100,7 +100,10 @@ export const ProfilePage = () => {
               </Box>
               {!isEditing && (
                 <Button
-                  colorScheme="blue"
+                  bg="brand.500"
+                  color="white"
+                  _hover={{ bg: 'brand.600' }}
+                  _active={{ bg: 'brand.700' }}
                   onClick={() => setIsEditing(true)}
                 >
                   Edit Profile

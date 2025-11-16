@@ -305,11 +305,11 @@ func boolToVerificationStatus(verified bool) commonpb.VerificationStatus {
 
 func stringToGender(gender string) userpb.Gender {
 	switch gender {
-	case "MALE":
+	case "MALE", "GENDER_MALE":
 		return userpb.Gender_GENDER_MALE
-	case "FEMALE":
+	case "FEMALE", "GENDER_FEMALE":
 		return userpb.Gender_GENDER_FEMALE
-	case "NON_BINARY":
+	case "NON_BINARY", "GENDER_NON_BINARY":
 		return userpb.Gender_GENDER_NON_BINARY
 	default:
 		return userpb.Gender_GENDER_UNSPECIFIED
@@ -318,13 +318,13 @@ func stringToGender(gender string) userpb.Gender {
 
 func stringToDrinkingHabit(habit string) userpb.DrinkingHabit {
 	switch habit {
-	case "NEVER":
+	case "NEVER", "DRINKING_NEVER":
 		return userpb.DrinkingHabit_DRINKING_NEVER
-	case "RARELY":
+	case "RARELY", "DRINKING_RARELY":
 		return userpb.DrinkingHabit_DRINKING_RARELY
-	case "SOCIALLY":
+	case "SOCIALLY", "DRINKING_SOCIALLY":
 		return userpb.DrinkingHabit_DRINKING_SOCIALLY
-	case "REGULARLY":
+	case "REGULARLY", "DRINKING_REGULARLY":
 		return userpb.DrinkingHabit_DRINKING_REGULARLY
 	default:
 		return userpb.DrinkingHabit_DRINKING_UNSPECIFIED
@@ -333,13 +333,13 @@ func stringToDrinkingHabit(habit string) userpb.DrinkingHabit {
 
 func stringToSmokingHabit(habit string) userpb.SmokingHabit {
 	switch habit {
-	case "NEVER":
+	case "NEVER", "SMOKING_NEVER":
 		return userpb.SmokingHabit_SMOKING_NEVER
-	case "SOCIALLY":
+	case "SOCIALLY", "SMOKING_SOCIALLY":
 		return userpb.SmokingHabit_SMOKING_SOCIALLY
-	case "REGULARLY":
+	case "REGULARLY", "SMOKING_REGULARLY":
 		return userpb.SmokingHabit_SMOKING_REGULARLY
-	case "TRYING_TO_QUIT":
+	case "TRYING_TO_QUIT", "SMOKING_TRYING_TO_QUIT":
 		return userpb.SmokingHabit_SMOKING_TRYING_TO_QUIT
 	default:
 		return userpb.SmokingHabit_SMOKING_UNSPECIFIED
@@ -348,17 +348,17 @@ func stringToSmokingHabit(habit string) userpb.SmokingHabit {
 
 func stringToWorkoutFrequency(freq string) userpb.WorkoutFrequency {
 	switch freq {
-	case "NEVER":
+	case "NEVER", "WORKOUT_NEVER":
 		return userpb.WorkoutFrequency_WORKOUT_NEVER
-	case "RARELY":
+	case "RARELY", "WORKOUT_RARELY":
 		return userpb.WorkoutFrequency_WORKOUT_RARELY
-	case "SOMETIMES":
+	case "SOMETIMES", "WORKOUT_SOMETIMES":
 		return userpb.WorkoutFrequency_WORKOUT_SOMETIMES
-	case "OFTEN":
+	case "OFTEN", "WORKOUT_OFTEN":
 		return userpb.WorkoutFrequency_WORKOUT_OFTEN
-	case "DAILY":
+	case "DAILY", "WORKOUT_DAILY":
 		return userpb.WorkoutFrequency_WORKOUT_DAILY
-	case "ATHLETE":
+	case "ATHLETE", "WORKOUT_ATHLETE":
 		return userpb.WorkoutFrequency_WORKOUT_ATHLETE
 	default:
 		return userpb.WorkoutFrequency_WORKOUT_UNSPECIFIED
@@ -367,15 +367,15 @@ func stringToWorkoutFrequency(freq string) userpb.WorkoutFrequency {
 
 func stringToDietaryPreference(pref string) userpb.DietaryPreference {
 	switch pref {
-	case "ANYTHING":
+	case "ANYTHING", "DIETARY_ANYTHING":
 		return userpb.DietaryPreference_DIETARY_ANYTHING
-	case "VEGETARIAN":
+	case "VEGETARIAN", "DIETARY_VEGETARIAN":
 		return userpb.DietaryPreference_DIETARY_VEGETARIAN
-	case "VEGAN":
+	case "VEGAN", "DIETARY_VEGAN":
 		return userpb.DietaryPreference_DIETARY_VEGAN
-	case "PESCATARIAN":
+	case "PESCATARIAN", "DIETARY_PESCATARIAN":
 		return userpb.DietaryPreference_DIETARY_PESCATARIAN
-	case "HALAL":
+	case "HALAL", "DIETARY_HALAL":
 		return userpb.DietaryPreference_DIETARY_HALAL
 	default:
 		return userpb.DietaryPreference_DIETARY_UNSPECIFIED
@@ -384,17 +384,17 @@ func stringToDietaryPreference(pref string) userpb.DietaryPreference {
 
 func stringToReligion(religion string) userpb.Religion {
 	switch religion {
-	case "HINDU":
+	case "HINDU", "RELIGION_HINDU":
 		return userpb.Religion_RELIGION_HINDU
-	case "MUSLIM":
+	case "MUSLIM", "RELIGION_MUSLIM":
 		return userpb.Religion_RELIGION_MUSLIM
-	case "CHRISTIAN":
+	case "CHRISTIAN", "RELIGION_CHRISTIAN":
 		return userpb.Religion_RELIGION_CHRISTIAN
-	case "SIKH":
+	case "SIKH", "RELIGION_SIKH":
 		return userpb.Religion_RELIGION_SIKH
-	case "BUDDHIST":
+	case "BUDDHIST", "RELIGION_BUDDHIST":
 		return userpb.Religion_RELIGION_BUDDHIST
-	case "ATHEIST":
+	case "ATHEIST", "RELIGION_ATHEIST":
 		return userpb.Religion_RELIGION_ATHEIST
 	default:
 		return userpb.Religion_RELIGION_UNSPECIFIED
@@ -418,13 +418,13 @@ func stringToImportance(importance string) userpb.Importance {
 
 func stringToPoliticalView(view string) userpb.PoliticalView {
 	switch view {
-	case "LIBERAL":
+	case "LIBERAL", "POLITICAL_LIBERAL":
 		return userpb.PoliticalView_POLITICAL_LIBERAL
-	case "MODERATE":
+	case "MODERATE", "POLITICAL_MODERATE":
 		return userpb.PoliticalView_POLITICAL_MODERATE
-	case "CONSERVATIVE":
+	case "CONSERVATIVE", "POLITICAL_CONSERVATIVE":
 		return userpb.PoliticalView_POLITICAL_CONSERVATIVE
-	case "APOLITICAL":
+	case "APOLITICAL", "POLITICAL_APOLITICAL":
 		return userpb.PoliticalView_POLITICAL_APOLITICAL
 	default:
 		return userpb.PoliticalView_POLITICAL_UNSPECIFIED
@@ -433,13 +433,13 @@ func stringToPoliticalView(view string) userpb.PoliticalView {
 
 func stringToPetPreference(pref string) userpb.PetPreference {
 	switch pref {
-	case "DOG_LOVER":
+	case "DOG_LOVER", "PET_DOG_LOVER":
 		return userpb.PetPreference_PET_DOG_LOVER
-	case "CAT_LOVER":
+	case "CAT_LOVER", "PET_CAT_LOVER":
 		return userpb.PetPreference_PET_CAT_LOVER
-	case "BOTH":
+	case "BOTH", "PET_BOTH":
 		return userpb.PetPreference_PET_BOTH
-	case "NO_PETS":
+	case "NO_PETS", "PET_NO_PETS":
 		return userpb.PetPreference_PET_NO_PETS
 	default:
 		return userpb.PetPreference_PET_UNSPECIFIED
@@ -448,13 +448,13 @@ func stringToPetPreference(pref string) userpb.PetPreference {
 
 func stringToChildrenPreference(pref string) userpb.ChildrenPreference {
 	switch pref {
-	case "HAVE_AND_WANT_MORE":
+	case "HAVE_AND_WANT_MORE", "CHILDREN_HAVE_AND_WANT_MORE":
 		return userpb.ChildrenPreference_CHILDREN_HAVE_AND_WANT_MORE
-	case "HAVE_DONT_WANT_MORE":
+	case "HAVE_DONT_WANT_MORE", "CHILDREN_HAVE_DONT_WANT_MORE":
 		return userpb.ChildrenPreference_CHILDREN_HAVE_DONT_WANT_MORE
-	case "DONT_HAVE_WANT":
+	case "DONT_HAVE_WANT", "CHILDREN_DONT_HAVE_WANT":
 		return userpb.ChildrenPreference_CHILDREN_DONT_HAVE_WANT
-	case "DONT_HAVE_DONT_WANT":
+	case "DONT_HAVE_DONT_WANT", "CHILDREN_DONT_HAVE_DONT_WANT":
 		return userpb.ChildrenPreference_CHILDREN_DONT_HAVE_DONT_WANT
 	default:
 		return userpb.ChildrenPreference_CHILDREN_UNSPECIFIED
@@ -463,13 +463,13 @@ func stringToChildrenPreference(pref string) userpb.ChildrenPreference {
 
 func stringToCommunicationStyle(style string) userpb.CommunicationStyle {
 	switch style {
-	case "BIG_TIME_TEXTER":
+	case "BIG_TIME_TEXTER", "COMMUNICATION_BIG_TIME_TEXTER":
 		return userpb.CommunicationStyle_COMMUNICATION_BIG_TIME_TEXTER
-	case "PHONE_CALLER":
+	case "PHONE_CALLER", "COMMUNICATION_PHONE_CALLER":
 		return userpb.CommunicationStyle_COMMUNICATION_PHONE_CALLER
-	case "VIDEO_CHATTER":
+	case "VIDEO_CHATTER", "COMMUNICATION_VIDEO_CHATTER":
 		return userpb.CommunicationStyle_COMMUNICATION_VIDEO_CHATTER
-	case "IN_PERSON":
+	case "IN_PERSON", "COMMUNICATION_IN_PERSON":
 		return userpb.CommunicationStyle_COMMUNICATION_IN_PERSON
 	default:
 		return userpb.CommunicationStyle_COMMUNICATION_UNSPECIFIED
@@ -478,15 +478,15 @@ func stringToCommunicationStyle(style string) userpb.CommunicationStyle {
 
 func stringToLoveLanguage(lang string) userpb.LoveLanguage {
 	switch lang {
-	case "WORDS_OF_AFFIRMATION":
+	case "WORDS_OF_AFFIRMATION", "LOVE_LANGUAGE_WORDS_OF_AFFIRMATION":
 		return userpb.LoveLanguage_LOVE_LANGUAGE_WORDS_OF_AFFIRMATION
-	case "ACTS_OF_SERVICE":
+	case "ACTS_OF_SERVICE", "LOVE_LANGUAGE_ACTS_OF_SERVICE":
 		return userpb.LoveLanguage_LOVE_LANGUAGE_ACTS_OF_SERVICE
-	case "RECEIVING_GIFTS":
+	case "RECEIVING_GIFTS", "LOVE_LANGUAGE_RECEIVING_GIFTS":
 		return userpb.LoveLanguage_LOVE_LANGUAGE_RECEIVING_GIFTS
-	case "QUALITY_TIME":
+	case "QUALITY_TIME", "LOVE_LANGUAGE_QUALITY_TIME":
 		return userpb.LoveLanguage_LOVE_LANGUAGE_QUALITY_TIME
-	case "PHYSICAL_TOUCH":
+	case "PHYSICAL_TOUCH", "LOVE_LANGUAGE_PHYSICAL_TOUCH":
 		return userpb.LoveLanguage_LOVE_LANGUAGE_PHYSICAL_TOUCH
 	default:
 		return userpb.LoveLanguage_LOVE_LANGUAGE_UNSPECIFIED
@@ -495,11 +495,11 @@ func stringToLoveLanguage(lang string) userpb.LoveLanguage {
 
 func stringToSleepSchedule(schedule string) userpb.SleepSchedule {
 	switch schedule {
-	case "EARLY_BIRD":
+	case "EARLY_BIRD", "SLEEP_SCHEDULE_EARLY_BIRD":
 		return userpb.SleepSchedule_SLEEP_SCHEDULE_EARLY_BIRD
-	case "NIGHT_OWL":
+	case "NIGHT_OWL", "SLEEP_SCHEDULE_NIGHT_OWL":
 		return userpb.SleepSchedule_SLEEP_SCHEDULE_NIGHT_OWL
-	case "VARIES":
+	case "VARIES", "SLEEP_SCHEDULE_VARIES":
 		return userpb.SleepSchedule_SLEEP_SCHEDULE_VARIES
 	default:
 		return userpb.SleepSchedule_SLEEP_SCHEDULE_UNSPECIFIED

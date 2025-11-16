@@ -540,6 +540,7 @@ func createUserProfileHandler(userService *service.UserService) http.HandlerFunc
 
 			// Convert to gRPC request
 			grpcReq := &userpb.UpdateProfileRequest{
+				BasicInfo:      reqBody.BasicInfo,
 				ProfileDetails: reqBody.ProfileDetails,
 				LifestyleInfo:  reqBody.LifestyleInfo,
 				Prompts:        reqBody.Prompts,

@@ -268,3 +268,33 @@ func (r *UserRepository) UpdateAccountStatus(ctx context.Context, userID int, st
 
 	return nil
 }
+
+// UpdateBasicInfo updates basic user information (name, gender, phone_number)
+func (r *UserRepository) UpdateBasicInfo(ctx context.Context, userID int, updates map[string]interface{}) error {
+	if len(updates) == 0 {
+		return nil
+	}
+
+	query := "UPDATE users SET "
+	args := []interface{}{}
+	argPos := 1
+
+	for field, value := range updates {
+		if argPos > 1 {
+			query += ", "
+		}
+		query += fmt.Sprintf("%s = $%d", field, argPos)
+		args = append(args, value)
+		argPos++
+	}
+
+	query += fmt.Sprintf(" WHERE id = $%d", argPos)
+	args = append(args, userID)
+
+	_, err := r.db.ExecContext(ctx, query, args...)
+	if err != nil {
+		return fmt.Errorf("%w: %v", ErrDatabaseError, err)
+	}
+
+	return nil
+}
