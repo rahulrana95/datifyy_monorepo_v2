@@ -1,0 +1,529 @@
+/**
+ * Profile Edit Form Component
+ * Handles editing of user profile using Tanstack Form
+ */
+
+import {
+  Box,
+  Button,
+  HStack,
+  Input,
+  SimpleGrid,
+  Textarea,
+  VStack,
+  Text,
+} from '@chakra-ui/react';
+import { Field } from '@chakra-ui/react/field';
+import { NativeSelectField, NativeSelectRoot } from '@chakra-ui/react/select';
+import { useForm } from '@tanstack/react-form';
+import type { UserProfile } from '../../gen/user/v1/user_pb';
+
+interface ProfileEditFormProps {
+  profile: UserProfile;
+  onSave: (data: Partial<UserProfile>) => Promise<void>;
+  onCancel: () => void;
+}
+
+export const ProfileEditForm = ({ profile, onSave, onCancel }: ProfileEditFormProps) => {
+  // Extract data from profile (handle both snake_case and camelCase)
+  const basicInfo = (profile as any)?.basic_info || profile.basicInfo;
+  const profileDetails = (profile as any)?.profile_details || profile.profileDetails;
+  const lifestyleInfo = (profile as any)?.lifestyle_info || profile.lifestyleInfo;
+
+  const form = useForm({
+    defaultValues: {
+      // Basic Info
+      name: basicInfo?.name || '',
+      email: basicInfo?.email || '',
+      phoneNumber: basicInfo?.phone_number || basicInfo?.phoneNumber || '',
+      gender: basicInfo?.gender || 'GENDER_UNSPECIFIED',
+      pronouns: basicInfo?.pronouns || '',
+
+      // Profile Details
+      bio: profileDetails?.bio || '',
+      height: profileDetails?.height || 0,
+      jobTitle: profileDetails?.job_title || profileDetails?.jobTitle || '',
+      company: profileDetails?.company || '',
+      school: profileDetails?.school || '',
+      hometown: profileDetails?.hometown || '',
+
+      // Lifestyle Info
+      drinking: lifestyleInfo?.drinking || 'DRINKING_UNSPECIFIED',
+      smoking: lifestyleInfo?.smoking || 'SMOKING_UNSPECIFIED',
+      workout: lifestyleInfo?.workout || 'WORKOUT_UNSPECIFIED',
+      dietaryPreference: lifestyleInfo?.dietary_preference || lifestyleInfo?.dietaryPreference || 'DIETARY_UNSPECIFIED',
+      religion: lifestyleInfo?.religion || 'RELIGION_UNSPECIFIED',
+      religionImportance: lifestyleInfo?.religion_importance || lifestyleInfo?.religionImportance || 'IMPORTANCE_UNSPECIFIED',
+      politicalView: lifestyleInfo?.political_view || lifestyleInfo?.politicalView || 'POLITICAL_UNSPECIFIED',
+      pets: lifestyleInfo?.pets || 'PET_UNSPECIFIED',
+      children: lifestyleInfo?.children || 'CHILDREN_UNSPECIFIED',
+      personalityType: lifestyleInfo?.personality_type || lifestyleInfo?.personalityType || '',
+      communicationStyle: lifestyleInfo?.communication_style || lifestyleInfo?.communicationStyle || 'COMMUNICATION_UNSPECIFIED',
+      loveLanguage: lifestyleInfo?.love_language || lifestyleInfo?.loveLanguage || 'LOVE_LANGUAGE_UNSPECIFIED',
+      sleepSchedule: lifestyleInfo?.sleep_schedule || lifestyleInfo?.sleepSchedule || 'SLEEP_SCHEDULE_UNSPECIFIED',
+    },
+    onSubmit: async ({ value }) => {
+      // Transform form values back to UserProfile structure
+      const updates: any = {
+        basic_info: {
+          name: value.name,
+          email: value.email,
+          phone_number: value.phoneNumber,
+          gender: value.gender,
+          pronouns: value.pronouns,
+          age: basicInfo?.age || 0,
+        },
+        profile_details: {
+          bio: value.bio,
+          height: value.height,
+          job_title: value.jobTitle,
+          company: value.company,
+          school: value.school,
+          hometown: value.hometown,
+        },
+        lifestyle_info: {
+          drinking: value.drinking,
+          smoking: value.smoking,
+          workout: value.workout,
+          dietary_preference: value.dietaryPreference,
+          religion: value.religion,
+          religion_importance: value.religionImportance,
+          political_view: value.politicalView,
+          pets: value.pets,
+          children: value.children,
+          personality_type: value.personalityType,
+          communication_style: value.communicationStyle,
+          love_language: value.loveLanguage,
+          sleep_schedule: value.sleepSchedule,
+        },
+      };
+
+      await onSave(updates);
+    },
+  });
+
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        form.handleSubmit();
+      }}
+    >
+      <VStack align="stretch" gap={6}>
+        {/* Basic Information Section */}
+        <Box
+          bg="white"
+          borderRadius="xl"
+          borderWidth="1px"
+          borderColor="gray.200"
+          p={{ base: 4, md: 8 }}
+          boxShadow="md"
+        >
+          <SimpleGrid columns={{ base: 1, md: 2 }} gap={6}>
+            <form.Field name="name">
+              {(field) => (
+                <Field label="Name">
+                  <Input
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    placeholder="Your name"
+                  />
+                </Field>
+              )}
+            </form.Field>
+
+            <form.Field name="email">
+              {(field) => (
+                <Field label="Email">
+                  <Input
+                    type="email"
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    placeholder="your.email@example.com"
+                  />
+                </Field>
+              )}
+            </form.Field>
+
+            <form.Field name="phoneNumber">
+              {(field) => (
+                <Field label="Phone Number">
+                  <Input
+                    type="tel"
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    placeholder="+1234567890"
+                  />
+                </Field>
+              )}
+            </form.Field>
+
+            <form.Field name="gender">
+              {(field) => (
+                <NativeSelectField label="Gender">
+                  <NativeSelectRoot>
+                    <option value="GENDER_UNSPECIFIED">Not specified</option>
+                    <option value="GENDER_MALE">Male</option>
+                    <option value="GENDER_FEMALE">Female</option>
+                    <option value="GENDER_NON_BINARY">Non-binary</option>
+                    <option value="GENDER_OTHER">Other</option>
+                  </NativeSelectRoot>
+                </NativeSelectField>
+              )}
+            </form.Field>
+
+            <form.Field name="pronouns">
+              {(field) => (
+                <Field label="Pronouns">
+                  <Input
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    placeholder="e.g., he/him, she/her, they/them"
+                  />
+                </Field>
+              )}
+            </form.Field>
+
+            <form.Field name="height">
+              {(field) => (
+                <Field label="Height (cm)">
+                  <Input
+                    type="number"
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(Number(e.target.value))}
+                    placeholder="170"
+                  />
+                </Field>
+              )}
+            </form.Field>
+
+            <form.Field name="bio">
+              {(field) => (
+                <Box gridColumn={{ base: '1', md: '1 / -1' }}>
+                  <Field label="Bio">
+                    <Textarea
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      placeholder="Tell us about yourself..."
+                      rows={4}
+                    />
+                  </Field>
+                </Box>
+              )}
+            </form.Field>
+
+            <form.Field name="jobTitle">
+              {(field) => (
+                <Field label="Job Title">
+                  <Input
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    placeholder="Software Engineer"
+                  />
+                </Field>
+              )}
+            </form.Field>
+
+            <form.Field name="company">
+              {(field) => (
+                <Field label="Company">
+                  <Input
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    placeholder="Company name"
+                  />
+                </Field>
+              )}
+            </form.Field>
+
+            <form.Field name="school">
+              {(field) => (
+                <Field label="School">
+                  <Input
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    placeholder="University name"
+                  />
+                </Field>
+              )}
+            </form.Field>
+
+            <form.Field name="hometown">
+              {(field) => (
+                <Field label="Hometown">
+                  <Input
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    placeholder="City, Country"
+                  />
+                </Field>
+              )}
+            </form.Field>
+          </SimpleGrid>
+        </Box>
+
+        {/* Lifestyle Section */}
+        <Box
+          bg="white"
+          borderRadius="xl"
+          borderWidth="1px"
+          borderColor="gray.200"
+          p={{ base: 4, md: 8 }}
+          boxShadow="md"
+        >
+          <SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
+            <form.Field name="drinking">
+              {(field) => (
+                <Box>
+                  <Text fontSize="sm" mb={2} fontWeight="medium">Drinking</Text>
+                  <NativeSelectRoot
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                  >
+                    <option value="DRINKING_UNSPECIFIED">Not specified</option>
+                    <option value="DRINKING_NEVER">Never</option>
+                    <option value="DRINKING_RARELY">Rarely</option>
+                    <option value="DRINKING_SOCIALLY">Socially</option>
+                    <option value="DRINKING_OFTEN">Often</option>
+                  </NativeSelectRoot>
+                </Box>
+              )}
+            </form.Field>
+
+            <form.Field name="smoking">
+              {(field) => (
+                <FormControl>
+                  <FormLabel>Smoking</FormLabel>
+                  <Select
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                  >
+                    <option value="SMOKING_UNSPECIFIED">Not specified</option>
+                    <option value="SMOKING_NEVER">Never</option>
+                    <option value="SMOKING_RARELY">Rarely</option>
+                    <option value="SMOKING_SOCIALLY">Socially</option>
+                    <option value="SMOKING_OFTEN">Often</option>
+                  </Select>
+                </FormControl>
+              )}
+            </form.Field>
+
+            <form.Field name="workout">
+              {(field) => (
+                <FormControl>
+                  <FormLabel>Workout</FormLabel>
+                  <Select
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                  >
+                    <option value="WORKOUT_UNSPECIFIED">Not specified</option>
+                    <option value="WORKOUT_NEVER">Never</option>
+                    <option value="WORKOUT_RARELY">Rarely</option>
+                    <option value="WORKOUT_SOMETIMES">Sometimes</option>
+                    <option value="WORKOUT_OFTEN">Often</option>
+                    <option value="WORKOUT_DAILY">Daily</option>
+                  </Select>
+                </FormControl>
+              )}
+            </form.Field>
+
+            <form.Field name="dietaryPreference">
+              {(field) => (
+                <FormControl>
+                  <FormLabel>Dietary Preference</FormLabel>
+                  <Select
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                  >
+                    <option value="DIETARY_UNSPECIFIED">Not specified</option>
+                    <option value="DIETARY_OMNIVORE">Omnivore</option>
+                    <option value="DIETARY_VEGETARIAN">Vegetarian</option>
+                    <option value="DIETARY_VEGAN">Vegan</option>
+                    <option value="DIETARY_PESCATARIAN">Pescatarian</option>
+                    <option value="DIETARY_HALAL">Halal</option>
+                    <option value="DIETARY_KOSHER">Kosher</option>
+                  </Select>
+                </FormControl>
+              )}
+            </form.Field>
+
+            <form.Field name="religion">
+              {(field) => (
+                <FormControl>
+                  <FormLabel>Religion</FormLabel>
+                  <Select
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                  >
+                    <option value="RELIGION_UNSPECIFIED">Not specified</option>
+                    <option value="RELIGION_CHRISTIAN">Christian</option>
+                    <option value="RELIGION_MUSLIM">Muslim</option>
+                    <option value="RELIGION_JEWISH">Jewish</option>
+                    <option value="RELIGION_HINDU">Hindu</option>
+                    <option value="RELIGION_BUDDHIST">Buddhist</option>
+                    <option value="RELIGION_ATHEIST">Atheist</option>
+                    <option value="RELIGION_AGNOSTIC">Agnostic</option>
+                    <option value="RELIGION_OTHER">Other</option>
+                  </Select>
+                </FormControl>
+              )}
+            </form.Field>
+
+            <form.Field name="religionImportance">
+              {(field) => (
+                <FormControl>
+                  <FormLabel>Religion Importance</FormLabel>
+                  <Select
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                  >
+                    <option value="IMPORTANCE_UNSPECIFIED">Not specified</option>
+                    <option value="IMPORTANCE_NOT_IMPORTANT">Not important</option>
+                    <option value="IMPORTANCE_SOMEWHAT">Somewhat</option>
+                    <option value="IMPORTANCE_IMPORTANT">Important</option>
+                    <option value="IMPORTANCE_VERY_IMPORTANT">Very important</option>
+                  </Select>
+                </FormControl>
+              )}
+            </form.Field>
+
+            <form.Field name="politicalView">
+              {(field) => (
+                <FormControl>
+                  <FormLabel>Political View</FormLabel>
+                  <Select
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                  >
+                    <option value="POLITICAL_UNSPECIFIED">Not specified</option>
+                    <option value="POLITICAL_LIBERAL">Liberal</option>
+                    <option value="POLITICAL_MODERATE">Moderate</option>
+                    <option value="POLITICAL_CONSERVATIVE">Conservative</option>
+                    <option value="POLITICAL_APOLITICAL">Apolitical</option>
+                  </Select>
+                </FormControl>
+              )}
+            </form.Field>
+
+            <form.Field name="pets">
+              {(field) => (
+                <FormControl>
+                  <FormLabel>Pets</FormLabel>
+                  <Select
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                  >
+                    <option value="PET_UNSPECIFIED">Not specified</option>
+                    <option value="PET_NONE">None</option>
+                    <option value="PET_DOG">Dog</option>
+                    <option value="PET_CAT">Cat</option>
+                    <option value="PET_BOTH">Both</option>
+                    <option value="PET_OTHER">Other</option>
+                  </Select>
+                </FormControl>
+              )}
+            </form.Field>
+
+            <form.Field name="children">
+              {(field) => (
+                <FormControl>
+                  <FormLabel>Children</FormLabel>
+                  <Select
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                  >
+                    <option value="CHILDREN_UNSPECIFIED">Not specified</option>
+                    <option value="CHILDREN_WANT">Want children</option>
+                    <option value="CHILDREN_DONT_WANT">Don't want</option>
+                    <option value="CHILDREN_HAVE_AND_WANT_MORE">Have and want more</option>
+                    <option value="CHILDREN_HAVE_DONT_WANT_MORE">Have, don't want more</option>
+                    <option value="CHILDREN_NOT_SURE">Not sure</option>
+                  </Select>
+                </FormControl>
+              )}
+            </form.Field>
+
+            <form.Field name="personalityType">
+              {(field) => (
+                <FormControl>
+                  <FormLabel>Personality Type (MBTI)</FormLabel>
+                  <Input
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    placeholder="e.g., INTJ, ENFP"
+                    maxLength={4}
+                  />
+                </FormControl>
+              )}
+            </form.Field>
+
+            <form.Field name="communicationStyle">
+              {(field) => (
+                <FormControl>
+                  <FormLabel>Communication Style</FormLabel>
+                  <Select
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                  >
+                    <option value="COMMUNICATION_UNSPECIFIED">Not specified</option>
+                    <option value="COMMUNICATION_BIG_TIME_TEXTER">Big time texter</option>
+                    <option value="COMMUNICATION_PHONE_CALLER">Phone caller</option>
+                    <option value="COMMUNICATION_VIDEO_CHATTER">Video chatter</option>
+                    <option value="COMMUNICATION_IN_PERSON">In person</option>
+                  </Select>
+                </FormControl>
+              )}
+            </form.Field>
+
+            <form.Field name="loveLanguage">
+              {(field) => (
+                <FormControl>
+                  <FormLabel>Love Language</FormLabel>
+                  <Select
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                  >
+                    <option value="LOVE_LANGUAGE_UNSPECIFIED">Not specified</option>
+                    <option value="LOVE_LANGUAGE_WORDS_OF_AFFIRMATION">Words of affirmation</option>
+                    <option value="LOVE_LANGUAGE_QUALITY_TIME">Quality time</option>
+                    <option value="LOVE_LANGUAGE_RECEIVING_GIFTS">Receiving gifts</option>
+                    <option value="LOVE_LANGUAGE_ACTS_OF_SERVICE">Acts of service</option>
+                    <option value="LOVE_LANGUAGE_PHYSICAL_TOUCH">Physical touch</option>
+                  </Select>
+                </FormControl>
+              )}
+            </form.Field>
+
+            <form.Field name="sleepSchedule">
+              {(field) => (
+                <FormControl>
+                  <FormLabel>Sleep Schedule</FormLabel>
+                  <Select
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                  >
+                    <option value="SLEEP_SCHEDULE_UNSPECIFIED">Not specified</option>
+                    <option value="SLEEP_SCHEDULE_EARLY_BIRD">Early bird</option>
+                    <option value="SLEEP_SCHEDULE_NIGHT_OWL">Night owl</option>
+                    <option value="SLEEP_SCHEDULE_IN_A_SPECTRUM">In a spectrum</option>
+                  </Select>
+                </FormControl>
+              )}
+            </form.Field>
+          </SimpleGrid>
+        </Box>
+
+        {/* Action Buttons */}
+        <HStack justify="flex-end" gap={4}>
+          <Button variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button type="submit" colorScheme="blue">
+            Save Changes
+          </Button>
+        </HStack>
+      </VStack>
+    </form>
+  );
+};

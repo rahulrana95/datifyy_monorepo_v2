@@ -13,17 +13,33 @@ import {
   Circle,
   SimpleGrid,
   Spinner,
+  Button,
 } from '@chakra-ui/react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Header } from '../../shared/components/Header/Header';
 import { useUserStore } from '../../stores/userStore';
+import { ProfileEditForm } from './ProfileEditForm';
 
 export const ProfilePage = () => {
-  const { profile, isLoading, error, fetchProfile } = useUserStore();
+  const { profile, isLoading, error, fetchProfile, updateProfile } = useUserStore();
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     fetchProfile();
   }, [fetchProfile]);
+
+  const handleSave = async (updates: any) => {
+    try {
+      await updateProfile(updates);
+      setIsEditing(false);
+    } catch (err) {
+      console.error('Failed to update profile:', err);
+    }
+  };
+
+  const handleCancel = () => {
+    setIsEditing(false);
+  };
 
   if (isLoading) {
     return (
@@ -72,17 +88,41 @@ export const ProfilePage = () => {
       <Container maxW="1200px" py={8} px={{ base: 4, md: 8 }} mx="auto">
         <VStack align="stretch" gap={6} mx="auto" w="100%" maxW="1000px">
           {/* Header Section */}
-          <Box textAlign="center" mb={2}>
-            <Heading size="xl" color="gray.800" mb={2}>
-              My Profile
-            </Heading>
-            <Text color="gray.600">
-              View and manage your profile information
-            </Text>
+          <Box mb={2}>
+            <HStack justify="space-between" align="center" mb={4}>
+              <Box>
+                <Heading size="xl" color="gray.800" mb={2}>
+                  My Profile
+                </Heading>
+                <Text color="gray.600">
+                  {isEditing ? 'Edit your profile information' : 'View and manage your profile information'}
+                </Text>
+              </Box>
+              {!isEditing && (
+                <Button
+                  colorScheme="blue"
+                  onClick={() => setIsEditing(true)}
+                >
+                  Edit Profile
+                </Button>
+              )}
+            </HStack>
           </Box>
 
-          {/* Profile Card */}
-          <Box
+          {/* Edit Mode */}
+          {isEditing && profile && (
+            <ProfileEditForm
+              profile={profile}
+              onSave={handleSave}
+              onCancel={handleCancel}
+            />
+          )}
+
+          {/* View Mode */}
+          {!isEditing && (
+            <>
+              {/* Profile Card */}
+              <Box
             bg="white"
             borderRadius="xl"
             borderWidth="1px"
@@ -417,6 +457,8 @@ export const ProfilePage = () => {
               </Box>
             </SimpleGrid>
           </Box>
+            </>
+          )}
         </VStack>
       </Container>
     </Box>
