@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 )
 
 var (
@@ -249,28 +250,37 @@ func (r *UserProfileRepository) GetPartnerPreferences(ctx context.Context, userI
 	return prefs, nil
 }
 
-// UpdatePartnerPreferences updates partner preferences
+// UpdatePartnerPreferences updates partner preferences (UPSERT)
 func (r *UserProfileRepository) UpdatePartnerPreferences(ctx context.Context, userID int, updates map[string]interface{}) error {
 	if len(updates) == 0 {
 		return nil
 	}
 
-	// Build dynamic UPDATE query
-	query := "UPDATE partner_preferences SET "
-	args := []interface{}{}
-	argPos := 1
+	// Build UPSERT query with ON CONFLICT
+	// First, build the column names and values for INSERT
+	columns := []string{"user_id"}
+	placeholders := []string{"$1"}
+	args := []interface{}{userID}
+	argPos := 2
+
+	// Build SET clause for ON CONFLICT UPDATE
+	var setClauses []string
 
 	for key, value := range updates {
-		if argPos > 1 {
-			query += ", "
-		}
-		query += fmt.Sprintf("%s = $%d", key, argPos)
+		columns = append(columns, key)
+		placeholders = append(placeholders, fmt.Sprintf("$%d", argPos))
 		args = append(args, value)
+		setClauses = append(setClauses, fmt.Sprintf("%s = EXCLUDED.%s", key, key))
 		argPos++
 	}
 
-	query += fmt.Sprintf(" WHERE user_id = $%d", argPos)
-	args = append(args, userID)
+	query := fmt.Sprintf(`
+		INSERT INTO partner_preferences (%s, created_at, updated_at)
+		VALUES (%s, NOW(), NOW())
+		ON CONFLICT (user_id) DO UPDATE SET
+			%s,
+			updated_at = NOW()
+	`, strings.Join(columns, ", "), strings.Join(placeholders, ", "), strings.Join(setClauses, ", "))
 
 	_, err := r.db.ExecContext(ctx, query, args...)
 	if err != nil {

@@ -163,6 +163,7 @@ func startHTTPServer(port string, server *Server, db *sql.DB, redisClient *redis
 	// User REST endpoints (wrapper around gRPC)
 	userService := service.NewUserService(db, redisClient)
 	mux.HandleFunc("/api/v1/user/me", createUserProfileHandler(userService))
+	mux.HandleFunc("/api/v1/partner-preferences", createPartnerPreferencesHandler(userService))
 
 	// Add CORS middleware
 	handler := enableCORS(mux)
@@ -685,6 +686,120 @@ func convertUserProfileToJSON(profile *userpb.UserProfile) map[string]interface{
 	}
 
 	return result
+}
+
+// createPartnerPreferencesHandler creates HTTP handler for partner preferences (GET and PUT)
+func createPartnerPreferencesHandler(userService *service.UserService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Extract access token from Authorization header
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" {
+			http.Error(w, "Authorization header required", http.StatusUnauthorized)
+			return
+		}
+
+		// Remove "Bearer " prefix
+		accessToken := authHeader
+		if len(authHeader) > 7 && authHeader[:7] == "Bearer " {
+			accessToken = authHeader[7:]
+		}
+
+		// Parse access token to get user ID
+		var userID int
+		var timestamp int64
+		_, err := fmt.Sscanf(accessToken, "access_token_%d_%d", &userID, &timestamp)
+		if err != nil {
+			http.Error(w, "Invalid access token format", http.StatusUnauthorized)
+			return
+		}
+
+		// Add userID to context
+		ctx := context.WithValue(r.Context(), "userID", userID)
+
+		// Handle GET request (GetPartnerPreferences)
+		if r.Method == http.MethodGet {
+			grpcReq := &userpb.GetPartnerPreferencesRequest{}
+
+			// Call gRPC service
+			resp, err := userService.GetPartnerPreferences(ctx, grpcReq)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("Failed to get partner preferences: %v", err), http.StatusInternalServerError)
+				return
+			}
+
+			// Convert response to JSON
+			jsonResp := map[string]interface{}{
+				"preferences": resp.Preferences,
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(jsonResp)
+			return
+		}
+
+		// Handle PUT request (UpdatePartnerPreferences)
+		if r.Method == http.MethodPut {
+			// Parse JSON request
+			var reqBody struct {
+				Preferences  *userpb.PartnerPreferences `json:"preferences"`
+				UpdateFields []string                   `json:"update_fields"`
+			}
+
+			if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+				http.Error(w, fmt.Sprintf("Invalid JSON: %v", err), http.StatusBadRequest)
+				return
+			}
+
+			// If no update fields specified, update all fields
+			updateFields := reqBody.UpdateFields
+			if len(updateFields) == 0 {
+				updateFields = []string{
+					"looking_for_gender",
+					"age_range",
+					"distance_preference",
+					"height_range",
+					"relationship_goals",
+					"education_levels",
+					"occupations",
+					"religions",
+					"children_preferences",
+					"drinking_preferences",
+					"smoking_preferences",
+					"dietary_preferences",
+					"pet_preferences",
+					"verified_only",
+					"dealbreakers",
+				}
+			}
+
+			// Convert to gRPC request
+			grpcReq := &userpb.UpdatePartnerPreferencesRequest{
+				Preferences:  reqBody.Preferences,
+				UpdateFields: updateFields,
+			}
+
+			// Call gRPC service
+			resp, err := userService.UpdatePartnerPreferences(ctx, grpcReq)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("Failed to update partner preferences: %v", err), http.StatusBadRequest)
+				return
+			}
+
+			// Convert response to JSON
+			jsonResp := map[string]interface{}{
+				"preferences": resp.Preferences,
+				"message":     resp.Message,
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(jsonResp)
+			return
+		}
+
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
 }
 
 func enableCORS(next http.Handler) http.Handler {

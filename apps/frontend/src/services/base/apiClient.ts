@@ -17,6 +17,32 @@ import type {
 const DEFAULT_TIMEOUT = 30000;
 
 /**
+ * Convert snake_case to camelCase
+ */
+function toCamelCase(str: string): string {
+  return str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+}
+
+/**
+ * Recursively convert all snake_case keys to camelCase
+ */
+function convertKeysToCamelCase(obj: any): any {
+  if (Array.isArray(obj)) {
+    return obj.map(convertKeysToCamelCase);
+  }
+  
+  if (obj !== null && typeof obj === 'object') {
+    return Object.keys(obj).reduce((acc, key) => {
+      const camelKey = toCamelCase(key);
+      acc[camelKey] = convertKeysToCamelCase(obj[key]);
+      return acc;
+    }, {} as any);
+  }
+  
+  return obj;
+}
+
+/**
  * Base API Client class
  * Handles all HTTP communication with the backend
  */
@@ -135,9 +161,10 @@ export class ApiClient {
       }
 
       const data = await response.json();
+      const camelCaseData = convertKeysToCamelCase(data);
 
       const apiResponse: ApiResponse<T> = {
-        data,
+        data: camelCaseData,
         status: response.status,
         headers: response.headers,
       };

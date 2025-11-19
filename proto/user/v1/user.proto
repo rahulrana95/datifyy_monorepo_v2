@@ -11,68 +11,68 @@ service UserService {
   // ============================================================================
   // Profile Management
   // ============================================================================
-
+  
   // Get user profile by ID
   rpc GetUserProfile(GetUserProfileRequest) returns (GetUserProfileResponse);
-
+  
   // Get current authenticated user's profile
   rpc GetMyProfile(GetMyProfileRequest) returns (GetMyProfileResponse);
-
+  
   // Update user profile
   rpc UpdateProfile(UpdateProfileRequest) returns (UpdateProfileResponse);
-
+  
   // Delete user account
   rpc DeleteAccount(DeleteAccountRequest) returns (DeleteAccountResponse);
-
+  
   // Upload profile photo
   rpc UploadProfilePhoto(UploadProfilePhotoRequest) returns (UploadProfilePhotoResponse);
-
+  
   // Delete profile photo
   rpc DeleteProfilePhoto(DeleteProfilePhotoRequest) returns (DeleteProfilePhotoResponse);
-
+  
   // ============================================================================
   // User Discovery
   // ============================================================================
-
+  
   // Search users (for matching)
   rpc SearchUsers(SearchUsersRequest) returns (SearchUsersResponse);
-
+  
   // Get user recommendations
   rpc GetRecommendations(GetRecommendationsRequest) returns (GetRecommendationsResponse);
-
+  
   // ============================================================================
   // Partner Preferences
   // ============================================================================
-
+  
   // Get partner preferences
   rpc GetPartnerPreferences(GetPartnerPreferencesRequest) returns (GetPartnerPreferencesResponse);
-
+  
   // Update partner preferences
   rpc UpdatePartnerPreferences(UpdatePartnerPreferencesRequest) returns (UpdatePartnerPreferencesResponse);
-
+  
   // ============================================================================
   // User Preferences (App Settings)
   // ============================================================================
-
+  
   // Get user app preferences
   rpc GetUserPreferences(GetUserPreferencesRequest) returns (GetUserPreferencesResponse);
-
+  
   // Update user app preferences
   rpc UpdateUserPreferences(UpdateUserPreferencesRequest) returns (UpdateUserPreferencesResponse);
-
+  
   // ============================================================================
   // Blocking & Reporting
   // ============================================================================
-
+  
   // Block a user
   rpc BlockUser(BlockUserRequest) returns (BlockUserResponse);
-
+  
   // Unblock a user
   rpc UnblockUser(UnblockUserRequest) returns (UnblockUserResponse);
-
+  
   // List blocked users
   rpc ListBlockedUsers(ListBlockedUsersRequest) returns (ListBlockedUsersResponse);
-
+  
   // Report a user
   rpc ReportUser(ReportUserRequest) returns (ReportUserResponse);
 }
@@ -81,77 +81,89 @@ service UserService {
 // User Profile Messages
 // ============================================================================
 
-// Complete user profile
+// Complete user profile message
 message UserProfile {
   // User ID
   string user_id = 1;
-
+  
   // Basic information
   BasicInfo basic_info = 2;
-
+  
   // Profile details
   ProfileDetails profile_details = 3;
-
+  
   // Lifestyle information
   LifestyleInfo lifestyle_info = 4;
-
+  
   // Profile prompts (user's answered prompts)
   repeated ProfilePrompt prompts = 5;
-
+  
   // Profile photos
   repeated ProfilePhoto photos = 6;
-
+  
   // Account metadata
   AccountMetadata metadata = 7;
-
+  
   // Partner preferences (what they're looking for)
   PartnerPreferences partner_preferences = 8;
-
+  
   // User app preferences (notifications, privacy, etc.)
   UserPreferences user_preferences = 9;
-
+  
   // Profile completion percentage (0-100)
   int32 completion_percentage = 10;
-
+  
   // Whether profile is public
   bool is_public = 11;
-
+  
   // Whether user is online
   bool is_online = 12;
-
+  
   // Last seen timestamp
   common.v1.Timestamp last_seen_at = 13;
-
+  
   // Profile verification status
   bool is_verified = 14;
-
+  
   // Compatibility score (when viewing from another profile)
   int32 compatibility_score = 15;
+  
+  // Cultural & Matrimonial Information (India-specific)
+  CulturalInfo cultural_info = 16;
+  
+  // Appearance details
+  AppearanceInfo appearance_info = 17;
+  
+  // Financial & Professional details
+  ProfessionalInfo professional_info = 18;
+  
+  // Family background and values
+  FamilyInfo family_info = 19;
 }
 
 // Basic user information
 message BasicInfo {
   // Display name
   string name = 1;
-
+  
   // Email address
   string email = 2;
-
+  
   // Phone number
   string phone_number = 3;
-
+  
   // Date of birth
   common.v1.Timestamp date_of_birth = 4;
-
+  
   // Age (calculated from DOB)
   int32 age = 5;
-
+  
   // Gender
   Gender gender = 6;
-
+  
   // Pronouns
   string pronouns = 7;
-
+  
   // Zodiac sign
   ZodiacSign zodiac_sign = 8;
 }
@@ -160,37 +172,37 @@ message BasicInfo {
 message ProfileDetails {
   // Bio/About me (max 500 chars)
   string bio = 1;
-
+  
   // Occupation (can select multiple)
   repeated OccupationInfo occupations = 2;
-
+  
   // Company name
   string company = 3;
-
+  
   // Job title
   string job_title = 4;
-
+  
   // Education (can have multiple degrees)
   repeated EducationInfo education = 5;
-
+  
   // School/University name
   string school = 6;
-
+  
   // Height in cm
   int32 height = 7;
-
+  
   // Location
   common.v1.Location location = 8;
-
+  
   // Hometown
   string hometown = 9;
-
+  
   // Interests/hobbies (select from predefined list)
   repeated InterestInfo interests = 10;
-
+  
   // Languages spoken
   repeated LanguageInfo languages = 11;
-
+  
   // Relationship goals
   repeated RelationshipGoal relationship_goals = 12;
 }
@@ -199,52 +211,216 @@ message ProfileDetails {
 message LifestyleInfo {
   // Drinking habits
   DrinkingHabit drinking = 1;
-
+  
   // Smoking habits
   SmokingHabit smoking = 2;
-
+  
   // Workout/Exercise frequency
   WorkoutFrequency workout = 3;
-
+  
   // Dietary preferences
   DietaryPreference dietary_preference = 4;
-
+  
   // Religion
   Religion religion = 5;
-
+  
   // How important is religion
   Importance religion_importance = 6;
-
+  
   // Political views
   PoliticalView political_view = 7;
-
+  
   // Pets
   PetPreference pets = 8;
-
+  
   // Want children
   ChildrenPreference children = 9;
-
+  
   // Personality type (MBTI)
   string personality_type = 10;
-
+  
   // Communication style
   CommunicationStyle communication_style = 11;
-
+  
   // Love language
   LoveLanguage love_language = 12;
-
+  
   // Sleep schedule
   SleepSchedule sleep_schedule = 13;
+}
+
+// ============================================================================
+// NEW: Cultural & Matrimonial Information (for Indian market + global)
+// ============================================================================
+
+// Cultural and matrimonial information
+message CulturalInfo {
+  // Caste/Community (India-specific but applicable to other cultures)
+  string caste = 1;
+  
+  // Sub-caste
+  string sub_caste = 2;
+  
+  // Gotra (for Hindu marriages - important in India)
+  string gotra = 3;
+  
+  // Manglik/Mangal Dosha status (astrological - India)
+  ManglikStatus manglik_status = 4;
+  
+  // Birth star/Nakshatra (astrological - India)
+  string nakshatra = 5;
+  
+  // Raasi/Moon sign (astrological - India)
+  string raasi = 6;
+  
+  // Willing to share horoscope/kundli
+  bool horoscope_available = 7;
+  
+  // Mother tongue
+  string mother_tongue = 8;
+  
+  // Ethnicity/Race (for global markets)
+  repeated Ethnicity ethnicity = 9;
+  
+  // Nationality
+  string nationality = 10;
+  
+  // Citizenship/Immigration status (relevant for NRI matching)
+  repeated string citizenship = 11;
+  
+  // Willing to relocate
+  bool willing_to_relocate = 12;
+  
+  // Willing to relocate to countries
+  repeated string relocation_countries = 13;
+}
+
+// ============================================================================
+// NEW: Appearance Information
+// ============================================================================
+
+// Physical appearance details
+message AppearanceInfo {
+  // Body type
+  BodyType body_type = 1;
+  
+  // Complexion/Skin tone (important in some cultures)
+  Complexion complexion = 2;
+  
+  // Hair color
+  HairColor hair_color = 3;
+  
+  // Eye color
+  EyeColor eye_color = 4;
+  
+  // Facial hair (for men)
+  FacialHair facial_hair = 5;
+  
+  // Tattoos
+  bool has_tattoos = 6;
+  
+  // Piercings (beyond ears)
+  bool has_piercings = 7;
+  
+  // Disability status
+  DisabilityStatus disability_status = 8;
+  
+  // Blood group (relevant in some cultures)
+  BloodGroup blood_group = 9;
+}
+
+// ============================================================================
+// NEW: Professional & Financial Information
+// ============================================================================
+
+// Professional and financial details
+message ProfessionalInfo {
+  // Annual income range
+  IncomeRange income_range = 1;
+
+  
+  // Employment type
+  EmploymentType employment_type = 2;
+  
+  // Industry sector
+  string industry = 3;
+  
+  // Years of experience
+  int32 years_of_experience = 4;
+  
+  // Highest education level
+  EducationLevel highest_education = 5;
+  
+  // Professional certifications
+  repeated string certifications = 6;
+  
+  // Own house/property
+  bool owns_property = 7;
+  
+  // Own vehicle
+  bool owns_vehicle = 8;
+  
+  // Financial stability indicator (aggregated score)
+  int32 financial_score = 9;
+}
+
+// ============================================================================
+// NEW: Family Information & Background
+// ============================================================================
+
+// Family background and structure
+message FamilyInfo {
+  // Family type
+  FamilyType family_type = 1;
+  
+  // Family values orientation
+  FamilyValues family_values = 2;
+  
+  // Father's occupation
+  string father_occupation = 3;
+  
+  // Mother's occupation
+  string mother_occupation = 4;
+  
+  // Number of siblings
+  int32 num_siblings = 5;
+  
+  // Number of brothers
+  int32 num_brothers = 6;
+  
+  // Number of sisters
+  int32 num_sisters = 7;
+  
+  // Family living situation (with parents, separate, etc.)
+  LivingSituation living_situation = 8;
+  
+  // Family affluence
+  FamilyAffluence family_affluence = 9;
+  
+  // About family (description)
+  string about_family = 10;
+  
+  // Father's status
+  ParentStatus father_status = 11;
+  
+  // Mother's status
+  ParentStatus mother_status = 12;
+  
+  // Family location/origin
+  string family_location = 13;
+  
+  // Ancestral origin (for diaspora communities)
+  string ancestral_origin = 14;
 }
 
 // Occupation information
 message OccupationInfo {
   // Occupation category
   OccupationCategory category = 1;
-
+  
   // Display label
   string label = 2;
-
+  
   // Custom occupation (if category is OTHER)
   string custom_occupation = 3;
 }
@@ -253,19 +429,25 @@ message OccupationInfo {
 message EducationInfo {
   // Education level
   EducationLevel level = 1;
-
+  
   // Display label
   string label = 2;
-
+  
   // Field of study
   string field_of_study = 3;
+  
+  // Institution name
+  string institution = 4;
+  
+  // Graduation year
+  int32 graduation_year = 5;
 }
 
 // Interest information
 message InterestInfo {
   // Interest category
   InterestCategory category = 1;
-
+  
   // Display label
   string label = 2;
 }
@@ -274,10 +456,10 @@ message InterestInfo {
 message LanguageInfo {
   // Language code
   LanguageCode code = 1;
-
+  
   // Display label
   string label = 2;
-
+  
   // Proficiency level
   LanguageProficiency proficiency = 3;
 }
@@ -286,16 +468,16 @@ message LanguageInfo {
 message ProfilePrompt {
   // Prompt ID
   string prompt_id = 1;
-
+  
   // Prompt question
   PromptQuestion question = 2;
-
+  
   // User's answer (text)
   string answer_text = 3;
-
+  
   // User's answer (photo/video URL if applicable)
   string answer_media_url = 4;
-
+  
   // Display order
   int32 order = 5;
 }
@@ -304,22 +486,22 @@ message ProfilePrompt {
 message ProfilePhoto {
   // Photo ID
   string photo_id = 1;
-
+  
   // Photo URL
   string url = 2;
-
+  
   // Thumbnail URL
   string thumbnail_url = 3;
-
+  
   // Display order
   int32 order = 4;
-
+  
   // Whether this is the primary photo
   bool is_primary = 5;
-
+  
   // Upload timestamp
   common.v1.Timestamp uploaded_at = 6;
-
+  
   // Photo caption/description
   string caption = 7;
 }
@@ -328,169 +510,274 @@ message ProfilePhoto {
 message AccountMetadata {
   // Account status
   common.v1.AccountStatus status = 1;
-
+  
   // Email verification status
   common.v1.VerificationStatus email_verified = 2;
-
+  
   // Phone verification status
   common.v1.VerificationStatus phone_verified = 3;
-
+  
   // Account creation timestamp
   common.v1.Timestamp created_at = 4;
-
+  
   // Last profile update timestamp
   common.v1.Timestamp updated_at = 5;
-
+  
   // Last login timestamp
   common.v1.Timestamp last_login_at = 6;
-
-  // Profile verification badge
+  
+  // Profile verification badge (government ID verified)
   bool is_verified = 7;
-
+  
   // Premium/subscription status
   bool is_premium = 8;
 }
 
-// Partner preferences (what user is looking for in a match)
+// ============================================================================
+// ENHANCED: Partner Preferences (Comprehensive matching criteria)
+// ============================================================================
+
+// Partner preferences - what user is looking for in a match
+// This should mirror all searchable attributes from UserProfile
 message PartnerPreferences {
+  // ============================================================================
+  // Basic Preferences
+  // ============================================================================
+  
   // Looking for (gender preference)
   repeated Gender looking_for_gender = 1;
-
+  
   // Age range preference
   AgeRange age_range = 2;
-
+  
   // Distance preference in km
   int32 distance_preference = 3;
-
+  
   // Height range preference (cm)
   HeightRange height_range = 4;
-
+  
+  // ============================================================================
+  // Relationship & Lifestyle Preferences
+  // ============================================================================
+  
   // Relationship goals
   repeated RelationshipGoal relationship_goals = 5;
-
+  
   // Education level preference
   repeated EducationLevel education_levels = 6;
-
+  
   // Occupation preferences
   repeated OccupationCategory occupations = 7;
-
+  
   // Religion preferences
   repeated Religion religions = 8;
-
+  
+  // Religion importance
+  Importance religion_importance = 9;
+  
   // Children preference
-  repeated ChildrenPreference children_preferences = 9;
-
+  repeated ChildrenPreference children_preferences = 10;
+  
   // Drinking preference
-  repeated DrinkingHabit drinking_preferences = 10;
-
+  repeated DrinkingHabit drinking_preferences = 11;
+  
   // Smoking preference
-  repeated SmokingHabit smoking_preferences = 11;
-
+  repeated SmokingHabit smoking_preferences = 12;
+  
   // Dietary preferences
-  repeated DietaryPreference dietary_preferences = 12;
-
+  repeated DietaryPreference dietary_preferences = 13;
+  
   // Pet preferences
-  repeated PetPreference pet_preferences = 13;
-
+  repeated PetPreference pet_preferences = 14;
+  
+  // Exercise/workout frequency preference
+  repeated WorkoutFrequency workout_preferences = 15;
+  
+  // ============================================================================
+  // Personality & Communication Preferences
+  // ============================================================================
+  
+  // MBTI personality types preferred
+  repeated string personality_types = 16;
+  
+  // Communication style preference
+  repeated CommunicationStyle communication_styles = 17;
+  
+  // Love language preference
+  repeated LoveLanguage love_languages = 18;
+  
+  // Political view preference
+  repeated PoliticalView political_views = 19;
+  
+  // Sleep schedule compatibility
+  repeated SleepSchedule sleep_schedules = 20;
+  
+  // ============================================================================
+  // Cultural & Matrimonial Preferences (India + Global)
+  // ============================================================================
+  
+  // Caste/Community preference (India-specific)
+  repeated string caste_preferences = 21;
+  
+  // Sub-caste preference
+  repeated string sub_caste_preferences = 22;
+  
+  // Gotra preference/restriction
+  repeated string gotra_preferences = 23;
+  
+  // Manglik preference - whether seeking manglik or non-manglik
+  ManglikPreference manglik_preference = 24;
+  
+  // Mother tongue preference
+  repeated string mother_tongue_preferences = 25;
+  
+  // Ethnicity/Race preference
+  repeated Ethnicity ethnicity_preferences = 26;
+  
+  // Nationality preference
+  repeated string nationality_preferences = 27;
+  
+  // NRI preference (India-specific)
+  NRIPreference nri_preference = 28;
+  
+  // Horoscope matching required
+  bool horoscope_matching_required = 29;
+  
+  // Willing to relocate expectation
+  RelocationExpectation relocation_expectation = 30;
+  
+  // ============================================================================
+  // Appearance Preferences
+  // ============================================================================
+  
+  // Body type preference
+  repeated BodyType body_type_preferences = 31;
+  
+  // Complexion preference (important in some cultures)
+  repeated Complexion complexion_preferences = 32;
+  
+  // Hair color preference
+  repeated HairColor hair_color_preferences = 33;
+  
+  // Eye color preference
+  repeated EyeColor eye_color_preferences = 34;
+  
+  // Facial hair preference
+  repeated FacialHair facial_hair_preferences = 35;
+  
+  // Tattoo acceptance
+  TattooPreference tattoo_preference = 36;
+  
+  // Piercing acceptance
+  PiercingPreference piercing_preference = 37;
+  
+  // Disability acceptance
+  DisabilityAcceptance disability_acceptance = 38;
+  
+  // ============================================================================
+  // Professional & Financial Preferences
+  // ============================================================================
+  
+  // Income range preference
+  repeated IncomeRange income_preferences = 39;
+  
+  // Employment type preference
+  repeated EmploymentType employment_preferences = 40;
+  
+  // Industry preference
+  repeated string industry_preferences = 41;
+  
+  // Minimum years of experience
+  int32 min_years_experience = 42;
+  
+  // Property ownership preference
+  PropertyOwnership property_preference = 43;
+  
+  // Vehicle ownership preference
+  VehicleOwnership vehicle_preference = 44;
+  
+  // Financial stability expectation
+  FinancialExpectation financial_expectation = 45;
+  
+  // ============================================================================
+  // Family Background Preferences
+  // ============================================================================
+  
+  // Family type preference
+  repeated FamilyType family_type_preferences = 46;
+  
+  // Family values preference
+  repeated FamilyValues family_values_preferences = 47;
+  
+  // Living situation preference (joint family, nuclear, etc.)
+  repeated LivingSituation living_situation_preferences = 48;
+  
+  // Family affluence preference
+  repeated FamilyAffluence family_affluence_preferences = 49;
+  
+  // Family location preference
+  repeated string family_location_preferences = 50;
+  
+  // Maximum acceptable siblings
+  int32 max_siblings = 51;
+  
+  // ============================================================================
+  // Language & Location Preferences
+  // ============================================================================
+  
+  // Language preferences
+  repeated LanguageCode language_preferences = 52;
+  
+  // Minimum language proficiency required
+  LanguageProficiency min_language_proficiency = 53;
+  
+  // Preferred cities/locations
+  repeated string location_preferences = 54;
+  
+  // Willing to consider long distance
+  bool open_to_long_distance = 55;
+  
+  // ============================================================================
+  // Interest & Hobby Preferences
+  // ============================================================================
+  
+  // Shared interests desired
+  repeated InterestCategory interest_preferences = 56;
+  
+  // Minimum shared interests required
+  int32 min_shared_interests = 57;
+  
+  // ============================================================================
+  // Deal-Breakers & Must-Haves
+  // ============================================================================
+  
   // Only show verified profiles
-  bool verified_only = 14;
-
-  // Dealbreakers (things that are must-haves or must-not-haves)
-  repeated string dealbreakers = 15;
-}
-
-// User app preferences (settings)
-message UserPreferences {
-  // Notification preferences
-  NotificationPreferences notifications = 1;
-
-  // Privacy preferences
-  PrivacyPreferences privacy = 2;
-
-  // Discovery preferences
-  DiscoveryPreferences discovery = 3;
-
-  // Language preference for app
-  string app_language = 4;
-
-  // Theme preference (light/dark)
-  string theme = 5;
-}
-
-// Notification preferences
-message NotificationPreferences {
-  // Push notifications enabled
-  bool push_enabled = 1;
-
-  // Email notifications enabled
-  bool email_enabled = 2;
-
-  // SMS notifications enabled
-  bool sms_enabled = 3;
-
-  // New match notifications
-  bool notify_matches = 4;
-
-  // New message notifications
-  bool notify_messages = 5;
-
-  // Like notifications
-  bool notify_likes = 6;
-
-  // Super like notifications
-  bool notify_super_likes = 7;
-
-  // Profile view notifications
-  bool notify_profile_views = 8;
-}
-
-// Privacy preferences
-message PrivacyPreferences {
-  // Show profile to everyone
-  bool public_profile = 1;
-
-  // Show online status
-  bool show_online_status = 2;
-
-  // Show distance
-  bool show_distance = 3;
-
-  // Show age
-  bool show_age = 4;
-
-  // Allow profile indexing
-  bool allow_search_engines = 5;
-
-  // Incognito mode (don't show in discovery)
-  bool incognito_mode = 6;
-
-  // Read receipts
-  bool read_receipts = 7;
-}
-
-// Discovery preferences
-message DiscoveryPreferences {
-  // Show me in discovery
-  bool discoverable = 1;
-
-  // Global mode (show me worldwide)
-  bool global_mode = 2;
-
-  // Only show verified users
-  bool verified_only = 3;
-
-  // Distance radius in km
-  int32 distance_radius = 4;
-
-  // Recently active (only show users active in last X days)
-  int32 recently_active_days = 5;
+  bool verified_only = 58;
+  
+  // Only show active users (online in last X days)
+  int32 max_days_inactive = 59;
+  
+  // Only show users with photos
+  bool photos_required = 60;
+  
+  // Minimum profile completion percentage
+  int32 min_profile_completion = 61;
+  
+  // Deal-breakers (structured list of non-negotiables)
+  repeated DealBreaker deal_breakers = 62;
+  
+  // Must-have attributes (positive requirements)
+  repeated MustHave must_haves = 63;
+  
+  // Custom deal-breaker descriptions (free text)
+  repeated string custom_dealbreakers = 64;
 }
 
 // Age range
 message AgeRange {
   // Minimum age
   int32 min_age = 1;
-
+  
   // Maximum age
   int32 max_age = 2;
 }
@@ -499,13 +786,128 @@ message AgeRange {
 message HeightRange {
   // Minimum height in cm
   int32 min_height = 1;
-
+  
   // Maximum height in cm
   int32 max_height = 2;
 }
 
 // ============================================================================
-// Enums
+// NEW: Deal-breakers and Must-haves (Structured preferences)
+// ============================================================================
+
+// Structured deal-breaker (automatic filter)
+message DealBreaker {
+  // Deal-breaker type
+  DealBreakerType type = 1;
+  
+  // Description
+  string description = 2;
+  
+  // Priority level (1-5, 5 being highest)
+  int32 priority = 3;
+}
+
+// Must-have attribute (positive requirement)
+message MustHave {
+  // Must-have type
+  MustHaveType type = 1;
+  
+  // Description
+  string description = 2;
+  
+  // Priority level (1-5, 5 being highest)
+  int32 priority = 3;
+}
+
+// User app preferences (settings)
+message UserPreferences {
+  // Notification preferences
+  NotificationPreferences notifications = 1;
+  
+  // Privacy preferences
+  PrivacyPreferences privacy = 2;
+  
+  // Discovery preferences
+  DiscoveryPreferences discovery = 3;
+  
+  // Language preference for app
+  string app_language = 4;
+  
+  // Theme preference (light/dark)
+  string theme = 5;
+}
+
+// Notification preferences
+message NotificationPreferences {
+  // Push notifications enabled
+  bool push_enabled = 1;
+  
+  // Email notifications enabled
+  bool email_enabled = 2;
+  
+  // SMS notifications enabled
+  bool sms_enabled = 3;
+  
+  // New match notifications
+  bool notify_matches = 4;
+  
+  // New message notifications
+  bool notify_messages = 5;
+  
+  // Like notifications
+  bool notify_likes = 6;
+  
+  // Super like notifications
+  bool notify_super_likes = 7;
+  
+  // Profile view notifications
+  bool notify_profile_views = 8;
+}
+
+// Privacy preferences
+message PrivacyPreferences {
+  // Show profile to everyone
+  bool public_profile = 1;
+  
+  // Show online status
+  bool show_online_status = 2;
+  
+  // Show distance
+  bool show_distance = 3;
+  
+  // Show age
+  bool show_age = 4;
+  
+  // Allow profile indexing
+  bool allow_search_engines = 5;
+  
+  // Incognito mode (don't show in discovery)
+  bool incognito_mode = 6;
+  
+  // Read receipts
+  bool read_receipts = 7;
+}
+
+// Discovery preferences
+message DiscoveryPreferences {
+  // Show me in discovery
+  bool discoverable = 1;
+  
+  // Global mode (show me worldwide)
+  bool global_mode = 2;
+  
+  // Only show verified users
+  bool verified_only = 3;
+  
+  // Distance radius in km
+  int32 distance_radius = 4;
+  
+  // Recently active (only show users active in last X days)
+  int32 recently_active_days = 5;
+}
+
+// ============================================================================
+// ENUMS - Existing + New
 // ============================================================================
 
 // Gender enum
@@ -524,44 +926,49 @@ enum Gender {
 // Zodiac signs
 enum ZodiacSign {
   ZODIAC_SIGN_UNSPECIFIED = 0;
-  ZODIAC_SIGN_ARIES = 1;           // March 21 - April 19
-  ZODIAC_SIGN_TAURUS = 2;          // April 20 - May 20
-  ZODIAC_SIGN_GEMINI = 3;          // May 21 - June 20
-  ZODIAC_SIGN_CANCER = 4;          // June 21 - July 22
-  ZODIAC_SIGN_LEO = 5;             // July 23 - August 22
-  ZODIAC_SIGN_VIRGO = 6;           // August 23 - September 22
-  ZODIAC_SIGN_LIBRA = 7;           // September 23 - October 22
-  ZODIAC_SIGN_SCORPIO = 8;         // October 23 - November 21
-  ZODIAC_SIGN_SAGITTARIUS = 9;     // November 22 - December 21
-  ZODIAC_SIGN_CAPRICORN = 10;      // December 22 - January 19
-  ZODIAC_SIGN_AQUARIUS = 11;       // January 20 - February 18
-  ZODIAC_SIGN_PISCES = 12;         // February 19 - March 20
+  ZODIAC_SIGN_ARIES = 1;        // March 21 - April 19
+  ZODIAC_SIGN_TAURUS = 2;       // April 20 - May 20
+  ZODIAC_SIGN_GEMINI = 3;       // May 21 - June 20
+  ZODIAC_SIGN_CANCER = 4;       // June 21 - July 22
+  ZODIAC_SIGN_LEO = 5;          // July 23 - August 22
+  ZODIAC_SIGN_VIRGO = 6;        // August 23 - September 22
+  ZODIAC_SIGN_LIBRA = 7;        // September 23 - October 22
+  ZODIAC_SIGN_SCORPIO = 8;      // October 23 - November 21
+  ZODIAC_SIGN_SAGITTARIUS = 9;  // November 22 - December 21
+  ZODIAC_SIGN_CAPRICORN = 10;   // December 22 - January 19
+  ZODIAC_SIGN_AQUARIUS = 11;    // January 20 - February 18
+  ZODIAC_SIGN_PISCES = 12;      // February 19 - March 20
 }
 
 // Occupation categories (worldwide + India-specific)
 enum OccupationCategory {
   OCCUPATION_UNSPECIFIED = 0;
+  
   // Tech & IT
   OCCUPATION_SOFTWARE_ENGINEER = 1;
   OCCUPATION_DATA_SCIENTIST = 2;
   OCCUPATION_PRODUCT_MANAGER = 3;
   OCCUPATION_UI_UX_DESIGNER = 4;
   OCCUPATION_CYBERSECURITY = 5;
+  
   // Healthcare
   OCCUPATION_DOCTOR = 6;
   OCCUPATION_NURSE = 7;
   OCCUPATION_PHARMACIST = 8;
   OCCUPATION_THERAPIST = 9;
+  
   // Business & Finance
   OCCUPATION_ACCOUNTANT = 10;
   OCCUPATION_FINANCIAL_ANALYST = 11;
   OCCUPATION_BANKER = 12;
   OCCUPATION_CONSULTANT = 13;
   OCCUPATION_ENTREPRENEUR = 14;
+  
   // Education
   OCCUPATION_TEACHER = 15;
   OCCUPATION_PROFESSOR = 16;
   OCCUPATION_RESEARCHER = 17;
+  
   // Creative & Arts
   OCCUPATION_ARTIST = 18;
   OCCUPATION_DESIGNER = 19;
@@ -569,29 +976,37 @@ enum OccupationCategory {
   OCCUPATION_MUSICIAN = 21;
   OCCUPATION_WRITER = 22;
   OCCUPATION_ACTOR = 23;
+  
   // Engineering (India-specific popular)
   OCCUPATION_CIVIL_ENGINEER = 24;
   OCCUPATION_MECHANICAL_ENGINEER = 25;
   OCCUPATION_ELECTRICAL_ENGINEER = 26;
+  
   // Legal
   OCCUPATION_LAWYER = 27;
   OCCUPATION_LEGAL_ADVISOR = 28;
+  
   // Government & Defense (India-specific)
   OCCUPATION_GOVERNMENT_EMPLOYEE = 29;
   OCCUPATION_CIVIL_SERVANT = 30;
   OCCUPATION_MILITARY = 31;
   OCCUPATION_POLICE = 32;
+  
   // Sales & Marketing
   OCCUPATION_SALES_EXECUTIVE = 33;
   OCCUPATION_MARKETING_MANAGER = 34;
+  
   // Aviation
   OCCUPATION_PILOT = 35;
   OCCUPATION_FLIGHT_ATTENDANT = 36;
+  
   // Hospitality
   OCCUPATION_CHEF = 37;
   OCCUPATION_HOTEL_MANAGER = 38;
+  
   // Real Estate
   OCCUPATION_REALTOR = 39;
+  
   // Other
   OCCUPATION_ARCHITECT = 40;
   OCCUPATION_SCIENTIST = 41;
@@ -607,48 +1022,49 @@ enum OccupationCategory {
 // Education levels (worldwide standards)
 enum EducationLevel {
   EDUCATION_LEVEL_UNSPECIFIED = 0;
-  EDUCATION_LEVEL_HIGH_SCHOOL = 1;              // Secondary education
-  EDUCATION_LEVEL_SOME_COLLEGE = 2;             // Some college, no degree
-  EDUCATION_LEVEL_ASSOCIATE_DEGREE = 3;         // 2-year degree
-  EDUCATION_LEVEL_BACHELORS = 4;                // Undergraduate degree
-  EDUCATION_LEVEL_MASTERS = 5;                  // Graduate degree
-  EDUCATION_LEVEL_MBA = 6;                      // Business degree
-  EDUCATION_LEVEL_PHD = 7;                      // Doctorate
-  EDUCATION_LEVEL_PROFESSIONAL_DEGREE = 8;      // JD, MD, etc.
-  EDUCATION_LEVEL_DIPLOMA = 9;                  // Vocational/Technical diploma
-  EDUCATION_LEVEL_TRADE_SCHOOL = 10;            // Trade certification
+  EDUCATION_LEVEL_HIGH_SCHOOL = 1;          // Secondary education
+  EDUCATION_LEVEL_SOME_COLLEGE = 2;         // Some college, no degree
+  EDUCATION_LEVEL_ASSOCIATE_DEGREE = 3;     // 2-year degree
+  EDUCATION_LEVEL_BACHELORS = 4;            // Undergraduate degree
+  EDUCATION_LEVEL_MASTERS = 5;              // Graduate degree
+  EDUCATION_LEVEL_MBA = 6;                  // Business degree
+  EDUCATION_LEVEL_PHD = 7;                  // Doctorate
+  EDUCATION_LEVEL_PROFESSIONAL_DEGREE = 8;  // JD, MD, etc.
+  EDUCATION_LEVEL_DIPLOMA = 9;              // Vocational/Technical diploma
+  EDUCATION_LEVEL_TRADE_SCHOOL = 10;        // Trade certification
   EDUCATION_LEVEL_OTHER = 11;
 }
 
 // Top 20 interests for dating apps
 enum InterestCategory {
   INTEREST_UNSPECIFIED = 0;
-  INTEREST_TRAVEL = 1;                  // Travel & Exploration
-  INTEREST_PHOTOGRAPHY = 2;             // Photography
-  INTEREST_MUSIC = 3;                   // Music
-  INTEREST_MOVIES_TV = 4;               // Movies & TV Shows
-  INTEREST_COOKING = 5;                 // Cooking & Food
-  INTEREST_FITNESS = 6;                 // Fitness & Gym
-  INTEREST_YOGA = 7;                    // Yoga & Meditation
-  INTEREST_READING = 8;                 // Reading & Books
-  INTEREST_WRITING = 9;                 // Writing & Blogging
-  INTEREST_ART = 10;                    // Art & Museums
-  INTEREST_DANCING = 11;                // Dancing
-  INTEREST_SPORTS = 12;                 // Sports & Athletics
-  INTEREST_GAMING = 13;                 // Gaming & Esports
-  INTEREST_HIKING = 14;                 // Hiking & Outdoors
-  INTEREST_PETS = 15;                   // Pets & Animals
-  INTEREST_FASHION = 16;                // Fashion & Style
-  INTEREST_VOLUNTEERING = 17;           // Volunteering & Activism
-  INTEREST_ENTREPRENEURSHIP = 18;       // Entrepreneurship & Startups
-  INTEREST_WINE_TASTING = 19;           // Wine & Cocktails
-  INTEREST_ASTROLOGY = 20;              // Astrology & Spirituality
+  INTEREST_TRAVEL = 1;           // Travel & Exploration
+  INTEREST_PHOTOGRAPHY = 2;      // Photography
+  INTEREST_MUSIC = 3;            // Music
+  INTEREST_MOVIES_TV = 4;        // Movies & TV Shows
+  INTEREST_COOKING = 5;          // Cooking & Food
+  INTEREST_FITNESS = 6;          // Fitness & Gym
+  INTEREST_YOGA = 7;             // Yoga & Meditation
+  INTEREST_READING = 8;          // Reading & Books
+  INTEREST_WRITING = 9;          // Writing & Blogging
+  INTEREST_ART = 10;             // Art & Museums
+  INTEREST_DANCING = 11;         // Dancing
+  INTEREST_SPORTS = 12;          // Sports & Athletics
+  INTEREST_GAMING = 13;          // Gaming & Esports
+  INTEREST_HIKING = 14;          // Hiking & Outdoors
+  INTEREST_PETS = 15;            // Pets & Animals
+  INTEREST_FASHION = 16;         // Fashion & Style
+  INTEREST_VOLUNTEERING = 17;    // Volunteering & Activism
+  INTEREST_ENTREPRENEURSHIP = 18; // Entrepreneurship & Startups
+  INTEREST_WINE_TASTING = 19;    // Wine & Cocktails
+  INTEREST_ASTROLOGY = 20;       // Astrology & Spirituality
   INTEREST_OTHER = 21;
 }
 
 // Language codes (popular worldwide + Indian languages)
 enum LanguageCode {
   LANGUAGE_UNSPECIFIED = 0;
+  
   // Global
   LANGUAGE_ENGLISH = 1;
   LANGUAGE_SPANISH = 2;
@@ -661,6 +1077,7 @@ enum LanguageCode {
   LANGUAGE_JAPANESE = 9;
   LANGUAGE_KOREAN = 10;
   LANGUAGE_ARABIC = 11;
+  
   // Indian languages
   LANGUAGE_HINDI = 12;
   LANGUAGE_BENGALI = 13;
@@ -673,6 +1090,7 @@ enum LanguageCode {
   LANGUAGE_PUNJABI = 20;
   LANGUAGE_URDU = 21;
   LANGUAGE_ODIA = 22;
+  
   // Other
   LANGUAGE_DUTCH = 23;
   LANGUAGE_POLISH = 24;
@@ -689,22 +1107,22 @@ enum LanguageCode {
 // Language proficiency
 enum LanguageProficiency {
   PROFICIENCY_UNSPECIFIED = 0;
-  PROFICIENCY_BASIC = 1;         // Basic/Beginner
-  PROFICIENCY_CONVERSATIONAL = 2; // Conversational
-  PROFICIENCY_FLUENT = 3;        // Fluent
-  PROFICIENCY_NATIVE = 4;        // Native speaker
+  PROFICIENCY_BASIC = 1;           // Basic/Beginner
+  PROFICIENCY_CONVERSATIONAL = 2;  // Conversational
+  PROFICIENCY_FLUENT = 3;          // Fluent
+  PROFICIENCY_NATIVE = 4;          // Native speaker
 }
 
 // Relationship goals
 enum RelationshipGoal {
   RELATIONSHIP_GOAL_UNSPECIFIED = 0;
-  RELATIONSHIP_GOAL_LONG_TERM = 1;           // Long-term relationship
-  RELATIONSHIP_GOAL_MARRIAGE = 2;            // Looking for marriage
-  RELATIONSHIP_GOAL_SHORT_TERM = 3;          // Short-term relationship
-  RELATIONSHIP_GOAL_FRIENDSHIP = 4;          // New friends
-  RELATIONSHIP_GOAL_CASUAL = 5;              // Casual dating/Hookups
-  RELATIONSHIP_GOAL_FIGURING_IT_OUT = 6;     // Still figuring it out
-  RELATIONSHIP_GOAL_OPEN_TO_EVERYTHING = 7;  // Open to everything
+  RELATIONSHIP_GOAL_LONG_TERM = 1;         // Long-term relationship
+  RELATIONSHIP_GOAL_MARRIAGE = 2;          // Looking for marriage
+  RELATIONSHIP_GOAL_SHORT_TERM = 3;        // Short-term relationship
+  RELATIONSHIP_GOAL_FRIENDSHIP = 4;        // New friends
+  RELATIONSHIP_GOAL_CASUAL = 5;            // Casual dating/Hookups
+  RELATIONSHIP_GOAL_FIGURING_IT_OUT = 6;   // Still figuring it out
+  RELATIONSHIP_GOAL_OPEN_TO_EVERYTHING = 7; // Open to everything
 }
 
 // Drinking habits
@@ -795,13 +1213,13 @@ enum PoliticalView {
 // Pet preferences
 enum PetPreference {
   PET_UNSPECIFIED = 0;
-  PET_DOG_LOVER = 1;              // Has/Loves dogs
-  PET_CAT_LOVER = 2;              // Has/Loves cats
-  PET_BOTH = 3;                   // Has/Loves both
-  PET_OTHER = 4;                  // Has other pets
-  PET_ALLERGIC = 5;               // Allergic to pets
-  PET_NO_PETS = 6;                // Don't have/want pets
-  PET_WANT_SOMEDAY = 7;           // Want pets someday
+  PET_DOG_LOVER = 1;               // Has/Loves dogs
+  PET_CAT_LOVER = 2;               // Has/Loves cats
+  PET_BOTH = 3;                    // Has/Loves both
+  PET_OTHER = 4;                   // Has other pets
+  PET_ALLERGIC = 5;                // Allergic to pets
+  PET_NO_PETS = 6;                 // Don't have/want pets
+  PET_WANT_SOMEDAY = 7;            // Want pets someday
 }
 
 // Children preferences
@@ -820,10 +1238,10 @@ enum ChildrenPreference {
 enum CommunicationStyle {
   COMMUNICATION_UNSPECIFIED = 0;
   COMMUNICATION_BIG_TIME_TEXTER = 1;   // Big time texter
-  COMMUNICATION_PHONE_CALLER = 2;       // Phone caller
-  COMMUNICATION_VIDEO_CHATTER = 3;      // Video chatter
-  COMMUNICATION_IN_PERSON = 4;          // Better in person
-  COMMUNICATION_BAD_TEXTER = 5;         // Bad texter
+  COMMUNICATION_PHONE_CALLER = 2;      // Phone caller
+  COMMUNICATION_VIDEO_CHATTER = 3;     // Video chatter
+  COMMUNICATION_IN_PERSON = 4;         // Better in person
+  COMMUNICATION_BAD_TEXTER = 5;        // Bad texter
 }
 
 // Love language
@@ -839,34 +1257,34 @@ enum LoveLanguage {
 // Sleep schedule
 enum SleepSchedule {
   SLEEP_SCHEDULE_UNSPECIFIED = 0;
-  SLEEP_SCHEDULE_EARLY_BIRD = 1;       // Early bird (sleep early, wake early)
-  SLEEP_SCHEDULE_NIGHT_OWL = 2;        // Night owl (sleep late, wake late)
-  SLEEP_SCHEDULE_VARIES = 3;           // Varies/Flexible
+  SLEEP_SCHEDULE_EARLY_BIRD = 1;   // Early bird (sleep early, wake early)
+  SLEEP_SCHEDULE_NIGHT_OWL = 2;    // Night owl (sleep late, wake late)
+  SLEEP_SCHEDULE_VARIES = 3;       // Varies/Flexible
 }
 
 // Profile prompts (like Hinge)
 enum PromptQuestion {
   PROMPT_UNSPECIFIED = 0;
-  PROMPT_TYPICAL_SUNDAY = 1;                      // A typical Sunday for me is...
-  PROMPT_LOOKING_FOR = 2;                         // I'm looking for...
-  PROMPT_MOST_SPONTANEOUS_THING = 3;              // The most spontaneous thing I've done is...
-  PROMPT_SIMPLE_PLEASURES = 4;                    // My simple pleasures...
-  PROMPT_DATING_ME_IS_LIKE = 5;                   // Dating me is like...
-  PROMPT_BEST_TRAVEL_STORY = 6;                   // My best travel story...
-  PROMPT_TOGETHER_WE_COULD = 7;                   // Together we could...
-  PROMPT_IDEAL_FIRST_DATE = 8;                    // My ideal first date...
-  PROMPT_GREEN_FLAG = 9;                          // A green flag for me is...
-  PROMPT_RED_FLAG = 10;                           // A red flag for me is...
-  PROMPT_UNPOPULAR_OPINION = 11;                  // My most unpopular opinion...
-  PROMPT_OBSESSED_WITH = 12;                      // I'm obsessed with...
-  PROMPT_NERD_OUT_ABOUT = 13;                     // I nerd out about...
-  PROMPT_TEACH_YOU = 14;                          // I can teach you...
-  PROMPT_BEST_QUALITY = 15;                       // My best quality is...
-  PROMPT_WORST_HABIT = 16;                        // My worst habit is...
-  PROMPT_RECENT_ACCOMPLISHMENT = 17;              // A recent accomplishment I'm proud of...
-  PROMPT_BUCKET_LIST = 18;                        // On my bucket list...
-  PROMPT_LIFE_GOAL = 19;                          // My life goal is...
-  PROMPT_FAVORITE_QUOTE = 20;                     // My favorite quote...
+  PROMPT_TYPICAL_SUNDAY = 1;             // A typical Sunday for me is...
+  PROMPT_LOOKING_FOR = 2;                // I'm looking for...
+  PROMPT_MOST_SPONTANEOUS_THING = 3;     // The most spontaneous thing I've done is...
+  PROMPT_SIMPLE_PLEASURES = 4;           // My simple pleasures...
+  PROMPT_DATING_ME_IS_LIKE = 5;          // Dating me is like...
+  PROMPT_BEST_TRAVEL_STORY = 6;          // My best travel story...
+  PROMPT_TOGETHER_WE_COULD = 7;          // Together we could...
+  PROMPT_IDEAL_FIRST_DATE = 8;           // My ideal first date...
+  PROMPT_GREEN_FLAG = 9;                 // A green flag for me is...
+  PROMPT_RED_FLAG = 10;                  // A red flag for me is...
+  PROMPT_UNPOPULAR_OPINION = 11;         // My most unpopular opinion...
+  PROMPT_OBSESSED_WITH = 12;             // I'm obsessed with...
+  PROMPT_NERD_OUT_ABOUT = 13;            // I nerd out about...
+  PROMPT_TEACH_YOU = 14;                 // I can teach you...
+  PROMPT_BEST_QUALITY = 15;              // My best quality is...
+  PROMPT_WORST_HABIT = 16;               // My worst habit is...
+  PROMPT_RECENT_ACCOMPLISHMENT = 17;     // A recent accomplishment I'm proud of...
+  PROMPT_BUCKET_LIST = 18;               // On my bucket list...
+  PROMPT_LIFE_GOAL = 19;                 // My life goal is...
+  PROMPT_FAVORITE_QUOTE = 20;            // My favorite quote...
 }
 
 // Report reason enum
@@ -882,6 +1300,336 @@ enum ReportReason {
   REPORT_REASON_HATE_SPEECH = 8;
   REPORT_REASON_VIOLENCE = 9;
   REPORT_REASON_OTHER = 10;
+}
+
+// ============================================================================
+// NEW ENUMS - Cultural, Appearance, Professional, Family
+// ============================================================================
+
+// Manglik/Mangal Dosha status (Vedic astrology - important in India)
+enum ManglikStatus {
+  MANGLIK_STATUS_UNSPECIFIED = 0;
+  MANGLIK_STATUS_MANGLIK = 1;          // Has Mangal Dosha
+  MANGLIK_STATUS_NON_MANGLIK = 2;      // Does not have Mangal Dosha
+  MANGLIK_STATUS_ANSHIK_MANGLIK = 3;   // Partial Manglik
+  MANGLIK_STATUS_NOT_APPLICABLE = 4;   // Not applicable/Don't believe
+  MANGLIK_STATUS_UNKNOWN = 5;          // Unknown/Not checked
+}
+
+// Manglik preference for partner search
+enum ManglikPreference {
+  MANGLIK_PREFERENCE_UNSPECIFIED = 0;
+  MANGLIK_PREFERENCE_MANGLIK_ONLY = 1;       // Only Manglik partners
+  MANGLIK_PREFERENCE_NON_MANGLIK_ONLY = 2;   // Only Non-Manglik partners
+  MANGLIK_PREFERENCE_BOTH = 3;               // Open to both
+  MANGLIK_PREFERENCE_NOT_IMPORTANT = 4;      // Not important/Don't believe
+}
+
+// Ethnicity/Race (for global markets)
+enum Ethnicity {
+  ETHNICITY_UNSPECIFIED = 0;
+  ETHNICITY_ASIAN = 1;
+  ETHNICITY_BLACK_AFRICAN = 2;
+  ETHNICITY_BLACK_CARIBBEAN = 3;
+  ETHNICITY_CAUCASIAN_WHITE = 4;
+  ETHNICITY_EAST_ASIAN = 5;
+  ETHNICITY_HISPANIC_LATINO = 6;
+  ETHNICITY_MIDDLE_EASTERN = 7;
+  ETHNICITY_NATIVE_AMERICAN = 8;
+  ETHNICITY_PACIFIC_ISLANDER = 9;
+  ETHNICITY_SOUTH_ASIAN = 10;
+  ETHNICITY_SOUTHEAST_ASIAN = 11;
+  ETHNICITY_MIXED_MULTIRACIAL = 12;
+  ETHNICITY_OTHER = 13;
+  ETHNICITY_PREFER_NOT_TO_SAY = 14;
+}
+
+// Body type
+enum BodyType {
+  BODY_TYPE_UNSPECIFIED = 0;
+  BODY_TYPE_SLIM = 1;              // Slim/Slender
+  BODY_TYPE_ATHLETIC = 2;          // Athletic/Toned
+  BODY_TYPE_AVERAGE = 3;           // Average
+  BODY_TYPE_MUSCULAR = 4;          // Muscular/Built
+  BODY_TYPE_CURVY = 5;             // Curvy (typically for women)
+  BODY_TYPE_FEW_EXTRA_POUNDS = 6;  // A few extra pounds
+  BODY_TYPE_HEAVYSET = 7;          // Heavyset/Plus-size
+  BODY_TYPE_PREFER_NOT_TO_SAY = 8;
+}
+
+// Complexion/Skin tone (important in some cultures, especially India)
+enum Complexion {
+  COMPLEXION_UNSPECIFIED = 0;
+  COMPLEXION_VERY_FAIR = 1;
+  COMPLEXION_FAIR = 2;
+  COMPLEXION_WHEATISH = 3;         // Medium/Wheatish (India-specific term)
+  COMPLEXION_DUSKY = 4;            // Dusky/Brown
+  COMPLEXION_DARK = 5;
+  COMPLEXION_PREFER_NOT_TO_SAY = 6;
+}
+
+// Hair color
+enum HairColor {
+  HAIR_COLOR_UNSPECIFIED = 0;
+  HAIR_COLOR_BLACK = 1;
+  HAIR_COLOR_BROWN = 2;
+  HAIR_COLOR_BLONDE = 3;
+  HAIR_COLOR_RED = 4;
+  HAIR_COLOR_GRAY = 5;
+  HAIR_COLOR_WHITE = 6;
+  HAIR_COLOR_BALD = 7;
+  HAIR_COLOR_OTHER = 8;
+  HAIR_COLOR_PREFER_NOT_TO_SAY = 9;
+}
+
+// Eye color
+enum EyeColor {
+  EYE_COLOR_UNSPECIFIED = 0;
+  EYE_COLOR_BROWN = 1;
+  EYE_COLOR_BLACK = 2;
+  EYE_COLOR_BLUE = 3;
+  EYE_COLOR_GREEN = 4;
+  EYE_COLOR_HAZEL = 5;
+  EYE_COLOR_GRAY = 6;
+  EYE_COLOR_OTHER = 7;
+  EYE_COLOR_PREFER_NOT_TO_SAY = 8;
+}
+
+// Facial hair (for men)
+enum FacialHair {
+  FACIAL_HAIR_UNSPECIFIED = 0;
+  FACIAL_HAIR_CLEAN_SHAVEN = 1;
+  FACIAL_HAIR_BEARD = 2;
+  FACIAL_HAIR_GOATEE = 3;
+  FACIAL_HAIR_MUSTACHE = 4;
+  FACIAL_HAIR_STUBBLE = 5;
+  FACIAL_HAIR_OTHER = 6;
+}
+
+// Disability status
+enum DisabilityStatus {
+  DISABILITY_STATUS_UNSPECIFIED = 0;
+  DISABILITY_STATUS_NONE = 1;
+  DISABILITY_STATUS_PHYSICAL = 2;
+  DISABILITY_STATUS_VISUAL = 3;
+  DISABILITY_STATUS_HEARING = 4;
+  DISABILITY_STATUS_OTHER = 5;
+  DISABILITY_STATUS_PREFER_NOT_TO_SAY = 6;
+}
+
+// Blood group
+enum BloodGroup {
+  BLOOD_GROUP_UNSPECIFIED = 0;
+  BLOOD_GROUP_A_POSITIVE = 1;
+  BLOOD_GROUP_A_NEGATIVE = 2;
+  BLOOD_GROUP_B_POSITIVE = 3;
+  BLOOD_GROUP_B_NEGATIVE = 4;
+  BLOOD_GROUP_AB_POSITIVE = 5;
+  BLOOD_GROUP_AB_NEGATIVE = 6;
+  BLOOD_GROUP_O_POSITIVE = 7;
+  BLOOD_GROUP_O_NEGATIVE = 8;
+  BLOOD_GROUP_UNKNOWN = 9;
+}
+
+// Income range
+enum IncomeRange {
+  INCOME_RANGE_UNSPECIFIED = 0;
+  INCOME_RANGE_BELOW_3_LAKH = 1;       // Below ₹3 lakh/year (India)
+  INCOME_RANGE_3_TO_5_LAKH = 2;        // ₹3-5 lakh/year
+  INCOME_RANGE_5_TO_7_LAKH = 3;        // ₹5-7 lakh/year
+  INCOME_RANGE_7_TO_10_LAKH = 4;       // ₹7-10 lakh/year
+  INCOME_RANGE_10_TO_15_LAKH = 5;      // ₹10-15 lakh/year
+  INCOME_RANGE_15_TO_20_LAKH = 6;      // ₹15-20 lakh/year
+  INCOME_RANGE_20_TO_30_LAKH = 7;      // ₹20-30 lakh/year
+  INCOME_RANGE_30_TO_50_LAKH = 8;      // ₹30-50 lakh/year
+  INCOME_RANGE_50_LAKH_TO_1_CRORE = 9; // ₹50 lakh - ₹1 crore/year
+  INCOME_RANGE_ABOVE_1_CRORE = 10;     // Above ₹1 crore/year
+  INCOME_RANGE_PREFER_NOT_TO_SAY = 11;
+}
+
+// Employment type
+enum EmploymentType {
+  EMPLOYMENT_TYPE_UNSPECIFIED = 0;
+  EMPLOYMENT_TYPE_FULL_TIME = 1;
+  EMPLOYMENT_TYPE_PART_TIME = 2;
+  EMPLOYMENT_TYPE_SELF_EMPLOYED = 3;
+  EMPLOYMENT_TYPE_ENTREPRENEUR = 4;
+  EMPLOYMENT_TYPE_FREELANCER = 5;
+  EMPLOYMENT_TYPE_CONTRACT = 6;
+  EMPLOYMENT_TYPE_INTERN = 7;
+  EMPLOYMENT_TYPE_STUDENT = 8;
+  EMPLOYMENT_TYPE_HOMEMAKER = 9;
+  EMPLOYMENT_TYPE_RETIRED = 10;
+  EMPLOYMENT_TYPE_UNEMPLOYED = 11;
+  EMPLOYMENT_TYPE_PREFER_NOT_TO_SAY = 12;
+}
+
+// Family type (India-specific but applicable globally)
+enum FamilyType {
+  FAMILY_TYPE_UNSPECIFIED = 0;
+  FAMILY_TYPE_NUCLEAR = 1;             // Parents and children only
+  FAMILY_TYPE_JOINT = 2;               // Extended family living together
+  FAMILY_TYPE_TRANSITIONAL_JOINT = 3;  // Semi-joint (separate kitchens but same compound)
+  FAMILY_TYPE_EXTENDED = 4;            // Extended family in same city/area
+  FAMILY_TYPE_SINGLE_PARENT = 5;       // Single parent household
+  FAMILY_TYPE_OTHER = 6;
+}
+
+// Family values
+enum FamilyValues {
+  FAMILY_VALUES_UNSPECIFIED = 0;
+  FAMILY_VALUES_TRADITIONAL = 1;       // Traditional/Conservative
+  FAMILY_VALUES_MODERATE = 2;          // Moderate
+  FAMILY_VALUES_LIBERAL = 3;           // Liberal/Progressive
+  FAMILY_VALUES_ORTHODOX = 4;          // Orthodox/Very traditional
+  FAMILY_VALUES_OPEN_MINDED = 5;       // Open-minded/Modern
+}
+
+// Living situation
+enum LivingSituation {
+  LIVING_SITUATION_UNSPECIFIED = 0;
+  LIVING_SITUATION_WITH_PARENTS = 1;        // Living with parents
+  LIVING_SITUATION_WITH_FAMILY = 2;         // Living with extended family
+  LIVING_SITUATION_INDEPENDENT = 3;         // Living independently
+  LIVING_SITUATION_WITH_ROOMMATES = 4;      // Living with roommates
+  LIVING_SITUATION_OWN_HOUSE = 5;           // Own house
+  LIVING_SITUATION_RENTED = 6;              // Rented accommodation
+  LIVING_SITUATION_OTHER = 7;
+}
+
+// Family affluence/socioeconomic status
+enum FamilyAffluence {
+  FAMILY_AFFLUENCE_UNSPECIFIED = 0;
+  FAMILY_AFFLUENCE_LOWER_MIDDLE_CLASS = 1;
+  FAMILY_AFFLUENCE_MIDDLE_CLASS = 2;
+  FAMILY_AFFLUENCE_UPPER_MIDDLE_CLASS = 3;
+  FAMILY_AFFLUENCE_AFFLUENT = 4;           // Rich/Wealthy
+  FAMILY_AFFLUENCE_VERY_AFFLUENT = 5;      // Very rich/High net worth
+  FAMILY_AFFLUENCE_PREFER_NOT_TO_SAY = 6;
+}
+
+// Parent status (for family information)
+enum ParentStatus {
+  PARENT_STATUS_UNSPECIFIED = 0;
+  PARENT_STATUS_ALIVE = 1;
+  PARENT_STATUS_DECEASED = 2;
+  PARENT_STATUS_PREFER_NOT_TO_SAY = 3;
+}
+
+// NRI (Non-Resident Indian) preference
+enum NRIPreference {
+  NRI_PREFERENCE_UNSPECIFIED = 0;
+  NRI_PREFERENCE_NRI_ONLY = 1;         // Only NRI/abroad candidates
+  NRI_PREFERENCE_RESIDENT_ONLY = 2;    // Only resident/India-based candidates
+  NRI_PREFERENCE_BOTH = 3;             // Open to both
+  NRI_PREFERENCE_NO_PREFERENCE = 4;    // No preference
+}
+
+// Relocation expectation
+enum RelocationExpectation {
+  RELOCATION_EXPECTATION_UNSPECIFIED = 0;
+  RELOCATION_EXPECTATION_MUST_RELOCATE = 1;     // Partner must be willing to relocate
+  RELOCATION_EXPECTATION_WILLING_TO_RELOCATE = 2; // I am willing to relocate
+  RELOCATION_EXPECTATION_BOTH_FLEXIBLE = 3;     // Both can discuss
+  RELOCATION_EXPECTATION_NO_RELOCATION = 4;     // No relocation preferred
+}
+
+// Tattoo preference
+enum TattooPreference {
+  TATTOO_PREFERENCE_UNSPECIFIED = 0;
+  TATTOO_PREFERENCE_LOVE_TATTOOS = 1;
+  TATTOO_PREFERENCE_OKAY_WITH_TATTOOS = 2;
+  TATTOO_PREFERENCE_NO_PREFERENCE = 3;
+  TATTOO_PREFERENCE_PREFER_WITHOUT = 4;
+  TATTOO_PREFERENCE_DEALBREAKER = 5;      // Tattoos are a dealbreaker
+}
+
+// Piercing preference
+enum PiercingPreference {
+  PIERCING_PREFERENCE_UNSPECIFIED = 0;
+  PIERCING_PREFERENCE_LOVE_PIERCINGS = 1;
+  PIERCING_PREFERENCE_OKAY_WITH_PIERCINGS = 2;
+  PIERCING_PREFERENCE_NO_PREFERENCE = 3;
+  PIERCING_PREFERENCE_PREFER_WITHOUT = 4;
+  PIERCING_PREFERENCE_DEALBREAKER = 5;    // Piercings are a dealbreaker
+}
+
+// Disability acceptance
+enum DisabilityAcceptance {
+  DISABILITY_ACCEPTANCE_UNSPECIFIED = 0;
+  DISABILITY_ACCEPTANCE_OPEN_TO_ALL = 1;
+  DISABILITY_ACCEPTANCE_DEPENDS = 2;
+  DISABILITY_ACCEPTANCE_NO_PREFERENCE = 3;
+  DISABILITY_ACCEPTANCE_PREFER_WITHOUT = 4;
+}
+
+// Property ownership preference
+enum PropertyOwnership {
+  PROPERTY_OWNERSHIP_UNSPECIFIED = 0;
+  PROPERTY_OWNERSHIP_MUST_OWN = 1;        // Must own property
+  PROPERTY_OWNERSHIP_PREFERRED = 2;       // Preferred but not required
+  PROPERTY_OWNERSHIP_NO_PREFERENCE = 3;   // No preference
+  PROPERTY_OWNERSHIP_NOT_IMPORTANT = 4;   // Not important
+}
+
+// Vehicle ownership preference
+enum VehicleOwnership {
+  VEHICLE_OWNERSHIP_UNSPECIFIED = 0;
+  VEHICLE_OWNERSHIP_MUST_OWN = 1;         // Must own vehicle
+  VEHICLE_OWNERSHIP_PREFERRED = 2;        // Preferred but not required
+  VEHICLE_OWNERSHIP_NO_PREFERENCE = 3;    // No preference
+  VEHICLE_OWNERSHIP_NOT_IMPORTANT = 4;    // Not important
+}
+
+// Financial expectation
+enum FinancialExpectation {
+  FINANCIAL_EXPECTATION_UNSPECIFIED = 0;
+  FINANCIAL_EXPECTATION_VERY_STABLE = 1;  // Must be very financially stable
+  FINANCIAL_EXPECTATION_STABLE = 2;       // Should be stable
+  FINANCIAL_EXPECTATION_MODERATE = 3;     // Moderate stability
+  FINANCIAL_EXPECTATION_NO_REQUIREMENT = 4; // No specific requirement
+}
+
+// Deal-breaker types
+enum DealBreakerType {
+  DEALBREAKER_TYPE_UNSPECIFIED = 0;
+  DEALBREAKER_TYPE_SMOKING = 1;
+  DEALBREAKER_TYPE_DRINKING = 2;
+  DEALBREAKER_TYPE_DRUGS = 3;
+  DEALBREAKER_TYPE_HAS_CHILDREN = 4;
+  DEALBREAKER_TYPE_DOESNT_WANT_CHILDREN = 5;
+  DEALBREAKER_TYPE_DIFFERENT_RELIGION = 6;
+  DEALBREAKER_TYPE_DIFFERENT_POLITICAL_VIEW = 7;
+  DEALBREAKER_TYPE_LONG_DISTANCE = 8;
+  DEALBREAKER_TYPE_NOT_EDUCATED = 9;
+  DEALBREAKER_TYPE_UNEMPLOYED = 10;
+  DEALBREAKER_TYPE_LIVING_WITH_PARENTS = 11;
+  DEALBREAKER_TYPE_DIVORCED = 12;
+  DEALBREAKER_TYPE_AGE_GAP = 13;
+  DEALBREAKER_TYPE_HEIGHT = 14;
+  DEALBREAKER_TYPE_VEGETARIAN_NON_VEG = 15;
+  DEALBREAKER_TYPE_OTHER = 16;
+}
+
+// Must-have types
+enum MustHaveType {
+  MUSTHAVE_TYPE_UNSPECIFIED = 0;
+  MUSTHAVE_TYPE_AMBITIOUS = 1;
+  MUSTHAVE_TYPE_FAMILY_ORIENTED = 2;
+  MUSTHAVE_TYPE_SENSE_OF_HUMOR = 3;
+  MUSTHAVE_TYPE_FINANCIALLY_STABLE = 4;
+  MUSTHAVE_TYPE_PHYSICALLY_FIT = 5;
+  MUSTHAVE_TYPE_EDUCATED = 6;
+  MUSTHAVE_TYPE_CAREER_FOCUSED = 7;
+  MUSTHAVE_TYPE_WANTS_CHILDREN = 8;
+  MUSTHAVE_TYPE_SAME_RELIGION = 9;
+  MUSTHAVE_TYPE_SAME_VALUES = 10;
+  MUSTHAVE_TYPE_GOOD_COMMUNICATOR = 11;
+  MUSTHAVE_TYPE_EMOTIONALLY_INTELLIGENT = 12;
+  MUSTHAVE_TYPE_ADVENTUROUS = 13;
+  MUSTHAVE_TYPE_HOMEBODY = 14;
+  MUSTHAVE_TYPE_SOCIAL = 15;
+  MUSTHAVE_TYPE_OTHER = 16;
 }
 
 // ============================================================================
@@ -913,24 +1661,36 @@ message GetMyProfileResponse {
 message UpdateProfileRequest {
   // Basic info updates
   BasicInfo basic_info = 1;
-
+  
   // Profile details updates
   ProfileDetails profile_details = 2;
-
+  
   // Lifestyle info updates
   LifestyleInfo lifestyle_info = 3;
-
+  
   // Prompts updates
   repeated ProfilePrompt prompts = 4;
-
+  
+  // Cultural info updates
+  CulturalInfo cultural_info = 5;
+  
+  // Appearance info updates
+  AppearanceInfo appearance_info = 6;
+  
+  // Professional info updates
+  ProfessionalInfo professional_info = 7;
+  
+  // Family info updates
+  FamilyInfo family_info = 8;
+  
   // Fields to update (field mask)
-  repeated string update_fields = 5;
+  repeated string update_fields = 9;
 }
 
 message UpdateProfileResponse {
   // Updated profile
   UserProfile profile = 1;
-
+  
   // Success message
   string message = 2;
 }
@@ -939,7 +1699,7 @@ message UpdateProfileResponse {
 message DeleteAccountRequest {
   // Confirmation password
   string password = 1;
-
+  
   // Reason for deletion
   string reason = 2;
 }
@@ -947,7 +1707,7 @@ message DeleteAccountRequest {
 message DeleteAccountResponse {
   // Success
   bool success = 1;
-
+  
   // Message
   string message = 2;
 }
@@ -956,16 +1716,16 @@ message DeleteAccountResponse {
 message UploadProfilePhotoRequest {
   // Photo data (base64 encoded)
   bytes photo_data = 1;
-
+  
   // Content type (e.g., "image/jpeg")
   string content_type = 2;
-
+  
   // Whether this should be primary photo
   bool is_primary = 3;
-
+  
   // Display order
   int32 order = 4;
-
+  
   // Caption
   string caption = 5;
 }
@@ -973,7 +1733,7 @@ message UploadProfilePhotoRequest {
 message UploadProfilePhotoResponse {
   // Uploaded photo
   ProfilePhoto photo = 1;
-
+  
   // Message
   string message = 2;
 }
@@ -987,7 +1747,7 @@ message DeleteProfilePhotoRequest {
 message DeleteProfilePhotoResponse {
   // Success
   bool success = 1;
-
+  
   // Message
   string message = 2;
 }
@@ -996,7 +1756,7 @@ message DeleteProfilePhotoResponse {
 message SearchUsersRequest {
   // Search filters
   SearchFilters filters = 1;
-
+  
   // Pagination
   common.v1.PaginationRequest pagination = 2;
 }
@@ -1004,7 +1764,7 @@ message SearchUsersRequest {
 message SearchUsersResponse {
   // Matching users
   repeated UserProfile users = 1;
-
+  
   // Pagination
   common.v1.PaginationResponse pagination = 2;
 }
@@ -1013,38 +1773,49 @@ message SearchUsersResponse {
 message SearchFilters {
   // Gender filter
   repeated Gender gender = 1;
-
+  
   // Age range
   AgeRange age_range = 2;
-
+  
   // Distance in km
   int32 distance = 3;
-
+  
   // Location (for distance calculation)
   common.v1.Location location = 4;
-
+  
   // Interests
   repeated InterestCategory interests = 5;
-
+  
   // Relationship goals
   repeated RelationshipGoal relationship_goals = 6;
-
+  
   // Education levels
   repeated EducationLevel education_levels = 7;
-
+  
   // Only verified users
   bool verified_only = 8;
-
+  
   // Only online users
   bool online_only = 9;
-
+  
   // Height range
   HeightRange height_range = 10;
-
+  
   // Lifestyle filters
   repeated DrinkingHabit drinking = 11;
   repeated SmokingHabit smoking = 12;
   repeated ChildrenPreference children = 13;
+  
+  // Cultural filters
+  repeated string caste = 14;
+  ManglikPreference manglik_preference = 15;
+  repeated Ethnicity ethnicity = 16;
+  
+  // Income filter
+  repeated IncomeRange income = 17;
+  
+  // Body type filter
+  repeated BodyType body_type = 18;
 }
 
 // Get recommendations
@@ -1056,7 +1827,7 @@ message GetRecommendationsRequest {
 message GetRecommendationsResponse {
   // Recommended users
   repeated UserProfile recommendations = 1;
-
+  
   // Total available recommendations
   int32 total_count = 2;
 }
@@ -1075,7 +1846,7 @@ message GetPartnerPreferencesResponse {
 message UpdatePartnerPreferencesRequest {
   // Updated partner preferences
   PartnerPreferences preferences = 1;
-
+  
   // Fields to update
   repeated string update_fields = 2;
 }
@@ -1083,7 +1854,7 @@ message UpdatePartnerPreferencesRequest {
 message UpdatePartnerPreferencesResponse {
   // Updated preferences
   PartnerPreferences preferences = 1;
-
+  
   // Success message
   string message = 2;
 }
@@ -1102,7 +1873,7 @@ message GetUserPreferencesResponse {
 message UpdateUserPreferencesRequest {
   // Updated user preferences
   UserPreferences preferences = 1;
-
+  
   // Fields to update
   repeated string update_fields = 2;
 }
@@ -1110,7 +1881,7 @@ message UpdateUserPreferencesRequest {
 message UpdateUserPreferencesResponse {
   // Updated preferences
   UserPreferences preferences = 1;
-
+  
   // Success message
   string message = 2;
 }
@@ -1119,7 +1890,7 @@ message UpdateUserPreferencesResponse {
 message BlockUserRequest {
   // User ID to block
   string user_id = 1;
-
+  
   // Optional reason
   string reason = 2;
 }
@@ -1127,7 +1898,7 @@ message BlockUserRequest {
 message BlockUserResponse {
   // Success
   bool success = 1;
-
+  
   // Message
   string message = 2;
 }
@@ -1141,7 +1912,7 @@ message UnblockUserRequest {
 message UnblockUserResponse {
   // Success
   bool success = 1;
-
+  
   // Message
   string message = 2;
 }
@@ -1155,7 +1926,7 @@ message ListBlockedUsersRequest {
 message ListBlockedUsersResponse {
   // Blocked users
   repeated UserProfile users = 1;
-
+  
   // Pagination
   common.v1.PaginationResponse pagination = 2;
 }
@@ -1164,13 +1935,13 @@ message ListBlockedUsersResponse {
 message ReportUserRequest {
   // User ID to report
   string user_id = 1;
-
+  
   // Report reason
   ReportReason reason = 2;
-
+  
   // Additional details
   string details = 3;
-
+  
   // Evidence (screenshot URLs, etc.)
   repeated string evidence_urls = 4;
 }
@@ -1178,7 +1949,7 @@ message ReportUserRequest {
 message ReportUserResponse {
   // Report ID
   string report_id = 1;
-
+  
   // Success message
   string message = 2;
 }

@@ -215,6 +215,10 @@ func buildUserProfileFromDB(
 
 // buildPartnerPreferencesFromDB builds PartnerPreferences proto from DB model
 func buildPartnerPreferencesFromDB(prefs *repository.PartnerPreferences) *userpb.PartnerPreferences {
+	if prefs == nil {
+		return &userpb.PartnerPreferences{}
+	}
+
 	pb := &userpb.PartnerPreferences{
 		AgeRange: &userpb.AgeRange{
 			MinAge: int32(prefs.AgeRangeMin),

@@ -129,7 +129,7 @@ export const Header = ({ onOpenLogin, onOpenSignup }: HeaderProps) => {
                       justifyContent="flex-start"
                       _hover={{ bg: 'brand.50', color: 'brand.600' }}
                       onClick={() => {
-                        navigate('/partner-preference');
+                        navigate('/partner-preferences');
                         setIsUserMenuOpen(false);
                       }}
                     >
@@ -249,7 +249,7 @@ export const Header = ({ onOpenLogin, onOpenSignup }: HeaderProps) => {
                   justifyContent="flex-start"
                   _hover={{ bg: 'brand.50', color: 'brand.600' }}
                   onClick={() => {
-                    navigate('/partner-preference');
+                    navigate('/partner-preferences');
                     setIsMobileMenuOpen(false);
                   }}
                 >
