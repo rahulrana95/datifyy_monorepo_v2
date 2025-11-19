@@ -144,6 +144,7 @@ export const AdminLogin: React.FC = () => {
                       placeholder="admin@datifyy.com"
                       required
                       size="lg"
+                      px={4}
                       bg="gray.50"
                       border="2px solid"
                       borderColor="gray.200"
@@ -177,6 +178,7 @@ export const AdminLogin: React.FC = () => {
                       placeholder="Enter your password"
                       required
                       size="lg"
+                      px={4}
                       bg="gray.50"
                       border="2px solid"
                       borderColor="gray.200"

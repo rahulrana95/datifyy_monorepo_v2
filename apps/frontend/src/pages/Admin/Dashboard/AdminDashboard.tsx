@@ -165,9 +165,9 @@ export const AdminDashboard: React.FC = () => {
               <Button
                 size="sm"
                 variant="outline"
-                borderColor="gray.300"
-                color="gray.600"
-                _hover={{ bg: 'gray.100' }}
+                borderColor="pink.300"
+                color="pink.600"
+                _hover={{ bg: 'pink.50', borderColor: 'pink.400' }}
                 onClick={handleLogout}
               >
                 Logout
@@ -359,6 +359,7 @@ export const AdminDashboard: React.FC = () => {
                     onChange={(e) => setSearchQuery(e.target.value)}
                     width="280px"
                     size="sm"
+                    px={4}
                     bg="gray.50"
                     border="1px solid"
                     borderColor="gray.200"
@@ -492,9 +493,11 @@ export const AdminDashboard: React.FC = () => {
                         <Button
                           size="xs"
                           variant="outline"
-                          borderColor="pink.200"
+                          bg="white"
+                          borderColor="pink.300"
                           color="pink.600"
-                          _hover={{ bg: 'pink.50', borderColor: 'pink.300' }}
+                          _hover={{ bg: 'pink.50', borderColor: 'pink.400' }}
+                          _focus={{ boxShadow: '0 0 0 2px rgba(237, 100, 166, 0.3)' }}
                           borderRadius="md"
                           onClick={(e) => {
                             e.stopPropagation();

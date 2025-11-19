@@ -167,6 +167,7 @@ export const SignupModal = ({
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 size="lg"
+                px={4}
                 borderColor="gray.300"
                 _hover={{ borderColor: 'brand.400' }}
                 _focus={{ borderColor: 'brand.500', boxShadow: '0 0 0 1px var(--chakra-colors-brand-500)' }}
@@ -184,6 +185,7 @@ export const SignupModal = ({
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 size="lg"
+                px={4}
                 borderColor="gray.300"
                 _hover={{ borderColor: 'brand.400' }}
                 _focus={{ borderColor: 'brand.500', boxShadow: '0 0 0 1px var(--chakra-colors-brand-500)' }}
@@ -201,6 +203,7 @@ export const SignupModal = ({
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 size="lg"
+                px={4}
                 borderColor="gray.300"
                 _hover={{ borderColor: 'brand.400' }}
                 _focus={{ borderColor: 'brand.500', boxShadow: '0 0 0 1px var(--chakra-colors-brand-500)' }}
@@ -218,6 +221,7 @@ export const SignupModal = ({
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 size="lg"
+                px={4}
                 borderColor="gray.300"
                 _hover={{ borderColor: 'brand.400' }}
                 _focus={{ borderColor: 'brand.500', boxShadow: '0 0 0 1px var(--chakra-colors-brand-500)' }}

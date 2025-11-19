@@ -278,6 +278,7 @@ export const ProfileEditForm = ({ profile, onSave, onCancel }: ProfileEditFormPr
                     value={field.state.value}
                     onChange={(e) => field.handleChange(e.target.value)}
                     placeholder="Your name"
+                    px={4}
                   />
                 </FormField>
               )}
@@ -291,6 +292,7 @@ export const ProfileEditForm = ({ profile, onSave, onCancel }: ProfileEditFormPr
                     value={field.state.value}
                     onChange={(e) => field.handleChange(e.target.value)}
                     placeholder="your.email@example.com"
+                    px={4}
                   />
                 </FormField>
               )}
@@ -304,6 +306,7 @@ export const ProfileEditForm = ({ profile, onSave, onCancel }: ProfileEditFormPr
                     value={field.state.value}
                     onChange={(e) => field.handleChange(e.target.value)}
                     placeholder="+1234567890"
+                    px={4}
                   />
                 </FormField>
               )}
@@ -340,6 +343,7 @@ export const ProfileEditForm = ({ profile, onSave, onCancel }: ProfileEditFormPr
                     value={field.state.value}
                     onChange={(e) => field.handleChange(e.target.value)}
                     placeholder="e.g., he/him, she/her, they/them"
+                    px={4}
                   />
                 </FormField>
               )}
@@ -353,6 +357,7 @@ export const ProfileEditForm = ({ profile, onSave, onCancel }: ProfileEditFormPr
                     value={field.state.value}
                     onChange={(e) => field.handleChange(Number(e.target.value))}
                     placeholder="170"
+                    px={4}
                   />
                 </FormField>
               )}
@@ -380,6 +385,7 @@ export const ProfileEditForm = ({ profile, onSave, onCancel }: ProfileEditFormPr
                     value={field.state.value}
                     onChange={(e) => field.handleChange(e.target.value)}
                     placeholder="Software Engineer"
+                    px={4}
                   />
                 </FormField>
               )}
@@ -392,6 +398,7 @@ export const ProfileEditForm = ({ profile, onSave, onCancel }: ProfileEditFormPr
                     value={field.state.value}
                     onChange={(e) => field.handleChange(e.target.value)}
                     placeholder="Company name"
+                    px={4}
                   />
                 </FormField>
               )}
@@ -404,6 +411,7 @@ export const ProfileEditForm = ({ profile, onSave, onCancel }: ProfileEditFormPr
                     value={field.state.value}
                     onChange={(e) => field.handleChange(e.target.value)}
                     placeholder="University name"
+                    px={4}
                   />
                 </FormField>
               )}
@@ -416,6 +424,7 @@ export const ProfileEditForm = ({ profile, onSave, onCancel }: ProfileEditFormPr
                     value={field.state.value}
                     onChange={(e) => field.handleChange(e.target.value)}
                     placeholder="City, Country"
+                    px={4}
                   />
                 </FormField>
               )}
@@ -582,6 +591,7 @@ export const ProfileEditForm = ({ profile, onSave, onCancel }: ProfileEditFormPr
                     onChange={(e) => field.handleChange(e.target.value)}
                     placeholder="e.g., INTJ, ENFP"
                     maxLength={4}
+                    px={4}
                   />
                 </FormField>
               )}

@@ -147,6 +147,7 @@ export const LoginModal = ({
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 size="lg"
+                px={4}
                 borderColor="gray.300"
                 _hover={{ borderColor: 'brand.400' }}
                 _focus={{ borderColor: 'brand.500', boxShadow: '0 0 0 1px var(--chakra-colors-brand-500)' }}
@@ -164,6 +165,7 @@ export const LoginModal = ({
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 size="lg"
+                px={4}
                 borderColor="gray.300"
                 _hover={{ borderColor: 'brand.400' }}
                 _focus={{ borderColor: 'brand.500', boxShadow: '0 0 0 1px var(--chakra-colors-brand-500)' }}

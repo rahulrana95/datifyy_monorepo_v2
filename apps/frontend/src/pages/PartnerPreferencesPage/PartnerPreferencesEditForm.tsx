@@ -725,25 +725,25 @@ export const PartnerPreferencesEditForm = ({
                 <SimpleGrid columns={{ base: 2, md: 4 }} gap={3}>
                   <Box>
                     <FieldLabel>Min Age</FieldLabel>
-                    <Input type="number" size="sm" value={formData.minAge} onChange={(e) => updateField('minAge', Number(e.target.value))} min={18} max={99} />
+                    <Input type="number" size="sm" px={3} value={formData.minAge} onChange={(e) => updateField('minAge', Number(e.target.value))} min={18} max={99} />
                   </Box>
                   <Box>
                     <FieldLabel>Max Age</FieldLabel>
-                    <Input type="number" size="sm" value={formData.maxAge} onChange={(e) => updateField('maxAge', Number(e.target.value))} min={18} max={99} />
+                    <Input type="number" size="sm" px={3} value={formData.maxAge} onChange={(e) => updateField('maxAge', Number(e.target.value))} min={18} max={99} />
                   </Box>
                   <Box>
                     <FieldLabel>Min Height (cm)</FieldLabel>
-                    <Input type="number" size="sm" value={formData.minHeight} onChange={(e) => updateField('minHeight', Number(e.target.value))} />
+                    <Input type="number" size="sm" px={3} value={formData.minHeight} onChange={(e) => updateField('minHeight', Number(e.target.value))} />
                   </Box>
                   <Box>
                     <FieldLabel>Max Height (cm)</FieldLabel>
-                    <Input type="number" size="sm" value={formData.maxHeight} onChange={(e) => updateField('maxHeight', Number(e.target.value))} />
+                    <Input type="number" size="sm" px={3} value={formData.maxHeight} onChange={(e) => updateField('maxHeight', Number(e.target.value))} />
                   </Box>
                 </SimpleGrid>
                 <SimpleGrid columns={{ base: 1, md: 2 }} gap={3}>
                   <Box>
                     <FieldLabel>Max Distance (km)</FieldLabel>
-                    <Input type="number" size="sm" value={formData.distancePreference} onChange={(e) => updateField('distancePreference', Number(e.target.value))} />
+                    <Input type="number" size="sm" px={3} value={formData.distancePreference} onChange={(e) => updateField('distancePreference', Number(e.target.value))} />
                   </Box>
                   <Box pt={5}>
                     <FormCheckbox checked={formData.verifiedOnly} onChange={(v) => updateField('verifiedOnly', v)} label="Verified profiles only" />
@@ -771,11 +771,11 @@ export const PartnerPreferencesEditForm = ({
                 <SimpleGrid columns={{ base: 1, md: 2 }} gap={3}>
                   <Box>
                     <FieldLabel>Min Years Experience</FieldLabel>
-                    <Input type="number" size="sm" value={formData.minYearsExperience} onChange={(e) => updateField('minYearsExperience', Number(e.target.value))} />
+                    <Input type="number" size="sm" px={3} value={formData.minYearsExperience} onChange={(e) => updateField('minYearsExperience', Number(e.target.value))} />
                   </Box>
                   <Box>
                     <FieldLabel>Industries (comma-separated)</FieldLabel>
-                    <Input size="sm" value={formData.industryPreferences} onChange={(e) => updateField('industryPreferences', e.target.value)} placeholder="Tech, Finance..." />
+                    <Input size="sm" px={3} value={formData.industryPreferences} onChange={(e) => updateField('industryPreferences', e.target.value)} placeholder="Tech, Finance..." />
                   </Box>
                 </SimpleGrid>
               </VStack>
@@ -815,15 +815,15 @@ export const PartnerPreferencesEditForm = ({
                 <SimpleGrid columns={{ base: 1, md: 3 }} gap={3}>
                   <Box>
                     <FieldLabel>Caste</FieldLabel>
-                    <Input size="sm" value={formData.castePreferences} onChange={(e) => updateField('castePreferences', e.target.value)} placeholder="Any" />
+                    <Input size="sm" px={3} value={formData.castePreferences} onChange={(e) => updateField('castePreferences', e.target.value)} placeholder="Any" />
                   </Box>
                   <Box>
                     <FieldLabel>Sub-Caste</FieldLabel>
-                    <Input size="sm" value={formData.subCastePreferences} onChange={(e) => updateField('subCastePreferences', e.target.value)} placeholder="Any" />
+                    <Input size="sm" px={3} value={formData.subCastePreferences} onChange={(e) => updateField('subCastePreferences', e.target.value)} placeholder="Any" />
                   </Box>
                   <Box>
                     <FieldLabel>Gotra</FieldLabel>
-                    <Input size="sm" value={formData.gotraPreferences} onChange={(e) => updateField('gotraPreferences', e.target.value)} placeholder="Any" />
+                    <Input size="sm" px={3} value={formData.gotraPreferences} onChange={(e) => updateField('gotraPreferences', e.target.value)} placeholder="Any" />
                   </Box>
                 </SimpleGrid>
                 <FormCheckbox checked={formData.horoscopeMatchingRequired} onChange={(v) => updateField('horoscopeMatchingRequired', v)} label="Horoscope matching required" />
@@ -869,7 +869,7 @@ export const PartnerPreferencesEditForm = ({
               <VStack align="stretch" gap={3}>
                 <Box>
                   <FieldLabel>Personality Types (e.g., INTJ, ENFP)</FieldLabel>
-                  <Input size="sm" value={formData.personalityTypes} onChange={(e) => updateField('personalityTypes', e.target.value)} placeholder="INTJ, ENFP..." />
+                  <Input size="sm" px={3} value={formData.personalityTypes} onChange={(e) => updateField('personalityTypes', e.target.value)} placeholder="INTJ, ENFP..." />
                 </Box>
                 <SimpleGrid columns={{ base: 1, md: 2 }} gap={3}>
                   <Box>
@@ -1011,11 +1011,11 @@ export const PartnerPreferencesEditForm = ({
                 <SimpleGrid columns={{ base: 1, md: 2 }} gap={3}>
                   <Box>
                     <FieldLabel>Max Siblings (0 = any)</FieldLabel>
-                    <Input type="number" size="sm" value={formData.maxSiblings} onChange={(e) => updateField('maxSiblings', Number(e.target.value))} />
+                    <Input type="number" size="sm" px={3} value={formData.maxSiblings} onChange={(e) => updateField('maxSiblings', Number(e.target.value))} />
                   </Box>
                   <Box>
                     <FieldLabel>Family Location</FieldLabel>
-                    <Input size="sm" value={formData.familyLocationPreferences} onChange={(e) => updateField('familyLocationPreferences', e.target.value)} placeholder="Mumbai, Delhi..." />
+                    <Input size="sm" px={3} value={formData.familyLocationPreferences} onChange={(e) => updateField('familyLocationPreferences', e.target.value)} placeholder="Mumbai, Delhi..." />
                   </Box>
                 </SimpleGrid>
               </VStack>
@@ -1031,11 +1031,11 @@ export const PartnerPreferencesEditForm = ({
                 <SimpleGrid columns={{ base: 1, md: 2 }} gap={3}>
                   <Box>
                     <FieldLabel>Location Preferences</FieldLabel>
-                    <Input size="sm" value={formData.locationPreferences} onChange={(e) => updateField('locationPreferences', e.target.value)} placeholder="Mumbai, Delhi..." />
+                    <Input size="sm" px={3} value={formData.locationPreferences} onChange={(e) => updateField('locationPreferences', e.target.value)} placeholder="Mumbai, Delhi..." />
                   </Box>
                   <Box>
                     <FieldLabel>Mother Tongue</FieldLabel>
-                    <Input size="sm" value={formData.motherTonguePreferences} onChange={(e) => updateField('motherTonguePreferences', e.target.value)} placeholder="Hindi, Tamil..." />
+                    <Input size="sm" px={3} value={formData.motherTonguePreferences} onChange={(e) => updateField('motherTonguePreferences', e.target.value)} placeholder="Hindi, Tamil..." />
                   </Box>
                 </SimpleGrid>
                 <SimpleGrid columns={{ base: 1, md: 2 }} gap={3}>
@@ -1079,7 +1079,7 @@ export const PartnerPreferencesEditForm = ({
                 </Box>
                 <Box>
                   <FieldLabel>Minimum Shared Interests</FieldLabel>
-                  <Input type="number" size="sm" value={formData.minSharedInterests} onChange={(e) => updateField('minSharedInterests', Number(e.target.value))} max={10} />
+                  <Input type="number" size="sm" px={3} value={formData.minSharedInterests} onChange={(e) => updateField('minSharedInterests', Number(e.target.value))} max={10} />
                 </Box>
               </VStack>
             </CollapsibleSection>
@@ -1090,11 +1090,11 @@ export const PartnerPreferencesEditForm = ({
                 <SimpleGrid columns={{ base: 1, md: 3 }} gap={3}>
                   <Box>
                     <FieldLabel>Max Days Inactive</FieldLabel>
-                    <Input type="number" size="sm" value={formData.maxDaysInactive} onChange={(e) => updateField('maxDaysInactive', Number(e.target.value))} />
+                    <Input type="number" size="sm" px={3} value={formData.maxDaysInactive} onChange={(e) => updateField('maxDaysInactive', Number(e.target.value))} />
                   </Box>
                   <Box>
                     <FieldLabel>Min Profile Completion %</FieldLabel>
-                    <Input type="number" size="sm" value={formData.minProfileCompletion} onChange={(e) => updateField('minProfileCompletion', Number(e.target.value))} max={100} />
+                    <Input type="number" size="sm" px={3} value={formData.minProfileCompletion} onChange={(e) => updateField('minProfileCompletion', Number(e.target.value))} max={100} />
                   </Box>
                   <Box>
                     <FieldLabel>Disability Acceptance</FieldLabel>
@@ -1110,7 +1110,7 @@ export const PartnerPreferencesEditForm = ({
                 <FormCheckbox checked={formData.photosRequired} onChange={(v) => updateField('photosRequired', v)} label="Photos required" />
                 <Box>
                   <FieldLabel>Custom Deal-breakers (comma-separated)</FieldLabel>
-                  <Input size="sm" value={formData.customDealbreakers} onChange={(e) => updateField('customDealbreakers', e.target.value)} placeholder="smoking, gambling..." />
+                  <Input size="sm" px={3} value={formData.customDealbreakers} onChange={(e) => updateField('customDealbreakers', e.target.value)} placeholder="smoking, gambling..." />
                 </Box>
               </VStack>
             </CollapsibleSection>
