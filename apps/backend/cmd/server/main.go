@@ -184,10 +184,25 @@ func startHTTPServer(port string, server *Server, db *sql.DB, redisClient *redis
 	mux.HandleFunc("/api/v1/admin/login", createAdminLoginHandler(adminService))
 	mux.HandleFunc("/api/v1/admin/users", createAdminGetAllUsersHandler(adminService))
 	mux.HandleFunc("/api/v1/admin/users/search", createAdminSearchUsersHandler(adminService))
+	mux.HandleFunc("/api/v1/admin/users/bulk", createAdminBulkUserActionHandler(adminService))
 	mux.HandleFunc("/api/v1/admin/users/", createAdminGetUserDetailsHandler(adminService))
 	mux.HandleFunc("/api/v1/admin/suggestions/", createAdminGetSuggestionsHandler(adminService))
 	mux.HandleFunc("/api/v1/admin/dates", createAdminDatesHandler(adminService))
 	mux.HandleFunc("/api/v1/admin/dates/", createAdminDateStatusHandler(adminService))
+
+	// Admin Analytics endpoints
+	mux.HandleFunc("/api/v1/admin/analytics/platform", createAdminGetPlatformStatsHandler(adminService))
+	mux.HandleFunc("/api/v1/admin/analytics/user-growth", createAdminGetUserGrowthHandler(adminService))
+	mux.HandleFunc("/api/v1/admin/analytics/active-users", createAdminGetActiveUsersHandler(adminService))
+	mux.HandleFunc("/api/v1/admin/analytics/signups", createAdminGetSignupsHandler(adminService))
+	mux.HandleFunc("/api/v1/admin/analytics/demographics", createAdminGetDemographicsHandler(adminService))
+	mux.HandleFunc("/api/v1/admin/analytics/locations", createAdminGetLocationStatsHandler(adminService))
+	mux.HandleFunc("/api/v1/admin/analytics/availability", createAdminGetAvailabilityStatsHandler(adminService))
+
+	// Admin Management endpoints
+	mux.HandleFunc("/api/v1/admin/admins", createAdminManageAdminsHandler(adminService))
+	mux.HandleFunc("/api/v1/admin/admins/", createAdminManageAdminByIdHandler(adminService))
+	mux.HandleFunc("/api/v1/admin/profile", createAdminUpdateProfileHandler(adminService))
 
 	// Add CORS middleware
 	handler := enableCORS(mux)
@@ -1723,6 +1738,903 @@ func convertScheduledDateToJSON(date *adminpb.ScheduledDate) map[string]interfac
 	}
 
 	return result
+}
+
+// =============================================================================
+// Admin Analytics HTTP Handlers
+// =============================================================================
+
+// createAdminGetPlatformStatsHandler handles getting platform statistics
+func createAdminGetPlatformStatsHandler(adminService *service.AdminService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		grpcReq := &adminpb.PlatformStatsRequest{}
+		resp, err := adminService.GetPlatformStats(r.Context(), grpcReq)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Failed to get platform stats: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		jsonResp := map[string]interface{}{
+			"totalUsers":         resp.TotalUsers,
+			"activeUsers":        resp.ActiveUsers,
+			"verifiedUsers":      resp.VerifiedUsers,
+			"availableForDating": resp.AvailableForDating,
+			"totalDatesScheduled": resp.TotalDatesScheduled,
+			"totalDatesCompleted": resp.TotalDatesCompleted,
+			"todaySignups":       resp.TodaySignups,
+			"thisWeekSignups":    resp.ThisWeekSignups,
+			"thisMonthSignups":   resp.ThisMonthSignups,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(jsonResp)
+	}
+}
+
+// createAdminGetUserGrowthHandler handles getting user growth analytics
+func createAdminGetUserGrowthHandler(adminService *service.AdminService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		// Parse query parameters
+		period := adminpb.AnalyticsPeriod_ANALYTICS_PERIOD_MONTHLY
+		if p := r.URL.Query().Get("period"); p != "" {
+			switch p {
+			case "daily":
+				period = adminpb.AnalyticsPeriod_ANALYTICS_PERIOD_DAILY
+			case "weekly":
+				period = adminpb.AnalyticsPeriod_ANALYTICS_PERIOD_WEEKLY
+			case "monthly":
+				period = adminpb.AnalyticsPeriod_ANALYTICS_PERIOD_MONTHLY
+			case "yearly":
+				period = adminpb.AnalyticsPeriod_ANALYTICS_PERIOD_YEARLY
+			}
+		}
+
+		var startTime, endTime int64
+		if st := r.URL.Query().Get("start_time"); st != "" {
+			fmt.Sscanf(st, "%d", &startTime)
+		}
+		if et := r.URL.Query().Get("end_time"); et != "" {
+			fmt.Sscanf(et, "%d", &endTime)
+		}
+
+		grpcReq := &adminpb.UserGrowthRequest{
+			Period: period,
+		}
+		if startTime > 0 && endTime > 0 {
+			grpcReq.TimeRange = &adminpb.TimeRange{
+				StartTime: &commonpb.Timestamp{Seconds: startTime},
+				EndTime:   &commonpb.Timestamp{Seconds: endTime},
+			}
+		}
+
+		resp, err := adminService.GetUserGrowth(r.Context(), grpcReq)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Failed to get user growth: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		dataPoints := make([]map[string]interface{}, len(resp.DataPoints))
+		for i, dp := range resp.DataPoints {
+			dataPoints[i] = map[string]interface{}{
+				"label":     dp.Label,
+				"value":     dp.Value,
+				"timestamp": dp.Timestamp.Seconds,
+			}
+		}
+
+		jsonResp := map[string]interface{}{
+			"dataPoints":  dataPoints,
+			"totalUsers":  resp.TotalUsers,
+			"growthRate":  resp.GrowthRate,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(jsonResp)
+	}
+}
+
+// createAdminGetActiveUsersHandler handles getting active users analytics
+func createAdminGetActiveUsersHandler(adminService *service.AdminService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		// Parse query parameters
+		period := adminpb.AnalyticsPeriod_ANALYTICS_PERIOD_MONTHLY
+		if p := r.URL.Query().Get("period"); p != "" {
+			switch p {
+			case "daily":
+				period = adminpb.AnalyticsPeriod_ANALYTICS_PERIOD_DAILY
+			case "weekly":
+				period = adminpb.AnalyticsPeriod_ANALYTICS_PERIOD_WEEKLY
+			case "monthly":
+				period = adminpb.AnalyticsPeriod_ANALYTICS_PERIOD_MONTHLY
+			case "yearly":
+				period = adminpb.AnalyticsPeriod_ANALYTICS_PERIOD_YEARLY
+			}
+		}
+
+		var startTime, endTime int64
+		if st := r.URL.Query().Get("start_time"); st != "" {
+			fmt.Sscanf(st, "%d", &startTime)
+		}
+		if et := r.URL.Query().Get("end_time"); et != "" {
+			fmt.Sscanf(et, "%d", &endTime)
+		}
+
+		grpcReq := &adminpb.ActiveUsersRequest{
+			Period: period,
+		}
+		if startTime > 0 && endTime > 0 {
+			grpcReq.TimeRange = &adminpb.TimeRange{
+				StartTime: &commonpb.Timestamp{Seconds: startTime},
+				EndTime:   &commonpb.Timestamp{Seconds: endTime},
+			}
+		}
+
+		resp, err := adminService.GetActiveUsers(r.Context(), grpcReq)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Failed to get active users: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		dataPoints := make([]map[string]interface{}, len(resp.DataPoints))
+		for i, dp := range resp.DataPoints {
+			dataPoints[i] = map[string]interface{}{
+				"label":     dp.Label,
+				"value":     dp.Value,
+				"timestamp": dp.Timestamp.Seconds,
+			}
+		}
+
+		jsonResp := map[string]interface{}{
+			"dataPoints":    dataPoints,
+			"currentActive": resp.CurrentActive,
+			"activityRate":  resp.ActivityRate,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(jsonResp)
+	}
+}
+
+// createAdminGetSignupsHandler handles getting signups analytics
+func createAdminGetSignupsHandler(adminService *service.AdminService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		// Parse query parameters
+		period := adminpb.AnalyticsPeriod_ANALYTICS_PERIOD_MONTHLY
+		if p := r.URL.Query().Get("period"); p != "" {
+			switch p {
+			case "daily":
+				period = adminpb.AnalyticsPeriod_ANALYTICS_PERIOD_DAILY
+			case "weekly":
+				period = adminpb.AnalyticsPeriod_ANALYTICS_PERIOD_WEEKLY
+			case "monthly":
+				period = adminpb.AnalyticsPeriod_ANALYTICS_PERIOD_MONTHLY
+			case "yearly":
+				period = adminpb.AnalyticsPeriod_ANALYTICS_PERIOD_YEARLY
+			}
+		}
+
+		var startTime, endTime int64
+		if st := r.URL.Query().Get("start_time"); st != "" {
+			fmt.Sscanf(st, "%d", &startTime)
+		}
+		if et := r.URL.Query().Get("end_time"); et != "" {
+			fmt.Sscanf(et, "%d", &endTime)
+		}
+
+		grpcReq := &adminpb.SignupsRequest{
+			Period: period,
+		}
+		if startTime > 0 && endTime > 0 {
+			grpcReq.TimeRange = &adminpb.TimeRange{
+				StartTime: &commonpb.Timestamp{Seconds: startTime},
+				EndTime:   &commonpb.Timestamp{Seconds: endTime},
+			}
+		}
+
+		resp, err := adminService.GetSignups(r.Context(), grpcReq)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Failed to get signups: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		dataPoints := make([]map[string]interface{}, len(resp.DataPoints))
+		for i, dp := range resp.DataPoints {
+			dataPoints[i] = map[string]interface{}{
+				"label":     dp.Label,
+				"value":     dp.Value,
+				"timestamp": dp.Timestamp.Seconds,
+			}
+		}
+
+		jsonResp := map[string]interface{}{
+			"dataPoints":   dataPoints,
+			"totalSignups": resp.TotalSignups,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(jsonResp)
+	}
+}
+
+// createAdminGetDemographicsHandler handles getting demographics analytics
+func createAdminGetDemographicsHandler(adminService *service.AdminService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		metricType := r.URL.Query().Get("metric_type")
+		if metricType == "" {
+			metricType = "gender"
+		}
+
+		grpcReq := &adminpb.DemographicsRequest{
+			MetricType: metricType,
+		}
+
+		resp, err := adminService.GetDemographics(r.Context(), grpcReq)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Failed to get demographics: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		data := make([]map[string]interface{}, len(resp.Data))
+		for i, item := range resp.Data {
+			data[i] = map[string]interface{}{
+				"category":   item.Category,
+				"count":      item.Count,
+				"percentage": item.Percentage,
+			}
+		}
+
+		jsonResp := map[string]interface{}{
+			"data": data,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(jsonResp)
+	}
+}
+
+// createAdminGetLocationStatsHandler handles getting location statistics
+func createAdminGetLocationStatsHandler(adminService *service.AdminService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		level := r.URL.Query().Get("level")
+		if level == "" {
+			level = "country"
+		}
+
+		grpcReq := &adminpb.LocationStatsRequest{
+			Level:          level,
+			ParentLocation: r.URL.Query().Get("parent_location"),
+		}
+
+		resp, err := adminService.GetLocationStats(r.Context(), grpcReq)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Failed to get location stats: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		locations := make([]map[string]interface{}, len(resp.Locations))
+		for i, loc := range resp.Locations {
+			locations[i] = map[string]interface{}{
+				"locationName": loc.LocationName,
+				"locationCode": loc.LocationCode,
+				"userCount":    loc.UserCount,
+				"percentage":   loc.Percentage,
+			}
+		}
+
+		jsonResp := map[string]interface{}{
+			"locations": locations,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(jsonResp)
+	}
+}
+
+// createAdminGetAvailabilityStatsHandler handles getting availability statistics
+func createAdminGetAvailabilityStatsHandler(adminService *service.AdminService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		grpcReq := &adminpb.AvailabilityStatsRequest{}
+		resp, err := adminService.GetAvailabilityStats(r.Context(), grpcReq)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Failed to get availability stats: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		jsonResp := map[string]interface{}{
+			"availableUsers":   resp.AvailableUsers,
+			"unavailableUsers": resp.UnavailableUsers,
+			"availabilityRate": resp.AvailabilityRate,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(jsonResp)
+	}
+}
+
+// =============================================================================
+// Admin Bulk Actions HTTP Handlers
+// =============================================================================
+
+// createAdminBulkUserActionHandler handles bulk user actions
+func createAdminBulkUserActionHandler(adminService *service.AdminService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		var reqBody struct {
+			UserIds []string `json:"userIds"`
+			Action  string   `json:"action"`
+			Reason  string   `json:"reason"`
+		}
+
+		if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+			http.Error(w, fmt.Sprintf("Invalid JSON: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		var action adminpb.BulkUserAction
+		switch reqBody.Action {
+		case "activate":
+			action = adminpb.BulkUserAction_BULK_USER_ACTION_ACTIVATE
+		case "suspend":
+			action = adminpb.BulkUserAction_BULK_USER_ACTION_SUSPEND
+		case "delete":
+			action = adminpb.BulkUserAction_BULK_USER_ACTION_DELETE
+		case "verify":
+			action = adminpb.BulkUserAction_BULK_USER_ACTION_VERIFY
+		case "unverify":
+			action = adminpb.BulkUserAction_BULK_USER_ACTION_UNVERIFY
+		default:
+			http.Error(w, "Invalid action", http.StatusBadRequest)
+			return
+		}
+
+		grpcReq := &adminpb.BulkUserActionRequest{
+			UserIds: reqBody.UserIds,
+			Action:  action,
+			Reason:  reqBody.Reason,
+		}
+
+		resp, err := adminService.BulkUserAction(r.Context(), grpcReq)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Bulk action failed: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		jsonResp := map[string]interface{}{
+			"successCount":   resp.SuccessCount,
+			"failedCount":    resp.FailedCount,
+			"failedUserIds":  resp.FailedUserIds,
+			"errorMessages":  resp.ErrorMessages,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(jsonResp)
+	}
+}
+
+// =============================================================================
+// Admin Management HTTP Handlers
+// =============================================================================
+
+// createAdminManageAdminsHandler handles GET (list all admins) and POST (create admin)
+func createAdminManageAdminsHandler(adminService *service.AdminService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			// Get all admins
+			page := 1
+			pageSize := 20
+			if p := r.URL.Query().Get("page"); p != "" {
+				fmt.Sscanf(p, "%d", &page)
+			}
+			if ps := r.URL.Query().Get("page_size"); ps != "" {
+				fmt.Sscanf(ps, "%d", &pageSize)
+			}
+
+			grpcReq := &adminpb.GetAllAdminsRequest{
+				Page:     int32(page),
+				PageSize: int32(pageSize),
+			}
+
+			resp, err := adminService.GetAllAdmins(r.Context(), grpcReq)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("Failed to get admins: %v", err), http.StatusInternalServerError)
+				return
+			}
+
+			admins := make([]map[string]interface{}, len(resp.Admins))
+			for i, admin := range resp.Admins {
+				admins[i] = map[string]interface{}{
+					"adminId":  admin.AdminId,
+					"userId":   admin.UserId,
+					"email":    admin.Email,
+					"name":     admin.Name,
+					"role":     admin.Role.String(),
+					"isGenie":  admin.IsGenie,
+				}
+			}
+
+			jsonResp := map[string]interface{}{
+				"admins":     admins,
+				"totalCount": resp.TotalCount,
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(jsonResp)
+			return
+		}
+
+		if r.Method == http.MethodPost {
+			// Create admin
+			var reqBody struct {
+				Email    string `json:"email"`
+				Password string `json:"password"`
+				Name     string `json:"name"`
+				Role     string `json:"role"`
+				IsGenie  bool   `json:"isGenie"`
+			}
+
+			if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+				http.Error(w, fmt.Sprintf("Invalid JSON: %v", err), http.StatusBadRequest)
+				return
+			}
+
+			var role adminpb.AdminRole
+			switch reqBody.Role {
+			case "super_admin", "ADMIN_ROLE_SUPER_ADMIN":
+				role = adminpb.AdminRole_ADMIN_ROLE_SUPER_ADMIN
+			case "genie", "ADMIN_ROLE_GENIE":
+				role = adminpb.AdminRole_ADMIN_ROLE_GENIE
+			case "support", "ADMIN_ROLE_SUPPORT":
+				role = adminpb.AdminRole_ADMIN_ROLE_SUPPORT
+			case "moderator", "ADMIN_ROLE_MODERATOR":
+				role = adminpb.AdminRole_ADMIN_ROLE_MODERATOR
+			default:
+				role = adminpb.AdminRole_ADMIN_ROLE_SUPPORT
+			}
+
+			grpcReq := &adminpb.CreateAdminUserRequest{
+				Email:    reqBody.Email,
+				Password: reqBody.Password,
+				Name:     reqBody.Name,
+				Role:     role,
+				IsGenie:  reqBody.IsGenie,
+			}
+
+			resp, err := adminService.CreateAdminUser(r.Context(), grpcReq)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("Failed to create admin: %v", err), http.StatusBadRequest)
+				return
+			}
+
+			jsonResp := map[string]interface{}{
+				"admin": map[string]interface{}{
+					"adminId":  resp.Admin.AdminId,
+					"userId":   resp.Admin.UserId,
+					"email":    resp.Admin.Email,
+					"name":     resp.Admin.Name,
+					"role":     resp.Admin.Role.String(),
+					"isGenie":  resp.Admin.IsGenie,
+				},
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusCreated)
+			json.NewEncoder(w).Encode(jsonResp)
+			return
+		}
+
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+// createAdminManageAdminByIdHandler handles PUT (update) and DELETE operations on specific admin
+func createAdminManageAdminByIdHandler(adminService *service.AdminService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Extract admin ID from path: /api/v1/admin/admins/{id}
+		adminID := r.URL.Path[len("/api/v1/admin/admins/"):]
+		if adminID == "" {
+			http.Error(w, "Admin ID required", http.StatusBadRequest)
+			return
+		}
+
+		if r.Method == http.MethodPut {
+			// Update admin
+			var reqBody struct {
+				Name  string `json:"name"`
+				Email string `json:"email"`
+				Role  string `json:"role"`
+			}
+
+			if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+				http.Error(w, fmt.Sprintf("Invalid JSON: %v", err), http.StatusBadRequest)
+				return
+			}
+
+			var role adminpb.AdminRole
+			switch reqBody.Role {
+			case "super_admin", "ADMIN_ROLE_SUPER_ADMIN":
+				role = adminpb.AdminRole_ADMIN_ROLE_SUPER_ADMIN
+			case "genie", "ADMIN_ROLE_GENIE":
+				role = adminpb.AdminRole_ADMIN_ROLE_GENIE
+			case "support", "ADMIN_ROLE_SUPPORT":
+				role = adminpb.AdminRole_ADMIN_ROLE_SUPPORT
+			case "moderator", "ADMIN_ROLE_MODERATOR":
+				role = adminpb.AdminRole_ADMIN_ROLE_MODERATOR
+			default:
+				role = adminpb.AdminRole_ADMIN_ROLE_SUPPORT
+			}
+
+			grpcReq := &adminpb.UpdateAdminRequest{
+				AdminId: adminID,
+				Name:    reqBody.Name,
+				Email:   reqBody.Email,
+				Role:    role,
+			}
+
+			resp, err := adminService.UpdateAdmin(r.Context(), grpcReq)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("Failed to update admin: %v", err), http.StatusBadRequest)
+				return
+			}
+
+			jsonResp := map[string]interface{}{
+				"admin": map[string]interface{}{
+					"adminId":  resp.Admin.AdminId,
+					"userId":   resp.Admin.UserId,
+					"email":    resp.Admin.Email,
+					"name":     resp.Admin.Name,
+					"role":     resp.Admin.Role.String(),
+					"isGenie":  resp.Admin.IsGenie,
+				},
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(jsonResp)
+			return
+		}
+
+		if r.Method == http.MethodDelete {
+			// Delete admin
+			grpcReq := &adminpb.DeleteAdminRequest{
+				AdminId: adminID,
+			}
+
+			resp, err := adminService.DeleteAdmin(r.Context(), grpcReq)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("Failed to delete admin: %v", err), http.StatusBadRequest)
+				return
+			}
+
+			jsonResp := map[string]interface{}{
+				"success": resp.Success,
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(jsonResp)
+			return
+		}
+
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+// createAdminGetAllAdminsHandler handles getting all admins
+func createAdminGetAllAdminsHandler(adminService *service.AdminService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		page := 1
+		pageSize := 20
+		if p := r.URL.Query().Get("page"); p != "" {
+			fmt.Sscanf(p, "%d", &page)
+		}
+		if ps := r.URL.Query().Get("page_size"); ps != "" {
+			fmt.Sscanf(ps, "%d", &pageSize)
+		}
+
+		grpcReq := &adminpb.GetAllAdminsRequest{
+			Page:     int32(page),
+			PageSize: int32(pageSize),
+		}
+
+		resp, err := adminService.GetAllAdmins(r.Context(), grpcReq)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Failed to get admins: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		admins := make([]map[string]interface{}, len(resp.Admins))
+		for i, admin := range resp.Admins {
+			admins[i] = map[string]interface{}{
+				"adminId":  admin.AdminId,
+				"userId":   admin.UserId,
+				"email":    admin.Email,
+				"name":     admin.Name,
+				"role":     admin.Role.String(),
+				"isGenie":  admin.IsGenie,
+			}
+		}
+
+		jsonResp := map[string]interface{}{
+			"admins":     admins,
+			"totalCount": resp.TotalCount,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(jsonResp)
+	}
+}
+
+// createAdminCreateAdminUserHandler handles creating a new admin user
+func createAdminCreateAdminUserHandler(adminService *service.AdminService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		var reqBody struct {
+			Email    string `json:"email"`
+			Password string `json:"password"`
+			Name     string `json:"name"`
+			Role     string `json:"role"`
+			IsGenie  bool   `json:"isGenie"`
+		}
+
+		if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+			http.Error(w, fmt.Sprintf("Invalid JSON: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		var role adminpb.AdminRole
+		switch reqBody.Role {
+		case "super_admin", "ADMIN_ROLE_SUPER_ADMIN":
+			role = adminpb.AdminRole_ADMIN_ROLE_SUPER_ADMIN
+		case "genie", "ADMIN_ROLE_GENIE":
+			role = adminpb.AdminRole_ADMIN_ROLE_GENIE
+		case "support", "ADMIN_ROLE_SUPPORT":
+			role = adminpb.AdminRole_ADMIN_ROLE_SUPPORT
+		case "moderator", "ADMIN_ROLE_MODERATOR":
+			role = adminpb.AdminRole_ADMIN_ROLE_MODERATOR
+		default:
+			role = adminpb.AdminRole_ADMIN_ROLE_SUPPORT
+		}
+
+		grpcReq := &adminpb.CreateAdminUserRequest{
+			Email:    reqBody.Email,
+			Password: reqBody.Password,
+			Name:     reqBody.Name,
+			Role:     role,
+			IsGenie:  reqBody.IsGenie,
+		}
+
+		resp, err := adminService.CreateAdminUser(r.Context(), grpcReq)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Failed to create admin: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		jsonResp := map[string]interface{}{
+			"admin": map[string]interface{}{
+				"adminId":  resp.Admin.AdminId,
+				"userId":   resp.Admin.UserId,
+				"email":    resp.Admin.Email,
+				"name":     resp.Admin.Name,
+				"role":     resp.Admin.Role.String(),
+				"isGenie":  resp.Admin.IsGenie,
+			},
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		json.NewEncoder(w).Encode(jsonResp)
+	}
+}
+
+// createAdminUpdateAdminHandler handles updating an admin user
+func createAdminUpdateAdminHandler(adminService *service.AdminService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPut {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		// Extract admin ID from path: /api/v1/admin/admins/{id}
+		adminID := r.URL.Path[len("/api/v1/admin/admins/"):]
+		if adminID == "" {
+			http.Error(w, "Admin ID required", http.StatusBadRequest)
+			return
+		}
+
+		var reqBody struct {
+			Name  string `json:"name"`
+			Email string `json:"email"`
+			Role  string `json:"role"`
+		}
+
+		if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+			http.Error(w, fmt.Sprintf("Invalid JSON: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		var role adminpb.AdminRole
+		switch reqBody.Role {
+		case "super_admin", "ADMIN_ROLE_SUPER_ADMIN":
+			role = adminpb.AdminRole_ADMIN_ROLE_SUPER_ADMIN
+		case "genie", "ADMIN_ROLE_GENIE":
+			role = adminpb.AdminRole_ADMIN_ROLE_GENIE
+		case "support", "ADMIN_ROLE_SUPPORT":
+			role = adminpb.AdminRole_ADMIN_ROLE_SUPPORT
+		case "moderator", "ADMIN_ROLE_MODERATOR":
+			role = adminpb.AdminRole_ADMIN_ROLE_MODERATOR
+		default:
+			role = adminpb.AdminRole_ADMIN_ROLE_SUPPORT
+		}
+
+		grpcReq := &adminpb.UpdateAdminRequest{
+			AdminId: adminID,
+			Name:    reqBody.Name,
+			Email:   reqBody.Email,
+			Role:    role,
+		}
+
+		resp, err := adminService.UpdateAdmin(r.Context(), grpcReq)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Failed to update admin: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		jsonResp := map[string]interface{}{
+			"admin": map[string]interface{}{
+				"adminId":  resp.Admin.AdminId,
+				"userId":   resp.Admin.UserId,
+				"email":    resp.Admin.Email,
+				"name":     resp.Admin.Name,
+				"role":     resp.Admin.Role.String(),
+				"isGenie":  resp.Admin.IsGenie,
+			},
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(jsonResp)
+	}
+}
+
+// createAdminDeleteAdminHandler handles deleting an admin user
+func createAdminDeleteAdminHandler(adminService *service.AdminService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodDelete {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		// Extract admin ID from path: /api/v1/admin/admins/{id}
+		adminID := r.URL.Path[len("/api/v1/admin/admins/"):]
+		if adminID == "" {
+			http.Error(w, "Admin ID required", http.StatusBadRequest)
+			return
+		}
+
+		grpcReq := &adminpb.DeleteAdminRequest{
+			AdminId: adminID,
+		}
+
+		resp, err := adminService.DeleteAdmin(r.Context(), grpcReq)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Failed to delete admin: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		jsonResp := map[string]interface{}{
+			"success": resp.Success,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(jsonResp)
+	}
+}
+
+// createAdminUpdateProfileHandler handles updating admin profile
+func createAdminUpdateProfileHandler(adminService *service.AdminService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPut {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		var reqBody struct {
+			AdminId string `json:"adminId"`
+			Name    string `json:"name"`
+			Email   string `json:"email"`
+		}
+
+		if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+			http.Error(w, fmt.Sprintf("Invalid JSON: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		grpcReq := &adminpb.UpdateAdminProfileRequest{
+			AdminId: reqBody.AdminId,
+			Name:    reqBody.Name,
+			Email:   reqBody.Email,
+		}
+
+		resp, err := adminService.UpdateAdminProfile(r.Context(), grpcReq)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Failed to update profile: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		jsonResp := map[string]interface{}{
+			"admin": map[string]interface{}{
+				"adminId":  resp.Admin.AdminId,
+				"userId":   resp.Admin.UserId,
+				"email":    resp.Admin.Email,
+				"name":     resp.Admin.Name,
+				"role":     resp.Admin.Role.String(),
+				"isGenie":  resp.Admin.IsGenie,
+			},
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(jsonResp)
+	}
 }
 
 func enableCORS(next http.Handler) http.Handler {
