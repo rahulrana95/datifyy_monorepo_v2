@@ -164,10 +164,12 @@ export const AdminDashboard: React.FC = () => {
               )}
               <Button
                 size="sm"
-                variant="outline"
+                bg="white"
+                border="1px solid"
                 borderColor="pink.300"
                 color="pink.600"
                 _hover={{ bg: 'pink.50', borderColor: 'pink.400' }}
+                _focus={{ boxShadow: '0 0 0 2px rgba(237, 100, 166, 0.3)' }}
                 onClick={handleLogout}
               >
                 Logout

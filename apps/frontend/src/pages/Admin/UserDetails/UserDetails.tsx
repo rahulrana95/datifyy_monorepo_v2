@@ -2,10 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Box,
-  Container,
   VStack,
   HStack,
-  Heading,
   Text,
   Button,
   Badge,
@@ -14,8 +12,10 @@ import {
   Grid,
   Card,
   Input,
+  Heading,
 } from '@chakra-ui/react';
 import { useAdminStore } from '../../../stores/adminStore';
+import { AdminLayout } from '../../../components/admin';
 
 export const UserDetails: React.FC = () => {
   const navigate = useNavigate();
@@ -91,48 +91,51 @@ export const UserDetails: React.FC = () => {
 
   if (isLoading && !selectedUser) {
     return (
-      <Flex minH="100vh" justify="center" align="center" bg="gray.50">
-        <Spinner size="xl" color="pink.500" />
-      </Flex>
+      <AdminLayout>
+        <Flex minH="50vh" justify="center" align="center">
+          <Spinner size="xl" color="pink.500" />
+        </Flex>
+      </AdminLayout>
     );
   }
 
   if (!selectedUser) {
     return (
-      <Flex minH="100vh" justify="center" align="center" bg="gray.50">
-        <Text color="gray.500">User not found</Text>
-      </Flex>
+      <AdminLayout>
+        <Flex minH="50vh" justify="center" align="center">
+          <Text color="gray.500">User not found</Text>
+        </Flex>
+      </AdminLayout>
     );
   }
 
   return (
-    <Box minH="100vh" bg="gray.50">
-      {/* Header */}
-      <Box bg="white" borderBottom="1px solid" borderColor="gray.200" py={4}>
-        <Container maxW="1200px">
-          <Flex justify="space-between" align="center">
-            <HStack gap={4}>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => navigate('/admin/dashboard')}
-              >
-                ← Back
-              </Button>
-              <Heading
-                size="lg"
-                bgGradient="linear(to-r, pink.500, rose.500)"
-                bgClip="text"
-              >
-                User Details
-              </Heading>
-            </HStack>
-          </Flex>
-        </Container>
-      </Box>
+    <AdminLayout>
+      <VStack align="stretch" gap={6}>
+        {/* Page Header */}
+        <HStack justify="space-between">
+          <Box>
+            <Text fontSize="2xl" fontWeight="bold" color="gray.800">
+              User Details
+            </Text>
+            <Text color="gray.500" fontSize="sm">
+              View and manage user profile
+            </Text>
+          </Box>
+          <Button
+            size="sm"
+            bg="white"
+            border="1px solid"
+            borderColor="gray.300"
+            color="gray.600"
+            _hover={{ bg: 'gray.50' }}
+            onClick={() => navigate('/admin/users')}
+          >
+            Back to Users
+          </Button>
+        </HStack>
 
-      {/* Main Content */}
-      <Container maxW="1200px" py={6}>
+        {/* Main Content */}
         <Grid templateColumns={{ base: '1fr', lg: '350px 1fr' }} gap={6}>
           {/* User Profile Card */}
           <Box bg="white" borderRadius="xl" boxShadow="sm" p={6}>
@@ -304,8 +307,8 @@ export const UserDetails: React.FC = () => {
             </Box>
           </VStack>
         </Grid>
-      </Container>
-    </Box>
+      </VStack>
+    </AdminLayout>
   );
 };
 

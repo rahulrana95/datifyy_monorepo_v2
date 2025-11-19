@@ -11,7 +11,11 @@ import { ProfilePage } from './pages/ProfilePage';
 import { PartnerPreferencesPage } from './pages/PartnerPreferencesPage';
 import { AvailabilityPage } from './pages/AvailabilityPage';
 import { AdminLogin } from './pages/Admin/Login/AdminLogin';
-import { AdminDashboard } from './pages/Admin/Dashboard/AdminDashboard';
+import { AdminAnalytics } from './pages/Admin/Analytics/AdminAnalytics';
+import { AdminUsers } from './pages/Admin/Users/AdminUsers';
+import { AdminProfile } from './pages/Admin/Profile/AdminProfile';
+import { AdminManagement } from './pages/Admin/Admins/AdminManagement';
+import { AdminGenie } from './pages/Admin/Genie/AdminGenie';
 import { UserDetails } from './pages/Admin/UserDetails/UserDetails';
 
 function App() {
@@ -27,8 +31,12 @@ function App() {
 
           {/* Admin Routes */}
           <Route path="/admin" element={<AdminLogin />} />
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/dashboard" element={<AdminAnalytics />} />
+          <Route path="/admin/users" element={<AdminUsers />} />
           <Route path="/admin/users/:userId" element={<UserDetails />} />
+          <Route path="/admin/profile" element={<AdminProfile />} />
+          <Route path="/admin/admins" element={<AdminManagement />} />
+          <Route path="/admin/genie" element={<AdminGenie />} />
         </Routes>
       </Router>
     </ChakraProvider>
