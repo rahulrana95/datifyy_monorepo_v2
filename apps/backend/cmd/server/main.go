@@ -14,6 +14,7 @@ import (
 	"syscall"
 	"time"
 
+	adminpb "github.com/datifyy/backend/gen/admin/v1"
 	authpb "github.com/datifyy/backend/gen/auth/v1"
 	availabilitypb "github.com/datifyy/backend/gen/availability/v1"
 	commonpb "github.com/datifyy/backend/gen/common/v1"
@@ -126,6 +127,9 @@ func startGRPCServer(port string, db *sql.DB, redisClient *redis.Client) {
 	availabilityService := service.NewAvailabilityService(db)
 	availabilitypb.RegisterAvailabilityServiceServer(grpcServer, availabilityService)
 
+	adminService := service.NewAdminService(db)
+	adminpb.RegisterAdminServiceServer(grpcServer, adminService)
+
 	// Register reflection service (for grpcurl)
 	reflection.Register(grpcServer)
 
@@ -174,6 +178,16 @@ func startHTTPServer(port string, server *Server, db *sql.DB, redisClient *redis
 	// Availability REST endpoints
 	availabilityService := service.NewAvailabilityService(db)
 	mux.HandleFunc("/api/v1/availability", createAvailabilityHandler(availabilityService))
+
+	// Admin REST endpoints
+	adminService := service.NewAdminService(db)
+	mux.HandleFunc("/api/v1/admin/login", createAdminLoginHandler(adminService))
+	mux.HandleFunc("/api/v1/admin/users", createAdminGetAllUsersHandler(adminService))
+	mux.HandleFunc("/api/v1/admin/users/search", createAdminSearchUsersHandler(adminService))
+	mux.HandleFunc("/api/v1/admin/users/", createAdminGetUserDetailsHandler(adminService))
+	mux.HandleFunc("/api/v1/admin/suggestions/", createAdminGetSuggestionsHandler(adminService))
+	mux.HandleFunc("/api/v1/admin/dates", createAdminDatesHandler(adminService))
+	mux.HandleFunc("/api/v1/admin/dates/", createAdminDateStatusHandler(adminService))
 
 	// Add CORS middleware
 	handler := enableCORS(mux)
@@ -1109,6 +1123,608 @@ func convertSlotToJSON(slot *availabilitypb.AvailabilitySlot) map[string]interfa
 	return result
 }
 
+// =============================================================================
+// Admin HTTP Handlers
+// =============================================================================
+
+// createAdminLoginHandler handles admin login
+func createAdminLoginHandler(adminService *service.AdminService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		var reqBody struct {
+			Email    string `json:"email"`
+			Password string `json:"password"`
+		}
+
+		if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+			http.Error(w, fmt.Sprintf("Invalid JSON: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		grpcReq := &adminpb.AdminLoginRequest{
+			Email:    reqBody.Email,
+			Password: reqBody.Password,
+		}
+
+		resp, err := adminService.AdminLogin(r.Context(), grpcReq)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Login failed: %v", err), http.StatusUnauthorized)
+			return
+		}
+
+		jsonResp := map[string]interface{}{
+			"admin": map[string]interface{}{
+				"adminId":  resp.Admin.AdminId,
+				"userId":   resp.Admin.UserId,
+				"email":    resp.Admin.Email,
+				"name":     resp.Admin.Name,
+				"role":     resp.Admin.Role.String(),
+				"isGenie":  resp.Admin.IsGenie,
+			},
+			"tokens": map[string]interface{}{
+				"accessToken":  resp.Tokens.AccessToken,
+				"refreshToken": resp.Tokens.RefreshToken,
+				"expiresIn":    resp.Tokens.ExpiresIn,
+			},
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(jsonResp)
+	}
+}
+
+// createAdminGetAllUsersHandler handles fetching all users with pagination
+func createAdminGetAllUsersHandler(adminService *service.AdminService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		// Parse query params
+		page := 1
+		pageSize := 20
+		if p := r.URL.Query().Get("page"); p != "" {
+			fmt.Sscanf(p, "%d", &page)
+		}
+		if ps := r.URL.Query().Get("page_size"); ps != "" {
+			fmt.Sscanf(ps, "%d", &pageSize)
+		}
+
+		sortBy := adminpb.UserSortField_USER_SORT_FIELD_CREATED_AT
+		if sb := r.URL.Query().Get("sort_by"); sb != "" {
+			switch sb {
+			case "name":
+				sortBy = adminpb.UserSortField_USER_SORT_FIELD_NAME
+			case "email":
+				sortBy = adminpb.UserSortField_USER_SORT_FIELD_EMAIL
+			case "last_login":
+				sortBy = adminpb.UserSortField_USER_SORT_FIELD_LAST_LOGIN
+			case "age":
+				sortBy = adminpb.UserSortField_USER_SORT_FIELD_AGE
+			}
+		}
+
+		sortOrder := adminpb.SortOrder_SORT_ORDER_DESC
+		if so := r.URL.Query().Get("sort_order"); so == "asc" {
+			sortOrder = adminpb.SortOrder_SORT_ORDER_ASC
+		}
+
+		grpcReq := &adminpb.GetAllUsersRequest{
+			Page:               int32(page),
+			PageSize:           int32(pageSize),
+			SortBy:             sortBy,
+			SortOrder:          sortOrder,
+			AccountStatusFilter: r.URL.Query().Get("account_status"),
+			GenderFilter:       r.URL.Query().Get("gender"),
+		}
+
+		resp, err := adminService.GetAllUsers(r.Context(), grpcReq)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Failed to get users: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		// Convert users to JSON
+		users := make([]map[string]interface{}, len(resp.Users))
+		for i, user := range resp.Users {
+			users[i] = convertUserFullDetailsToJSON(user)
+		}
+
+		jsonResp := map[string]interface{}{
+			"users":      users,
+			"totalCount": resp.TotalCount,
+			"page":       resp.Page,
+			"pageSize":   resp.PageSize,
+			"totalPages": resp.TotalPages,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(jsonResp)
+	}
+}
+
+// createAdminSearchUsersHandler handles searching users
+func createAdminSearchUsersHandler(adminService *service.AdminService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		query := r.URL.Query().Get("q")
+		if query == "" {
+			http.Error(w, "Search query required", http.StatusBadRequest)
+			return
+		}
+
+		page := 1
+		pageSize := 20
+		if p := r.URL.Query().Get("page"); p != "" {
+			fmt.Sscanf(p, "%d", &page)
+		}
+		if ps := r.URL.Query().Get("page_size"); ps != "" {
+			fmt.Sscanf(ps, "%d", &pageSize)
+		}
+
+		grpcReq := &adminpb.SearchUsersRequest{
+			Query:    query,
+			Page:     int32(page),
+			PageSize: int32(pageSize),
+		}
+
+		resp, err := adminService.SearchUsers(r.Context(), grpcReq)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Search failed: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		users := make([]map[string]interface{}, len(resp.Users))
+		for i, user := range resp.Users {
+			users[i] = convertUserFullDetailsToJSON(user)
+		}
+
+		jsonResp := map[string]interface{}{
+			"users":      users,
+			"totalCount": resp.TotalCount,
+			"page":       resp.Page,
+			"pageSize":   resp.PageSize,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(jsonResp)
+	}
+}
+
+// createAdminGetUserDetailsHandler handles getting user details
+func createAdminGetUserDetailsHandler(adminService *service.AdminService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		// Extract user ID from path: /api/v1/admin/users/{id}
+		userID := r.URL.Path[len("/api/v1/admin/users/"):]
+		if userID == "" {
+			http.Error(w, "User ID required", http.StatusBadRequest)
+			return
+		}
+
+		grpcReq := &adminpb.GetUserDetailsRequest{
+			UserId: userID,
+		}
+
+		resp, err := adminService.GetUserDetails(r.Context(), grpcReq)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Failed to get user details: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		jsonResp := map[string]interface{}{
+			"user": convertUserFullDetailsToJSON(resp.User),
+		}
+
+		// Add availability, past dates, upcoming dates if present
+		if len(resp.Availability) > 0 {
+			slots := make([]map[string]interface{}, len(resp.Availability))
+			for i, slot := range resp.Availability {
+				slots[i] = map[string]interface{}{
+					"startTime": slot.StartTime.Seconds,
+					"endTime":   slot.EndTime.Seconds,
+					"dateType":  slot.DateType,
+				}
+			}
+			jsonResp["availability"] = slots
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(jsonResp)
+	}
+}
+
+// createAdminGetSuggestionsHandler handles getting date suggestions for a user
+func createAdminGetSuggestionsHandler(adminService *service.AdminService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		// Extract user ID from path: /api/v1/admin/suggestions/{id}
+		userID := r.URL.Path[len("/api/v1/admin/suggestions/"):]
+		if userID == "" {
+			http.Error(w, "User ID required", http.StatusBadRequest)
+			return
+		}
+
+		limit := 10
+		if l := r.URL.Query().Get("limit"); l != "" {
+			fmt.Sscanf(l, "%d", &limit)
+		}
+
+		grpcReq := &adminpb.GetDateSuggestionsRequest{
+			UserId: userID,
+			Limit:  int32(limit),
+		}
+
+		resp, err := adminService.GetDateSuggestions(r.Context(), grpcReq)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Failed to get suggestions: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		suggestions := make([]map[string]interface{}, len(resp.Suggestions))
+		for i, suggestion := range resp.Suggestions {
+			suggestions[i] = map[string]interface{}{
+				"user": map[string]interface{}{
+					"userId":     suggestion.User.UserId,
+					"name":       suggestion.User.Name,
+					"email":      suggestion.User.Email,
+					"phone":      suggestion.User.Phone,
+					"photoUrl":   suggestion.User.PhotoUrl,
+					"age":        suggestion.User.Age,
+					"gender":     suggestion.User.Gender,
+					"city":       suggestion.User.City,
+					"occupation": suggestion.User.Occupation,
+				},
+				"compatibilityScore": suggestion.CompatibilityScore,
+				"commonInterests":    suggestion.CommonInterests,
+				"suggestedDateType":  suggestion.SuggestedDateType,
+			}
+
+			if len(suggestion.MatchingSlots) > 0 {
+				slots := make([]map[string]interface{}, len(suggestion.MatchingSlots))
+				for j, slot := range suggestion.MatchingSlots {
+					slots[j] = map[string]interface{}{
+						"startTime": slot.StartTime.Seconds,
+						"endTime":   slot.EndTime.Seconds,
+						"dateType":  slot.DateType,
+					}
+				}
+				suggestions[i]["matchingSlots"] = slots
+			}
+		}
+
+		jsonResp := map[string]interface{}{
+			"suggestions": suggestions,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(jsonResp)
+	}
+}
+
+// createAdminDatesHandler handles scheduling dates and getting genie dates
+func createAdminDatesHandler(adminService *service.AdminService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// POST - Schedule a date
+		if r.Method == http.MethodPost {
+			var reqBody struct {
+				User1ID         string `json:"user1Id"`
+				User2ID         string `json:"user2Id"`
+				ScheduledTime   int64  `json:"scheduledTime"`
+				DurationMinutes int64  `json:"durationMinutes"`
+				DateType        string `json:"dateType"`
+				Notes           string `json:"notes"`
+				Location        *struct {
+					PlaceName string  `json:"placeName"`
+					Address   string  `json:"address"`
+					City      string  `json:"city"`
+					State     string  `json:"state"`
+					Country   string  `json:"country"`
+					Zipcode   string  `json:"zipcode"`
+					Latitude  float64 `json:"latitude"`
+					Longitude float64 `json:"longitude"`
+				} `json:"location"`
+			}
+
+			if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+				http.Error(w, fmt.Sprintf("Invalid JSON: %v", err), http.StatusBadRequest)
+				return
+			}
+
+			grpcReq := &adminpb.ScheduleDateRequest{
+				User1Id:         reqBody.User1ID,
+				User2Id:         reqBody.User2ID,
+				ScheduledTime:   &commonpb.Timestamp{Seconds: reqBody.ScheduledTime},
+				DurationMinutes: reqBody.DurationMinutes,
+				DateType:        reqBody.DateType,
+				Notes:           reqBody.Notes,
+			}
+
+			if reqBody.Location != nil {
+				grpcReq.Location = &adminpb.OfflineLocation{
+					PlaceName: reqBody.Location.PlaceName,
+					Address:   reqBody.Location.Address,
+					City:      reqBody.Location.City,
+					State:     reqBody.Location.State,
+					Country:   reqBody.Location.Country,
+					Zipcode:   reqBody.Location.Zipcode,
+					Latitude:  reqBody.Location.Latitude,
+					Longitude: reqBody.Location.Longitude,
+				}
+			}
+
+			resp, err := adminService.ScheduleDate(r.Context(), grpcReq)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("Failed to schedule date: %v", err), http.StatusBadRequest)
+				return
+			}
+
+			jsonResp := map[string]interface{}{
+				"date": convertScheduledDateToJSON(resp.Date),
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusCreated)
+			json.NewEncoder(w).Encode(jsonResp)
+			return
+		}
+
+		// GET - Get genie dates
+		if r.Method == http.MethodGet {
+			genieID := r.URL.Query().Get("genie_id")
+
+			page := 1
+			pageSize := 20
+			if p := r.URL.Query().Get("page"); p != "" {
+				fmt.Sscanf(p, "%d", &page)
+			}
+			if ps := r.URL.Query().Get("page_size"); ps != "" {
+				fmt.Sscanf(ps, "%d", &pageSize)
+			}
+
+			var statusFilter adminpb.DateStatus
+			if sf := r.URL.Query().Get("status"); sf != "" {
+				switch sf {
+				case "scheduled":
+					statusFilter = adminpb.DateStatus_DATE_STATUS_SCHEDULED
+				case "confirmed":
+					statusFilter = adminpb.DateStatus_DATE_STATUS_CONFIRMED
+				case "in_progress":
+					statusFilter = adminpb.DateStatus_DATE_STATUS_IN_PROGRESS
+				case "completed":
+					statusFilter = adminpb.DateStatus_DATE_STATUS_COMPLETED
+				case "cancelled":
+					statusFilter = adminpb.DateStatus_DATE_STATUS_CANCELLED
+				}
+			}
+
+			grpcReq := &adminpb.GetGenieDatesRequest{
+				GenieId:      genieID,
+				StatusFilter: statusFilter,
+				Page:         int32(page),
+				PageSize:     int32(pageSize),
+			}
+
+			resp, err := adminService.GetGenieDates(r.Context(), grpcReq)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("Failed to get dates: %v", err), http.StatusInternalServerError)
+				return
+			}
+
+			dates := make([]map[string]interface{}, len(resp.Dates))
+			for i, date := range resp.Dates {
+				dates[i] = convertScheduledDateToJSON(date)
+			}
+
+			jsonResp := map[string]interface{}{
+				"dates":      dates,
+				"totalCount": resp.TotalCount,
+				"page":       resp.Page,
+				"pageSize":   resp.PageSize,
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(jsonResp)
+			return
+		}
+
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+// createAdminDateStatusHandler handles updating date status
+func createAdminDateStatusHandler(adminService *service.AdminService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPut {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		// Extract date ID from path: /api/v1/admin/dates/{id}
+		dateID := r.URL.Path[len("/api/v1/admin/dates/"):]
+		if dateID == "" {
+			http.Error(w, "Date ID required", http.StatusBadRequest)
+			return
+		}
+
+		var reqBody struct {
+			Status string `json:"status"`
+			Notes  string `json:"notes"`
+		}
+
+		if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+			http.Error(w, fmt.Sprintf("Invalid JSON: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		var status adminpb.DateStatus
+		switch reqBody.Status {
+		case "scheduled":
+			status = adminpb.DateStatus_DATE_STATUS_SCHEDULED
+		case "confirmed":
+			status = adminpb.DateStatus_DATE_STATUS_CONFIRMED
+		case "in_progress":
+			status = adminpb.DateStatus_DATE_STATUS_IN_PROGRESS
+		case "completed":
+			status = adminpb.DateStatus_DATE_STATUS_COMPLETED
+		case "cancelled":
+			status = adminpb.DateStatus_DATE_STATUS_CANCELLED
+		case "no_show":
+			status = adminpb.DateStatus_DATE_STATUS_NO_SHOW
+		default:
+			http.Error(w, "Invalid status", http.StatusBadRequest)
+			return
+		}
+
+		grpcReq := &adminpb.UpdateDateStatusRequest{
+			DateId: dateID,
+			Status: status,
+			Notes:  reqBody.Notes,
+		}
+
+		resp, err := adminService.UpdateDateStatus(r.Context(), grpcReq)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Failed to update status: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		jsonResp := map[string]interface{}{
+			"date": convertScheduledDateToJSON(resp.Date),
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(jsonResp)
+	}
+}
+
+// Helper functions for admin handlers
+func convertUserFullDetailsToJSON(user *adminpb.UserFullDetails) map[string]interface{} {
+	if user == nil {
+		return nil
+	}
+
+	result := map[string]interface{}{
+		"userId":            user.UserId,
+		"email":             user.Email,
+		"name":              user.Name,
+		"phone":             user.Phone,
+		"photoUrl":          user.PhotoUrl,
+		"age":               user.Age,
+		"gender":            user.Gender,
+		"accountStatus":     user.AccountStatus,
+		"emailVerified":     user.EmailVerified,
+		"phoneVerified":     user.PhoneVerified,
+		"photoCount":        user.PhotoCount,
+		"availabilityCount": user.AvailabilityCount,
+	}
+
+	if user.DateOfBirth != nil {
+		result["dateOfBirth"] = user.DateOfBirth.Seconds
+	}
+	if user.CreatedAt != nil {
+		result["createdAt"] = user.CreatedAt.Seconds
+	}
+	if user.LastLoginAt != nil {
+		result["lastLoginAt"] = user.LastLoginAt.Seconds
+	}
+
+	return result
+}
+
+func convertScheduledDateToJSON(date *adminpb.ScheduledDate) map[string]interface{} {
+	if date == nil {
+		return nil
+	}
+
+	result := map[string]interface{}{
+		"dateId":          date.DateId,
+		"user1Id":         date.User1Id,
+		"user2Id":         date.User2Id,
+		"genieId":         date.GenieId,
+		"durationMinutes": date.DurationMinutes,
+		"status":          date.Status.String(),
+		"dateType":        date.DateType,
+		"notes":           date.Notes,
+	}
+
+	if date.User1 != nil {
+		result["user1"] = map[string]interface{}{
+			"userId":     date.User1.UserId,
+			"name":       date.User1.Name,
+			"email":      date.User1.Email,
+			"phone":      date.User1.Phone,
+			"photoUrl":   date.User1.PhotoUrl,
+			"age":        date.User1.Age,
+			"gender":     date.User1.Gender,
+			"city":       date.User1.City,
+			"occupation": date.User1.Occupation,
+		}
+	}
+
+	if date.User2 != nil {
+		result["user2"] = map[string]interface{}{
+			"userId":     date.User2.UserId,
+			"name":       date.User2.Name,
+			"email":      date.User2.Email,
+			"phone":      date.User2.Phone,
+			"photoUrl":   date.User2.PhotoUrl,
+			"age":        date.User2.Age,
+			"gender":     date.User2.Gender,
+			"city":       date.User2.City,
+			"occupation": date.User2.Occupation,
+		}
+	}
+
+	if date.ScheduledTime != nil {
+		result["scheduledTime"] = date.ScheduledTime.Seconds
+	}
+	if date.CreatedAt != nil {
+		result["createdAt"] = date.CreatedAt.Seconds
+	}
+	if date.UpdatedAt != nil {
+		result["updatedAt"] = date.UpdatedAt.Seconds
+	}
+
+	if date.Location != nil {
+		result["location"] = map[string]interface{}{
+			"placeName": date.Location.PlaceName,
+			"address":   date.Location.Address,
+			"city":      date.Location.City,
+			"state":     date.Location.State,
+			"country":   date.Location.Country,
+			"zipcode":   date.Location.Zipcode,
+			"latitude":  date.Location.Latitude,
+			"longitude": date.Location.Longitude,
+		}
+	}
+
+	return result
+}
+
 func enableCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Set CORS headers
@@ -1222,6 +1838,7 @@ func (s *Server) rootHandler(w http.ResponseWriter, r *http.Request) {
 			"AuthService (gRPC)",
 			"UserService (gRPC)",
 			"AvailabilityService (gRPC)",
+			"AdminService (gRPC)",
 		},
 	}
 

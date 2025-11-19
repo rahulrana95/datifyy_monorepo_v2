@@ -1,0 +1,294 @@
+syntax = "proto3";
+
+package datifyy.admin.v1;
+
+option go_package = "github.com/datifyy/backend/gen/admin/v1";
+
+import "common/v1/types.proto";
+import "user/v1/user.proto";
+
+// =============================================================================
+// Enums
+// =============================================================================
+
+enum AdminRole {
+  ADMIN_ROLE_UNSPECIFIED = 0;
+  ADMIN_ROLE_SUPER_ADMIN = 1;
+  ADMIN_ROLE_GENIE = 2;          // Date coordinator
+  ADMIN_ROLE_SUPPORT = 3;
+  ADMIN_ROLE_MODERATOR = 4;
+}
+
+enum DateStatus {
+  DATE_STATUS_UNSPECIFIED = 0;
+  DATE_STATUS_SCHEDULED = 1;
+  DATE_STATUS_CONFIRMED = 2;
+  DATE_STATUS_IN_PROGRESS = 3;
+  DATE_STATUS_COMPLETED = 4;
+  DATE_STATUS_CANCELLED = 5;
+  DATE_STATUS_NO_SHOW = 6;
+}
+
+enum SortOrder {
+  SORT_ORDER_UNSPECIFIED = 0;
+  SORT_ORDER_ASC = 1;
+  SORT_ORDER_DESC = 2;
+}
+
+enum UserSortField {
+  USER_SORT_FIELD_UNSPECIFIED = 0;
+  USER_SORT_FIELD_CREATED_AT = 1;
+  USER_SORT_FIELD_NAME = 2;
+  USER_SORT_FIELD_EMAIL = 3;
+  USER_SORT_FIELD_LAST_LOGIN = 4;
+  USER_SORT_FIELD_AGE = 5;
+}
+
+// =============================================================================
+// Admin User Messages
+// =============================================================================
+
+message AdminUser {
+  string admin_id = 1;
+  string user_id = 2;
+  string email = 3;
+  string name = 4;
+  AdminRole role = 5;
+  bool is_genie = 6;
+  common.v1.Timestamp created_at = 7;
+  common.v1.Timestamp last_login_at = 8;
+}
+
+message AdminTokenPair {
+  string access_token = 1;
+  string refresh_token = 2;
+  int64 expires_in = 3;
+}
+
+// =============================================================================
+// Date/Match Messages
+// =============================================================================
+
+message ScheduledDate {
+  string date_id = 1;
+  string user1_id = 2;
+  string user2_id = 3;
+  UserSummary user1 = 4;
+  UserSummary user2 = 5;
+  string genie_id = 6;
+  AdminUser genie = 7;
+  common.v1.Timestamp scheduled_time = 8;
+  int64 duration_minutes = 9;
+  DateStatus status = 10;
+  string date_type = 11;           // online, offline, event
+  OfflineLocation location = 12;
+  string notes = 13;
+  common.v1.Timestamp created_at = 14;
+  common.v1.Timestamp updated_at = 15;
+}
+
+message UserSummary {
+  string user_id = 1;
+  string name = 2;
+  string email = 3;
+  string phone = 4;
+  string photo_url = 5;
+  int32 age = 6;
+  string gender = 7;
+  string city = 8;
+  string occupation = 9;
+}
+
+message OfflineLocation {
+  string place_name = 1;
+  string address = 2;
+  string city = 3;
+  string state = 4;
+  string country = 5;
+  string zipcode = 6;
+  double latitude = 7;
+  double longitude = 8;
+}
+
+message DateSuggestion {
+  UserSummary user = 1;
+  double compatibility_score = 2;
+  repeated string common_interests = 3;
+  string suggested_date_type = 4;
+  repeated AvailableSlot matching_slots = 5;
+}
+
+message AvailableSlot {
+  common.v1.Timestamp start_time = 1;
+  common.v1.Timestamp end_time = 2;
+  string date_type = 3;
+}
+
+// =============================================================================
+// Request/Response Messages
+// =============================================================================
+
+// Admin Login
+message AdminLoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message AdminLoginResponse {
+  AdminUser admin = 1;
+  AdminTokenPair tokens = 2;
+}
+
+// Get All Users
+message GetAllUsersRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+  UserSortField sort_by = 3;
+  SortOrder sort_order = 4;
+  string account_status_filter = 5;
+  string gender_filter = 6;
+}
+
+message GetAllUsersResponse {
+  repeated UserFullDetails users = 1;
+  int32 total_count = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+  int32 total_pages = 5;
+}
+
+message UserFullDetails {
+  string user_id = 1;
+  string email = 2;
+  string name = 3;
+  string phone = 4;
+  string photo_url = 5;
+  common.v1.Timestamp date_of_birth = 6;
+  int32 age = 7;
+  string gender = 8;
+  string account_status = 9;
+  bool email_verified = 10;
+  bool phone_verified = 11;
+  common.v1.Timestamp created_at = 12;
+  common.v1.Timestamp last_login_at = 13;
+  user.v1.UserProfile profile = 14;
+  user.v1.PartnerPreferences partner_preferences = 15;
+  int32 photo_count = 16;
+  int32 availability_count = 17;
+}
+
+// Search Users
+message SearchUsersRequest {
+  string query = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+  repeated string search_fields = 4;  // name, email, phone, city
+}
+
+message SearchUsersResponse {
+  repeated UserFullDetails users = 1;
+  int32 total_count = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+// Get User Details
+message GetUserDetailsRequest {
+  string user_id = 1;
+}
+
+message GetUserDetailsResponse {
+  UserFullDetails user = 1;
+  repeated AvailableSlot availability = 2;
+  repeated ScheduledDate past_dates = 3;
+  repeated ScheduledDate upcoming_dates = 4;
+}
+
+// Get Date Suggestions (Opposite Sex)
+message GetDateSuggestionsRequest {
+  string user_id = 1;
+  int32 limit = 2;
+}
+
+message GetDateSuggestionsResponse {
+  repeated DateSuggestion suggestions = 1;
+}
+
+// Schedule Date
+message ScheduleDateRequest {
+  string user1_id = 1;
+  string user2_id = 2;
+  common.v1.Timestamp scheduled_time = 3;
+  int64 duration_minutes = 4;
+  string date_type = 5;
+  OfflineLocation location = 6;
+  string notes = 7;
+}
+
+message ScheduleDateResponse {
+  ScheduledDate date = 1;
+}
+
+// Get Genie Dates (Dates assigned to admin)
+message GetGenieDatesRequest {
+  string genie_id = 1;
+  DateStatus status_filter = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message GetGenieDatesResponse {
+  repeated ScheduledDate dates = 1;
+  int32 total_count = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+// Update Date Status
+message UpdateDateStatusRequest {
+  string date_id = 1;
+  DateStatus status = 2;
+  string notes = 3;
+}
+
+message UpdateDateStatusResponse {
+  ScheduledDate date = 1;
+}
+
+// Create Admin User
+message CreateAdminUserRequest {
+  string email = 1;
+  string password = 2;
+  string name = 3;
+  AdminRole role = 4;
+  bool is_genie = 5;
+}
+
+message CreateAdminUserResponse {
+  AdminUser admin = 1;
+}
+
+// =============================================================================
+// Admin Service
+// =============================================================================
+
+service AdminService {
+  // Authentication
+  rpc AdminLogin(AdminLoginRequest) returns (AdminLoginResponse);
+
+  // User Management
+  rpc GetAllUsers(GetAllUsersRequest) returns (GetAllUsersResponse);
+  rpc SearchUsers(SearchUsersRequest) returns (SearchUsersResponse);
+  rpc GetUserDetails(GetUserDetailsRequest) returns (GetUserDetailsResponse);
+
+  // Date Matching
+  rpc GetDateSuggestions(GetDateSuggestionsRequest) returns (GetDateSuggestionsResponse);
+  rpc ScheduleDate(ScheduleDateRequest) returns (ScheduleDateResponse);
+
+  // Genie Operations
+  rpc GetGenieDates(GetGenieDatesRequest) returns (GetGenieDatesResponse);
+  rpc UpdateDateStatus(UpdateDateStatusRequest) returns (UpdateDateStatusResponse);
+
+  // Admin User Management (Super Admin only)
+  rpc CreateAdminUser(CreateAdminUserRequest) returns (CreateAdminUserResponse);
+}

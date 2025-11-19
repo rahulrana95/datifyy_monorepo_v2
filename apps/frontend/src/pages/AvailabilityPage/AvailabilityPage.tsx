@@ -1073,13 +1073,14 @@ export const AvailabilityPage = (): JSX.Element => {
           <Container maxW="600px" mx="auto">
             <HStack gap={3}>
               <Button
-                variant="outline"
                 size="lg"
                 flex={1}
                 onClick={handleClearForm}
                 borderRadius="xl"
+                bg="white"
+                borderWidth="1px"
                 borderColor="gray.300"
-                color="fg.muted"
+                color="gray.600"
                 fontWeight="semibold"
                 h={{ base: '52px', md: '48px' }}
                 fontSize="sm"
