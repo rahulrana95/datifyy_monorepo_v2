@@ -24,17 +24,39 @@ import type { PartnerPreferences } from '../../gen/user/v1/user_pb';
 export const PartnerPreferencesPage = (): JSX.Element => {
   const { profile, isLoading, error, fetchProfile, updatePartnerPreferences } = useUserStore();
   const [isEditing, setIsEditing] = useState(false);
+  const [notification, setNotification] = useState<{
+    type: 'success' | 'error';
+    message: string;
+  } | null>(null);
 
   useEffect(() => {
     fetchProfile();
   }, [fetchProfile]);
 
+  // Auto-hide notification after 4 seconds
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => {
+        setNotification(null);
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
+
   const handleSave = async (updates: PartnerPreferences): Promise<void> => {
     try {
       await updatePartnerPreferences(updates);
       setIsEditing(false);
+      setNotification({
+        type: 'success',
+        message: 'Your partner preferences have been updated successfully.',
+      });
     } catch (err) {
       console.error('Failed to update partner preferences:', err);
+      setNotification({
+        type: 'error',
+        message: err instanceof Error ? err.message : 'An error occurred while saving your preferences.',
+      });
     }
   };
 
@@ -173,6 +195,44 @@ export const PartnerPreferencesPage = (): JSX.Element => {
       <Header />
       <Container maxW="1200px" py={8} px={{ base: 4, md: 8 }} mx="auto">
         <VStack align="stretch" gap={6} mx="auto" w="100%" maxW="1000px">
+          {/* Success/Error Notification */}
+          {notification && (
+            <Box
+              position="fixed"
+              top={4}
+              right={4}
+              zIndex={1000}
+              maxW="400px"
+              bg={notification.type === 'success' ? 'green.500' : 'red.500'}
+              color="white"
+              p={4}
+              borderRadius="md"
+              boxShadow="lg"
+              display="flex"
+              alignItems="center"
+              gap={3}
+            >
+              <Text fontSize="xl">
+                {notification.type === 'success' ? '✓' : '✕'}
+              </Text>
+              <Box flex={1}>
+                <Text fontWeight="semibold" mb={1}>
+                  {notification.type === 'success' ? 'Success' : 'Error'}
+                </Text>
+                <Text fontSize="sm">{notification.message}</Text>
+              </Box>
+              <Button
+                size="xs"
+                variant="ghost"
+                color="white"
+                _hover={{ bg: notification.type === 'success' ? 'green.600' : 'red.600' }}
+                onClick={() => setNotification(null)}
+              >
+                ✕
+              </Button>
+            </Box>
+          )}
+
           {/* Header Section */}
           <Box mb={2}>
             <HStack justify="space-between" align="center" mb={4}>
