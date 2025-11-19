@@ -228,6 +228,7 @@ func buildPartnerPreferencesFromDB(prefs *repository.PartnerPreferences) *userpb
 		VerifiedOnly:       prefs.VerifiedOnly,
 	}
 
+	// Height range
 	if prefs.HeightRangeMin.Valid && prefs.HeightRangeMax.Valid {
 		pb.HeightRange = &userpb.HeightRange{
 			MinHeight: prefs.HeightRangeMin.Int32,
@@ -235,7 +236,30 @@ func buildPartnerPreferencesFromDB(prefs *repository.PartnerPreferences) *userpb
 		}
 	}
 
-	// Parse JSONB arrays
+	// Simple integer fields (enums)
+	pb.ReligionImportance = userpb.Importance(prefs.ReligionImportance)
+	pb.ManglikPreference = userpb.ManglikPreference(prefs.ManglikPreference)
+	pb.NriPreference = userpb.NRIPreference(prefs.NRIPreference)
+	pb.RelocationExpectation = userpb.RelocationExpectation(prefs.RelocationExpectation)
+	pb.TattooPreference = userpb.TattooPreference(prefs.TattooPreference)
+	pb.PiercingPreference = userpb.PiercingPreference(prefs.PiercingPreference)
+	pb.DisabilityAcceptance = userpb.DisabilityAcceptance(prefs.DisabilityAcceptance)
+	pb.MinYearsExperience = int32(prefs.MinYearsExperience)
+	pb.PropertyPreference = userpb.PropertyOwnership(prefs.PropertyPreference)
+	pb.VehiclePreference = userpb.VehicleOwnership(prefs.VehiclePreference)
+	pb.FinancialExpectation = userpb.FinancialExpectation(prefs.FinancialExpectation)
+	pb.MaxSiblings = int32(prefs.MaxSiblings)
+	pb.MinLanguageProficiency = userpb.LanguageProficiency(prefs.MinLangProficiency)
+	pb.MinSharedInterests = int32(prefs.MinSharedInterests)
+	pb.MaxDaysInactive = int32(prefs.MaxDaysInactive)
+	pb.MinProfileCompletion = int32(prefs.MinProfileCompletion)
+
+	// Boolean fields
+	pb.HoroscopeMatchingRequired = prefs.HoroscopeRequired
+	pb.OpenToLongDistance = prefs.OpenToLongDistance
+	pb.PhotosRequired = prefs.PhotosRequired
+
+	// Parse JSONB arrays - Gender
 	if len(prefs.LookingForGender) > 0 {
 		var genders []int32
 		if err := json.Unmarshal(prefs.LookingForGender, &genders); err == nil {
@@ -246,7 +270,410 @@ func buildPartnerPreferencesFromDB(prefs *repository.PartnerPreferences) *userpb
 		}
 	}
 
-	// Similar parsing for other JSONB fields...
+	// RelationshipGoals
+	if len(prefs.RelationshipGoals) > 0 {
+		var goals []int32
+		if err := json.Unmarshal(prefs.RelationshipGoals, &goals); err == nil {
+			pb.RelationshipGoals = make([]userpb.RelationshipGoal, len(goals))
+			for i, g := range goals {
+				pb.RelationshipGoals[i] = userpb.RelationshipGoal(g)
+			}
+		}
+	}
+
+	// EducationLevels
+	if len(prefs.EducationLevels) > 0 {
+		var levels []int32
+		if err := json.Unmarshal(prefs.EducationLevels, &levels); err == nil {
+			pb.EducationLevels = make([]userpb.EducationLevel, len(levels))
+			for i, l := range levels {
+				pb.EducationLevels[i] = userpb.EducationLevel(l)
+			}
+		}
+	}
+
+	// Occupations
+	if len(prefs.Occupations) > 0 {
+		var occupations []int32
+		if err := json.Unmarshal(prefs.Occupations, &occupations); err == nil {
+			pb.Occupations = make([]userpb.OccupationCategory, len(occupations))
+			for i, o := range occupations {
+				pb.Occupations[i] = userpb.OccupationCategory(o)
+			}
+		}
+	}
+
+	// Religions
+	if len(prefs.Religions) > 0 {
+		var religions []int32
+		if err := json.Unmarshal(prefs.Religions, &religions); err == nil {
+			pb.Religions = make([]userpb.Religion, len(religions))
+			for i, r := range religions {
+				pb.Religions[i] = userpb.Religion(r)
+			}
+		}
+	}
+
+	// ChildrenPreferences
+	if len(prefs.ChildrenPreferences) > 0 {
+		var children []int32
+		if err := json.Unmarshal(prefs.ChildrenPreferences, &children); err == nil {
+			pb.ChildrenPreferences = make([]userpb.ChildrenPreference, len(children))
+			for i, c := range children {
+				pb.ChildrenPreferences[i] = userpb.ChildrenPreference(c)
+			}
+		}
+	}
+
+	// DrinkingPreferences
+	if len(prefs.DrinkingPreferences) > 0 {
+		var drinking []int32
+		if err := json.Unmarshal(prefs.DrinkingPreferences, &drinking); err == nil {
+			pb.DrinkingPreferences = make([]userpb.DrinkingHabit, len(drinking))
+			for i, d := range drinking {
+				pb.DrinkingPreferences[i] = userpb.DrinkingHabit(d)
+			}
+		}
+	}
+
+	// SmokingPreferences
+	if len(prefs.SmokingPreferences) > 0 {
+		var smoking []int32
+		if err := json.Unmarshal(prefs.SmokingPreferences, &smoking); err == nil {
+			pb.SmokingPreferences = make([]userpb.SmokingHabit, len(smoking))
+			for i, s := range smoking {
+				pb.SmokingPreferences[i] = userpb.SmokingHabit(s)
+			}
+		}
+	}
+
+	// DietaryPreferences
+	if len(prefs.DietaryPreferences) > 0 {
+		var dietary []int32
+		if err := json.Unmarshal(prefs.DietaryPreferences, &dietary); err == nil {
+			pb.DietaryPreferences = make([]userpb.DietaryPreference, len(dietary))
+			for i, d := range dietary {
+				pb.DietaryPreferences[i] = userpb.DietaryPreference(d)
+			}
+		}
+	}
+
+	// PetPreferences
+	if len(prefs.PetPreferences) > 0 {
+		var pets []int32
+		if err := json.Unmarshal(prefs.PetPreferences, &pets); err == nil {
+			pb.PetPreferences = make([]userpb.PetPreference, len(pets))
+			for i, p := range pets {
+				pb.PetPreferences[i] = userpb.PetPreference(p)
+			}
+		}
+	}
+
+	// WorkoutPreferences
+	if len(prefs.WorkoutPreferences) > 0 {
+		var workouts []int32
+		if err := json.Unmarshal(prefs.WorkoutPreferences, &workouts); err == nil {
+			pb.WorkoutPreferences = make([]userpb.WorkoutFrequency, len(workouts))
+			for i, w := range workouts {
+				pb.WorkoutPreferences[i] = userpb.WorkoutFrequency(w)
+			}
+		}
+	}
+
+	// PersonalityTypes (string array)
+	if len(prefs.PersonalityTypes) > 0 {
+		var personalities []string
+		if err := json.Unmarshal(prefs.PersonalityTypes, &personalities); err == nil {
+			pb.PersonalityTypes = personalities
+		}
+	}
+
+	// CommunicationStyles
+	if len(prefs.CommunicationStyles) > 0 {
+		var styles []int32
+		if err := json.Unmarshal(prefs.CommunicationStyles, &styles); err == nil {
+			pb.CommunicationStyles = make([]userpb.CommunicationStyle, len(styles))
+			for i, s := range styles {
+				pb.CommunicationStyles[i] = userpb.CommunicationStyle(s)
+			}
+		}
+	}
+
+	// LoveLanguages
+	if len(prefs.LoveLanguages) > 0 {
+		var languages []int32
+		if err := json.Unmarshal(prefs.LoveLanguages, &languages); err == nil {
+			pb.LoveLanguages = make([]userpb.LoveLanguage, len(languages))
+			for i, l := range languages {
+				pb.LoveLanguages[i] = userpb.LoveLanguage(l)
+			}
+		}
+	}
+
+	// PoliticalViews
+	if len(prefs.PoliticalViews) > 0 {
+		var views []int32
+		if err := json.Unmarshal(prefs.PoliticalViews, &views); err == nil {
+			pb.PoliticalViews = make([]userpb.PoliticalView, len(views))
+			for i, v := range views {
+				pb.PoliticalViews[i] = userpb.PoliticalView(v)
+			}
+		}
+	}
+
+	// SleepSchedules
+	if len(prefs.SleepSchedules) > 0 {
+		var schedules []int32
+		if err := json.Unmarshal(prefs.SleepSchedules, &schedules); err == nil {
+			pb.SleepSchedules = make([]userpb.SleepSchedule, len(schedules))
+			for i, s := range schedules {
+				pb.SleepSchedules[i] = userpb.SleepSchedule(s)
+			}
+		}
+	}
+
+	// CastePreferences (string array)
+	if len(prefs.CastePreferences) > 0 {
+		var castes []string
+		if err := json.Unmarshal(prefs.CastePreferences, &castes); err == nil {
+			pb.CastePreferences = castes
+		}
+	}
+
+	// SubCastePreferences (string array)
+	if len(prefs.SubCastePreferences) > 0 {
+		var subCastes []string
+		if err := json.Unmarshal(prefs.SubCastePreferences, &subCastes); err == nil {
+			pb.SubCastePreferences = subCastes
+		}
+	}
+
+	// GotraPreferences (string array)
+	if len(prefs.GotraPreferences) > 0 {
+		var gotras []string
+		if err := json.Unmarshal(prefs.GotraPreferences, &gotras); err == nil {
+			pb.GotraPreferences = gotras
+		}
+	}
+
+	// MotherTonguePreferences (string array)
+	if len(prefs.MotherTonguePrefs) > 0 {
+		var tongues []string
+		if err := json.Unmarshal(prefs.MotherTonguePrefs, &tongues); err == nil {
+			pb.MotherTonguePreferences = tongues
+		}
+	}
+
+	// EthnicityPreferences
+	if len(prefs.EthnicityPreferences) > 0 {
+		var ethnicities []int32
+		if err := json.Unmarshal(prefs.EthnicityPreferences, &ethnicities); err == nil {
+			pb.EthnicityPreferences = make([]userpb.Ethnicity, len(ethnicities))
+			for i, e := range ethnicities {
+				pb.EthnicityPreferences[i] = userpb.Ethnicity(e)
+			}
+		}
+	}
+
+	// NationalityPreferences (string array)
+	if len(prefs.NationalityPrefs) > 0 {
+		var nationalities []string
+		if err := json.Unmarshal(prefs.NationalityPrefs, &nationalities); err == nil {
+			pb.NationalityPreferences = nationalities
+		}
+	}
+
+	// BodyTypePreferences
+	if len(prefs.BodyTypePreferences) > 0 {
+		var bodyTypes []int32
+		if err := json.Unmarshal(prefs.BodyTypePreferences, &bodyTypes); err == nil {
+			pb.BodyTypePreferences = make([]userpb.BodyType, len(bodyTypes))
+			for i, b := range bodyTypes {
+				pb.BodyTypePreferences[i] = userpb.BodyType(b)
+			}
+		}
+	}
+
+	// ComplexionPreferences
+	if len(prefs.ComplexionPrefs) > 0 {
+		var complexions []int32
+		if err := json.Unmarshal(prefs.ComplexionPrefs, &complexions); err == nil {
+			pb.ComplexionPreferences = make([]userpb.Complexion, len(complexions))
+			for i, c := range complexions {
+				pb.ComplexionPreferences[i] = userpb.Complexion(c)
+			}
+		}
+	}
+
+	// HairColorPreferences
+	if len(prefs.HairColorPrefs) > 0 {
+		var hairColors []int32
+		if err := json.Unmarshal(prefs.HairColorPrefs, &hairColors); err == nil {
+			pb.HairColorPreferences = make([]userpb.HairColor, len(hairColors))
+			for i, h := range hairColors {
+				pb.HairColorPreferences[i] = userpb.HairColor(h)
+			}
+		}
+	}
+
+	// EyeColorPreferences
+	if len(prefs.EyeColorPrefs) > 0 {
+		var eyeColors []int32
+		if err := json.Unmarshal(prefs.EyeColorPrefs, &eyeColors); err == nil {
+			pb.EyeColorPreferences = make([]userpb.EyeColor, len(eyeColors))
+			for i, e := range eyeColors {
+				pb.EyeColorPreferences[i] = userpb.EyeColor(e)
+			}
+		}
+	}
+
+	// FacialHairPreferences
+	if len(prefs.FacialHairPrefs) > 0 {
+		var facialHairs []int32
+		if err := json.Unmarshal(prefs.FacialHairPrefs, &facialHairs); err == nil {
+			pb.FacialHairPreferences = make([]userpb.FacialHair, len(facialHairs))
+			for i, f := range facialHairs {
+				pb.FacialHairPreferences[i] = userpb.FacialHair(f)
+			}
+		}
+	}
+
+	// IncomePreferences
+	if len(prefs.IncomePreferences) > 0 {
+		var incomes []int32
+		if err := json.Unmarshal(prefs.IncomePreferences, &incomes); err == nil {
+			pb.IncomePreferences = make([]userpb.IncomeRange, len(incomes))
+			for i, inc := range incomes {
+				pb.IncomePreferences[i] = userpb.IncomeRange(inc)
+			}
+		}
+	}
+
+	// EmploymentPreferences
+	if len(prefs.EmploymentPrefs) > 0 {
+		var employments []int32
+		if err := json.Unmarshal(prefs.EmploymentPrefs, &employments); err == nil {
+			pb.EmploymentPreferences = make([]userpb.EmploymentType, len(employments))
+			for i, e := range employments {
+				pb.EmploymentPreferences[i] = userpb.EmploymentType(e)
+			}
+		}
+	}
+
+	// IndustryPreferences (string array)
+	if len(prefs.IndustryPreferences) > 0 {
+		var industries []string
+		if err := json.Unmarshal(prefs.IndustryPreferences, &industries); err == nil {
+			pb.IndustryPreferences = industries
+		}
+	}
+
+	// FamilyTypePreferences
+	if len(prefs.FamilyTypePrefs) > 0 {
+		var familyTypes []int32
+		if err := json.Unmarshal(prefs.FamilyTypePrefs, &familyTypes); err == nil {
+			pb.FamilyTypePreferences = make([]userpb.FamilyType, len(familyTypes))
+			for i, f := range familyTypes {
+				pb.FamilyTypePreferences[i] = userpb.FamilyType(f)
+			}
+		}
+	}
+
+	// FamilyValuesPreferences
+	if len(prefs.FamilyValuesPrefs) > 0 {
+		var familyValues []int32
+		if err := json.Unmarshal(prefs.FamilyValuesPrefs, &familyValues); err == nil {
+			pb.FamilyValuesPreferences = make([]userpb.FamilyValues, len(familyValues))
+			for i, f := range familyValues {
+				pb.FamilyValuesPreferences[i] = userpb.FamilyValues(f)
+			}
+		}
+	}
+
+	// LivingSituationPreferences
+	if len(prefs.LivingSituationPrefs) > 0 {
+		var livingSituations []int32
+		if err := json.Unmarshal(prefs.LivingSituationPrefs, &livingSituations); err == nil {
+			pb.LivingSituationPreferences = make([]userpb.LivingSituation, len(livingSituations))
+			for i, l := range livingSituations {
+				pb.LivingSituationPreferences[i] = userpb.LivingSituation(l)
+			}
+		}
+	}
+
+	// FamilyAffluencePreferences
+	if len(prefs.FamilyAffluencePrefs) > 0 {
+		var affluences []int32
+		if err := json.Unmarshal(prefs.FamilyAffluencePrefs, &affluences); err == nil {
+			pb.FamilyAffluencePreferences = make([]userpb.FamilyAffluence, len(affluences))
+			for i, a := range affluences {
+				pb.FamilyAffluencePreferences[i] = userpb.FamilyAffluence(a)
+			}
+		}
+	}
+
+	// FamilyLocationPreferences (string array)
+	if len(prefs.FamilyLocationPrefs) > 0 {
+		var locations []string
+		if err := json.Unmarshal(prefs.FamilyLocationPrefs, &locations); err == nil {
+			pb.FamilyLocationPreferences = locations
+		}
+	}
+
+	// LanguagePreferences
+	if len(prefs.LanguagePreferences) > 0 {
+		var langCodes []int32
+		if err := json.Unmarshal(prefs.LanguagePreferences, &langCodes); err == nil {
+			pb.LanguagePreferences = make([]userpb.LanguageCode, len(langCodes))
+			for i, l := range langCodes {
+				pb.LanguagePreferences[i] = userpb.LanguageCode(l)
+			}
+		}
+	}
+
+	// LocationPreferences (string array)
+	if len(prefs.LocationPreferences) > 0 {
+		var locations []string
+		if err := json.Unmarshal(prefs.LocationPreferences, &locations); err == nil {
+			pb.LocationPreferences = locations
+		}
+	}
+
+	// InterestPreferences
+	if len(prefs.InterestPreferences) > 0 {
+		var interests []int32
+		if err := json.Unmarshal(prefs.InterestPreferences, &interests); err == nil {
+			pb.InterestPreferences = make([]userpb.InterestCategory, len(interests))
+			for i, interest := range interests {
+				pb.InterestPreferences[i] = userpb.InterestCategory(interest)
+			}
+		}
+	}
+
+	// DealBreakers (message array)
+	if len(prefs.DealBreakers) > 0 {
+		var dealBreakers []*userpb.DealBreaker
+		if err := json.Unmarshal(prefs.DealBreakers, &dealBreakers); err == nil {
+			pb.DealBreakers = dealBreakers
+		}
+	}
+
+	// MustHaves (message array)
+	if len(prefs.MustHaves) > 0 {
+		var mustHaves []*userpb.MustHave
+		if err := json.Unmarshal(prefs.MustHaves, &mustHaves); err == nil {
+			pb.MustHaves = mustHaves
+		}
+	}
+
+	// CustomDealbreakers (string array)
+	if len(prefs.CustomDealbreakers) > 0 {
+		var customDealbreakers []string
+		if err := json.Unmarshal(prefs.CustomDealbreakers, &customDealbreakers); err == nil {
+			pb.CustomDealbreakers = customDealbreakers
+		}
+	}
+
 	return pb
 }
 

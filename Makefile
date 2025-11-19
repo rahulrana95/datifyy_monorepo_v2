@@ -101,6 +101,18 @@ test-db: ## Start test database
 test-db-down: ## Stop test database
 	docker-compose -f docker-compose.test.yml down
 
+test-db-migrate: ## Apply migrations to test database
+	@echo "Applying migrations to test database..."
+	@for f in apps/backend/migrations/*.sql; do docker exec -i datifyy_monorepo_v2-postgres-test-1 psql -U testuser -d monorepo_test < "$$f"; done
+	@echo "Migrations applied to test database!"
+
+test-db-reset: ## Reset test database and apply migrations
+	docker-compose -f docker-compose.test.yml down -v
+	docker-compose -f docker-compose.test.yml up -d postgres-test redis-test
+	@echo "Waiting for test database to be ready..."
+	@sleep 5
+	@make test-db-migrate
+
 install-frontend: ## Install frontend dependencies
 	docker-compose exec frontend npm install
 

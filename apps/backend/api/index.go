@@ -14,8 +14,8 @@ import (
 )
 
 var (
-	db    *sql.DB
-	redis *redis.Client
+	db          *sql.DB
+	redisClient *redis.Client
 )
 
 func init() {
@@ -36,7 +36,7 @@ func init() {
 	if redisURL != "" {
 		opts, err := redis.ParseURL(redisURL)
 		if err == nil {
-			redis = redis.NewClient(opts)
+			redisClient = redis.NewClient(opts)
 		}
 	}
 }
@@ -77,7 +77,7 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 		"timestamp": time.Now().UTC(),
 		"status": map[string]bool{
 			"database": db != nil && db.Ping() == nil,
-			"redis":    redis != nil && redis.Ping(context.Background()).Err() == nil,
+			"redis":    redisClient != nil && redisClient.Ping(context.Background()).Err() == nil,
 		},
 	}
 
@@ -101,9 +101,9 @@ func readyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check Redis connection
-	if redis != nil {
+	if redisClient != nil {
 		ctx := context.Background()
-		if err := redis.Ping(ctx).Err(); err != nil {
+		if err := redisClient.Ping(ctx).Err(); err != nil {
 			w.WriteHeader(http.StatusServiceUnavailable)
 			w.Write([]byte("Redis not ready"))
 			return
@@ -137,23 +137,23 @@ func testDBHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func testRedisHandler(w http.ResponseWriter, r *http.Request) {
-	if redis == nil {
+	if redisClient == nil {
 		http.Error(w, "Redis not connected", http.StatusServiceUnavailable)
 		return
 	}
 
 	ctx := context.Background()
-	
+
 	key := fmt.Sprintf("test:%d", time.Now().Unix())
 	value := "Hello from Redis!"
-	
-	err := redis.Set(ctx, key, value, 10*time.Second).Err()
+
+	err := redisClient.Set(ctx, key, value, 10*time.Second).Err()
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Redis error: %v", err), http.StatusInternalServerError)
 		return
 	}
 
-	result, err := redis.Get(ctx, key).Result()
+	result, err := redisClient.Get(ctx, key).Result()
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Redis error: %v", err), http.StatusInternalServerError)
 		return

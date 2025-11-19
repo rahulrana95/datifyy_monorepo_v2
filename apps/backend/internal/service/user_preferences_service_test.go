@@ -17,18 +17,47 @@ func TestGetPartnerPreferences_Success(t *testing.T) {
 
 	ctx := context.WithValue(context.Background(), "userID", 1)
 
-	// Mock partner preferences query
+	// Mock partner preferences query with all columns
 	prefRows := sqlmock.NewRows([]string{
 		"id", "user_id", "looking_for_gender", "age_range_min", "age_range_max",
 		"distance_preference", "height_range_min", "height_range_max",
 		"relationship_goals", "education_levels", "occupations", "religions",
-		"children_preferences", "drinking_preferences", "smoking_preferences",
-		"dietary_preferences", "pet_preferences", "verified_only", "dealbreakers",
+		"religion_importance", "children_preferences", "drinking_preferences", "smoking_preferences",
+		"dietary_preferences", "pet_preferences", "workout_preferences",
+		"personality_types", "communication_styles", "love_languages", "political_views", "sleep_schedules",
+		"caste_preferences", "sub_caste_preferences", "gotra_preferences", "manglik_preference",
+		"mother_tongue_preferences", "ethnicity_preferences", "nationality_preferences", "nri_preference",
+		"horoscope_matching_required", "relocation_expectation",
+		"body_type_preferences", "complexion_preferences", "hair_color_preferences", "eye_color_preferences",
+		"facial_hair_preferences", "tattoo_preference", "piercing_preference", "disability_acceptance",
+		"income_preferences", "employment_preferences", "industry_preferences", "min_years_experience",
+		"property_preference", "vehicle_preference", "financial_expectation",
+		"family_type_preferences", "family_values_preferences", "living_situation_preferences",
+		"family_affluence_preferences", "family_location_preferences", "max_siblings",
+		"language_preferences", "min_language_proficiency", "location_preferences", "open_to_long_distance",
+		"interest_preferences", "min_shared_interests",
+		"verified_only", "max_days_inactive", "photos_required", "min_profile_completion",
+		"deal_breakers", "must_haves", "custom_dealbreakers",
 	}).AddRow(
-		1, 1, []byte("[]"), 21, 35, 50, nil, nil,
+		1, 1, []byte("[]"), 21, 35,
+		50, nil, nil,
 		[]byte("[]"), []byte("[]"), []byte("[]"), []byte("[]"),
+		0, []byte("[]"), []byte("[]"), []byte("[]"),
 		[]byte("[]"), []byte("[]"), []byte("[]"),
-		[]byte("[]"), []byte("[]"), false, []byte("[]"),
+		[]byte("[]"), []byte("[]"), []byte("[]"), []byte("[]"), []byte("[]"),
+		[]byte("[]"), []byte("[]"), []byte("[]"), 0,
+		[]byte("[]"), []byte("[]"), []byte("[]"), 0,
+		false, 0,
+		[]byte("[]"), []byte("[]"), []byte("[]"), []byte("[]"),
+		[]byte("[]"), 0, 0, 0,
+		[]byte("[]"), []byte("[]"), []byte("[]"), 0,
+		0, 0, 0,
+		[]byte("[]"), []byte("[]"), []byte("[]"),
+		[]byte("[]"), []byte("[]"), 0,
+		[]byte("[]"), 0, []byte("[]"), false,
+		[]byte("[]"), 0,
+		false, 30, false, 0,
+		[]byte("[]"), []byte("[]"), []byte("[]"),
 	)
 
 	mock.ExpectQuery("SELECT (.+) FROM partner_preferences WHERE user_id").
@@ -54,22 +83,51 @@ func TestUpdatePartnerPreferences_Success(t *testing.T) {
 
 	ctx := context.WithValue(context.Background(), "userID", 1)
 
-	// Mock update
-	mock.ExpectExec("UPDATE partner_preferences SET").
-		WillReturnResult(sqlmock.NewResult(0, 1))
+	// Mock UPSERT (INSERT ... ON CONFLICT)
+	mock.ExpectExec("INSERT INTO partner_preferences").
+		WillReturnResult(sqlmock.NewResult(1, 1))
 
-	// Mock get updated preferences
+	// Mock get updated preferences with all columns
 	prefRows := sqlmock.NewRows([]string{
 		"id", "user_id", "looking_for_gender", "age_range_min", "age_range_max",
 		"distance_preference", "height_range_min", "height_range_max",
 		"relationship_goals", "education_levels", "occupations", "religions",
-		"children_preferences", "drinking_preferences", "smoking_preferences",
-		"dietary_preferences", "pet_preferences", "verified_only", "dealbreakers",
+		"religion_importance", "children_preferences", "drinking_preferences", "smoking_preferences",
+		"dietary_preferences", "pet_preferences", "workout_preferences",
+		"personality_types", "communication_styles", "love_languages", "political_views", "sleep_schedules",
+		"caste_preferences", "sub_caste_preferences", "gotra_preferences", "manglik_preference",
+		"mother_tongue_preferences", "ethnicity_preferences", "nationality_preferences", "nri_preference",
+		"horoscope_matching_required", "relocation_expectation",
+		"body_type_preferences", "complexion_preferences", "hair_color_preferences", "eye_color_preferences",
+		"facial_hair_preferences", "tattoo_preference", "piercing_preference", "disability_acceptance",
+		"income_preferences", "employment_preferences", "industry_preferences", "min_years_experience",
+		"property_preference", "vehicle_preference", "financial_expectation",
+		"family_type_preferences", "family_values_preferences", "living_situation_preferences",
+		"family_affluence_preferences", "family_location_preferences", "max_siblings",
+		"language_preferences", "min_language_proficiency", "location_preferences", "open_to_long_distance",
+		"interest_preferences", "min_shared_interests",
+		"verified_only", "max_days_inactive", "photos_required", "min_profile_completion",
+		"deal_breakers", "must_haves", "custom_dealbreakers",
 	}).AddRow(
-		1, 1, []byte("[]"), 25, 40, 100, nil, nil,
+		1, 1, []byte("[]"), 25, 40,
+		100, nil, nil,
 		[]byte("[]"), []byte("[]"), []byte("[]"), []byte("[]"),
+		0, []byte("[]"), []byte("[]"), []byte("[]"),
 		[]byte("[]"), []byte("[]"), []byte("[]"),
-		[]byte("[]"), []byte("[]"), true, []byte("[]"),
+		[]byte("[]"), []byte("[]"), []byte("[]"), []byte("[]"), []byte("[]"),
+		[]byte("[]"), []byte("[]"), []byte("[]"), 0,
+		[]byte("[]"), []byte("[]"), []byte("[]"), 0,
+		false, 0,
+		[]byte("[]"), []byte("[]"), []byte("[]"), []byte("[]"),
+		[]byte("[]"), 0, 0, 0,
+		[]byte("[]"), []byte("[]"), []byte("[]"), 0,
+		0, 0, 0,
+		[]byte("[]"), []byte("[]"), []byte("[]"),
+		[]byte("[]"), []byte("[]"), 0,
+		[]byte("[]"), 0, []byte("[]"), false,
+		[]byte("[]"), 0,
+		true, 30, false, 0,
+		[]byte("[]"), []byte("[]"), []byte("[]"),
 	)
 
 	mock.ExpectQuery("SELECT (.+) FROM partner_preferences WHERE user_id").
@@ -310,8 +368,8 @@ func TestUpdatePartnerPreferences_DatabaseError(t *testing.T) {
 
 	ctx := context.WithValue(context.Background(), "userID", 1)
 
-	// Mock update with error
-	mock.ExpectExec("UPDATE partner_preferences SET").
+	// Mock UPSERT with error
+	mock.ExpectExec("INSERT INTO partner_preferences").
 		WillReturnError(sql.ErrConnDone)
 
 	req := &userpb.UpdatePartnerPreferencesRequest{

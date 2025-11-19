@@ -52,23 +52,82 @@ type UserProfile struct {
 type PartnerPreferences struct {
 	ID                   int
 	UserID               int
+	// Basic Preferences
 	LookingForGender     []byte // JSONB
 	AgeRangeMin          int
 	AgeRangeMax          int
 	DistancePreference   int
 	HeightRangeMin       sql.NullInt32
 	HeightRangeMax       sql.NullInt32
+	// Relationship & Lifestyle
 	RelationshipGoals    []byte // JSONB
 	EducationLevels      []byte // JSONB
 	Occupations          []byte // JSONB
 	Religions            []byte // JSONB
+	ReligionImportance   int
 	ChildrenPreferences  []byte // JSONB
 	DrinkingPreferences  []byte // JSONB
 	SmokingPreferences   []byte // JSONB
 	DietaryPreferences   []byte // JSONB
 	PetPreferences       []byte // JSONB
+	WorkoutPreferences   []byte // JSONB
+	// Personality & Communication
+	PersonalityTypes     []byte // JSONB
+	CommunicationStyles  []byte // JSONB
+	LoveLanguages        []byte // JSONB
+	PoliticalViews       []byte // JSONB
+	SleepSchedules       []byte // JSONB
+	// Cultural & Matrimonial
+	CastePreferences     []byte // JSONB
+	SubCastePreferences  []byte // JSONB
+	GotraPreferences     []byte // JSONB
+	ManglikPreference    int
+	MotherTonguePrefs    []byte // JSONB
+	EthnicityPreferences []byte // JSONB
+	NationalityPrefs     []byte // JSONB
+	NRIPreference        int
+	HoroscopeRequired    bool
+	RelocationExpectation int
+	// Appearance
+	BodyTypePreferences  []byte // JSONB
+	ComplexionPrefs      []byte // JSONB
+	HairColorPrefs       []byte // JSONB
+	EyeColorPrefs        []byte // JSONB
+	FacialHairPrefs      []byte // JSONB
+	TattooPreference     int
+	PiercingPreference   int
+	DisabilityAcceptance int
+	// Professional & Financial
+	IncomePreferences    []byte // JSONB
+	EmploymentPrefs      []byte // JSONB
+	IndustryPreferences  []byte // JSONB
+	MinYearsExperience   int
+	PropertyPreference   int
+	VehiclePreference    int
+	FinancialExpectation int
+	// Family Background
+	FamilyTypePrefs      []byte // JSONB
+	FamilyValuesPrefs    []byte // JSONB
+	LivingSituationPrefs []byte // JSONB
+	FamilyAffluencePrefs []byte // JSONB
+	FamilyLocationPrefs  []byte // JSONB
+	MaxSiblings          int
+	// Language & Location
+	LanguagePreferences  []byte // JSONB
+	MinLangProficiency   int
+	LocationPreferences  []byte // JSONB
+	OpenToLongDistance   bool
+	// Interest & Hobbies
+	InterestPreferences  []byte // JSONB
+	MinSharedInterests   int
+	// Deal-Breakers & Must-Haves
 	VerifiedOnly         bool
-	Dealbreakers         []byte // JSONB
+	MaxDaysInactive      int
+	PhotosRequired       bool
+	MinProfileCompletion int
+	DealBreakers         []byte // JSONB
+	MustHaves            []byte // JSONB
+	CustomDealbreakers   []byte // JSONB
 }
 
 // UserPreferences represents user app preferences in the database
@@ -222,8 +281,22 @@ func (r *UserProfileRepository) GetPartnerPreferences(ctx context.Context, userI
 		SELECT id, user_id, looking_for_gender, age_range_min, age_range_max,
 		       distance_preference, height_range_min, height_range_max,
 		       relationship_goals, education_levels, occupations, religions,
-		       children_preferences, drinking_preferences, smoking_preferences,
-		       dietary_preferences, pet_preferences, verified_only, dealbreakers
+		       religion_importance, children_preferences, drinking_preferences, smoking_preferences,
+		       dietary_preferences, pet_preferences, workout_preferences,
+		       personality_types, communication_styles, love_languages, political_views, sleep_schedules,
+		       caste_preferences, sub_caste_preferences, gotra_preferences, manglik_preference,
+		       mother_tongue_preferences, ethnicity_preferences, nationality_preferences, nri_preference,
+		       horoscope_matching_required, relocation_expectation,
+		       body_type_preferences, complexion_preferences, hair_color_preferences, eye_color_preferences,
+		       facial_hair_preferences, tattoo_preference, piercing_preference, disability_acceptance,
+		       income_preferences, employment_preferences, industry_preferences, min_years_experience,
+		       property_preference, vehicle_preference, financial_expectation,
+		       family_type_preferences, family_values_preferences, living_situation_preferences,
+		       family_affluence_preferences, family_location_preferences, max_siblings,
+		       language_preferences, min_language_proficiency, location_preferences, open_to_long_distance,
+		       interest_preferences, min_shared_interests,
+		       verified_only, max_days_inactive, photos_required, min_profile_completion,
+		       deal_breakers, must_haves, custom_dealbreakers
 		FROM partner_preferences
 		WHERE user_id = $1
 	`
@@ -233,10 +306,26 @@ func (r *UserProfileRepository) GetPartnerPreferences(ctx context.Context, userI
 		&prefs.ID, &prefs.UserID, &prefs.LookingForGender, &prefs.AgeRangeMin,
 		&prefs.AgeRangeMax, &prefs.DistancePreference, &prefs.HeightRangeMin,
 		&prefs.HeightRangeMax, &prefs.RelationshipGoals, &prefs.EducationLevels,
-		&prefs.Occupations, &prefs.Religions, &prefs.ChildrenPreferences,
-		&prefs.DrinkingPreferences, &prefs.SmokingPreferences,
-		&prefs.DietaryPreferences, &prefs.PetPreferences, &prefs.VerifiedOnly,
-		&prefs.Dealbreakers,
+		&prefs.Occupations, &prefs.Religions, &prefs.ReligionImportance,
+		&prefs.ChildrenPreferences, &prefs.DrinkingPreferences, &prefs.SmokingPreferences,
+		&prefs.DietaryPreferences, &prefs.PetPreferences, &prefs.WorkoutPreferences,
+		&prefs.PersonalityTypes, &prefs.CommunicationStyles, &prefs.LoveLanguages,
+		&prefs.PoliticalViews, &prefs.SleepSchedules,
+		&prefs.CastePreferences, &prefs.SubCastePreferences, &prefs.GotraPreferences,
+		&prefs.ManglikPreference, &prefs.MotherTonguePrefs, &prefs.EthnicityPreferences,
+		&prefs.NationalityPrefs, &prefs.NRIPreference, &prefs.HoroscopeRequired,
+		&prefs.RelocationExpectation, &prefs.BodyTypePreferences, &prefs.ComplexionPrefs,
+		&prefs.HairColorPrefs, &prefs.EyeColorPrefs, &prefs.FacialHairPrefs,
+		&prefs.TattooPreference, &prefs.PiercingPreference, &prefs.DisabilityAcceptance,
+		&prefs.IncomePreferences, &prefs.EmploymentPrefs, &prefs.IndustryPreferences,
+		&prefs.MinYearsExperience, &prefs.PropertyPreference, &prefs.VehiclePreference,
+		&prefs.FinancialExpectation, &prefs.FamilyTypePrefs, &prefs.FamilyValuesPrefs,
+		&prefs.LivingSituationPrefs, &prefs.FamilyAffluencePrefs, &prefs.FamilyLocationPrefs,
+		&prefs.MaxSiblings, &prefs.LanguagePreferences, &prefs.MinLangProficiency,
+		&prefs.LocationPreferences, &prefs.OpenToLongDistance, &prefs.InterestPreferences,
+		&prefs.MinSharedInterests, &prefs.VerifiedOnly, &prefs.MaxDaysInactive,
+		&prefs.PhotosRequired, &prefs.MinProfileCompletion, &prefs.DealBreakers,
+		&prefs.MustHaves, &prefs.CustomDealbreakers,
 	)
 
 	if err == sql.ErrNoRows {

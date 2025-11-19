@@ -421,6 +421,102 @@
           ]
         }
       ]
+    },
+    {
+      "name": "User Profile",
+      "item": [
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/user/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "user", "me"]
+            },
+            "description": "Get current user's profile"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Partner Preferences",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/partner-preferences",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "partner-preferences"]
+            },
+            "description": "Get current user's partner preferences including all fields: age range, distance, height, lifestyle, personality, cultural, appearance, professional, family, and deal-breakers."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"preferences\": {\n    \"looking_for_gender\": [1, 2],\n    \"age_range\": {\n      \"min_age\": 25,\n      \"max_age\": 35\n    },\n    \"distance_preference\": 100,\n    \"height_range\": {\n      \"min_height\": 160,\n      \"max_height\": 185\n    },\n    \"religion_importance\": 2,\n    \"workout_preferences\": [1, 2],\n    \"body_type_preferences\": [1, 2],\n    \"tattoo_preference\": 2,\n    \"max_siblings\": 3,\n    \"open_to_long_distance\": true,\n    \"min_shared_interests\": 5,\n    \"verified_only\": true,\n    \"max_days_inactive\": 14,\n    \"photos_required\": true,\n    \"min_profile_completion\": 80\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update Partner Preferences",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"preferences\": {\n    \"age_range\": {\n      \"min_age\": 25,\n      \"max_age\": 35\n    },\n    \"distance_preference\": 100,\n    \"height_range\": {\n      \"min_height\": 160,\n      \"max_height\": 185\n    },\n    \"looking_for_gender\": [1, 2],\n    \"verified_only\": true,\n    \"relationship_goals\": [1, 2],\n    \"education_levels\": [3, 4, 5],\n    \"religions\": [1],\n    \"religion_importance\": 2,\n    \"children_preferences\": [1, 2],\n    \"drinking_preferences\": [1, 2],\n    \"smoking_preferences\": [1],\n    \"dietary_preferences\": [1],\n    \"pet_preferences\": [1, 2],\n    \"workout_preferences\": [1, 2, 3],\n    \"personality_types\": [1, 2],\n    \"communication_styles\": [1],\n    \"love_languages\": [2, 3],\n    \"political_views\": [2],\n    \"sleep_schedules\": [1, 2],\n    \"caste_preferences\": [],\n    \"manglik_preference\": 0,\n    \"horoscope_matching_required\": false,\n    \"relocation_expectation\": 1,\n    \"body_type_preferences\": [1, 2, 3],\n    \"complexion_preferences\": [],\n    \"tattoo_preference\": 2,\n    \"piercing_preference\": 2,\n    \"disability_acceptance\": 1,\n    \"income_preferences\": [2, 3, 4],\n    \"employment_preferences\": [1],\n    \"industry_preferences\": [],\n    \"min_years_experience\": 0,\n    \"property_preference\": 0,\n    \"vehicle_preference\": 0,\n    \"financial_expectation\": 2,\n    \"family_type_preferences\": [1],\n    \"family_values_preferences\": [1],\n    \"living_situation_preferences\": [1, 2],\n    \"max_siblings\": 3,\n    \"language_preferences\": [1],\n    \"min_language_proficiency\": 2,\n    \"location_preferences\": [],\n    \"open_to_long_distance\": true,\n    \"interest_preferences\": [],\n    \"min_shared_interests\": 5,\n    \"max_days_inactive\": 14,\n    \"photos_required\": true,\n    \"min_profile_completion\": 80,\n    \"deal_breakers\": [1, 2],\n    \"must_haves\": [1],\n    \"custom_dealbreakers\": []\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/partner-preferences",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "partner-preferences"]
+            },
+            "description": "Update current user's partner preferences. All fields are optional - only the fields provided will be updated.\n\n**Field Categories:**\n- **Basic**: looking_for_gender, age_range, distance_preference, height_range\n- **Lifestyle**: relationship_goals, education_levels, religions, children, drinking, smoking, dietary, pets, workout\n- **Personality**: personality_types, communication_styles, love_languages, political_views, sleep_schedules\n- **Cultural/Matrimonial**: caste, gotra, manglik, mother_tongue, ethnicity, nationality, nri, horoscope, relocation\n- **Appearance**: body_type, complexion, hair_color, eye_color, facial_hair, tattoo, piercing, disability\n- **Professional**: income, employment, industry, experience, property, vehicle, financial_expectation\n- **Family**: family_type, family_values, living_situation, affluence, location, max_siblings\n- **Language/Location**: languages, proficiency, locations, long_distance\n- **Interests**: interest_preferences, min_shared_interests\n- **Deal-breakers**: verified_only, max_days_inactive, photos_required, min_profile_completion, deal_breakers, must_haves, custom_dealbreakers"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Partner preferences updated successfully\",\n  \"preferences\": {\n    \"looking_for_gender\": [1, 2],\n    \"age_range\": {\n      \"min_age\": 25,\n      \"max_age\": 35\n    },\n    \"distance_preference\": 100,\n    \"height_range\": {\n      \"min_height\": 160,\n      \"max_height\": 185\n    },\n    \"religion_importance\": 2,\n    \"workout_preferences\": [1, 2, 3],\n    \"personality_types\": [1, 2],\n    \"body_type_preferences\": [1, 2, 3],\n    \"tattoo_preference\": 2,\n    \"financial_expectation\": 2,\n    \"max_siblings\": 3,\n    \"open_to_long_distance\": true,\n    \"min_shared_interests\": 5,\n    \"verified_only\": true,\n    \"max_days_inactive\": 14,\n    \"photos_required\": true,\n    \"min_profile_completion\": 80\n  }\n}"
+            }
+          ]
+        }
+      ]
     }
   ],
   "event": [

@@ -101,6 +101,73 @@ export const PartnerPreferencesPage = (): JSX.Element => {
     return genders.map(g => genderMap[g] || 'Unknown').join(', ');
   };
 
+  const formatImportance = (value: number | undefined): string => {
+    const importanceMap: Record<number, string> = {
+      0: 'Not specified',
+      1: 'Not important',
+      2: 'Somewhat important',
+      3: 'Important',
+      4: 'Very important',
+    };
+    return importanceMap[value ?? 0] || 'Not specified';
+  };
+
+  const formatBoolean = (value: boolean | undefined): string => {
+    return value ? 'Yes' : 'No';
+  };
+
+  const formatNumber = (value: number | undefined, suffix: string = ''): string => {
+    return value ? `${value}${suffix}` : 'Not specified';
+  };
+
+  const formatStringArray = (values: string[] | undefined): string => {
+    if (!values || values.length === 0) return 'Not specified';
+    return values.join(', ');
+  };
+
+  // Section component for consistency
+  const PreferenceSection = ({
+    title,
+    children
+  }: {
+    title: string;
+    children: React.ReactNode;
+  }): JSX.Element => (
+    <Box
+      bg="white"
+      borderRadius="xl"
+      borderWidth="1px"
+      borderColor="gray.200"
+      p={{ base: 4, md: 6 }}
+      boxShadow="sm"
+    >
+      <Heading size="md" color="fg" mb={4}>{title}</Heading>
+      {children}
+    </Box>
+  );
+
+  // Field display component
+  const PreferenceField = ({
+    label,
+    value
+  }: {
+    label: string;
+    value: string | React.ReactNode;
+  }): JSX.Element => (
+    <Box>
+      <Text fontSize="sm" color="fg.muted" mb={1}>
+        {label}
+      </Text>
+      {typeof value === 'string' ? (
+        <Text color="fg" fontWeight="medium">
+          {value}
+        </Text>
+      ) : (
+        value
+      )}
+    </Box>
+  );
+
   return (
     <Box minH="100vh" bg="gray.50">
       <Header />
@@ -173,184 +240,329 @@ export const PartnerPreferencesPage = (): JSX.Element => {
           {/* View Mode */}
           {!isEditing && (
             <>
-              {/* Basic Preferences Card */}
-              <Box
-                bg="white"
-                borderRadius="xl"
-                borderWidth="1px"
-                borderColor="gray.200"
-                p={{ base: 4, md: 8 }}
-                boxShadow="md"
-              >
-                <Heading size="md" color="fg" mb={4}>
-                  Basic Preferences
-                </Heading>
-                <SimpleGrid columns={{ base: 1, md: 2 }} gap={6}>
-                  <Box>
-                    <Text fontSize="sm" color="fg.muted" mb={1}>
-                      Looking For
-                    </Text>
-                    <Text color="fg" fontWeight="medium">
-                      {formatGenderArray(partnerPrefs?.lookingForGender)}
-                    </Text>
-                  </Box>
-
-                  <Box>
-                    <Text fontSize="sm" color="fg.muted" mb={1}>
-                      Age Range
-                    </Text>
-                    <Text color="fg" fontWeight="medium">
-                      {partnerPrefs?.ageRange
-                        ? `${partnerPrefs.ageRange.minAge || 18} - ${partnerPrefs.ageRange.maxAge || 99} years`
-                        : 'Not specified'}
-                    </Text>
-                  </Box>
-
-                  <Box>
-                    <Text fontSize="sm" color="fg.muted" mb={1}>
-                      Distance Preference
-                    </Text>
-                    <Text color="fg" fontWeight="medium">
-                      {partnerPrefs?.distancePreference
-                        ? `${partnerPrefs.distancePreference} km`
-                        : 'Not specified'}
-                    </Text>
-                  </Box>
-
-                  <Box>
-                    <Text fontSize="sm" color="fg.muted" mb={1}>
-                      Height Range
-                    </Text>
-                    <Text color="fg" fontWeight="medium">
-                      {partnerPrefs?.heightRange
-                        ? `${partnerPrefs.heightRange.minHeight || 0} - ${partnerPrefs.heightRange.maxHeight || 0} cm`
-                        : 'Not specified'}
-                    </Text>
-                  </Box>
-
-                  <Box>
-                    <Text fontSize="sm" color="fg.muted" mb={1}>
-                      Verified Only
-                    </Text>
-                    <Badge colorScheme={partnerPrefs?.verifiedOnly ? 'green' : 'gray'}>
-                      {partnerPrefs?.verifiedOnly ? 'Yes' : 'No'}
-                    </Badge>
-                  </Box>
-                </SimpleGrid>
-              </Box>
-
-              {/* Lifestyle Preferences Card */}
-              <Box
-                bg="white"
-                borderRadius="xl"
-                borderWidth="1px"
-                borderColor="gray.200"
-                p={{ base: 4, md: 8 }}
-                boxShadow="md"
-              >
-                <Heading size="md" color="fg" mb={4}>
-                  Lifestyle Preferences
-                </Heading>
+              {/* Basic Preferences */}
+              <PreferenceSection title="Basic Preferences">
                 <SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
-                  <Box>
-                    <Text fontSize="sm" color="fg.muted" mb={1}>
-                      Drinking Habits
-                    </Text>
-                    <Text color="fg" fontWeight="medium">
-                      {formatEnumArray(partnerPrefs?.drinkingPreferences, 'DRINKING')}
-                    </Text>
-                  </Box>
-
-                  <Box>
-                    <Text fontSize="sm" color="fg.muted" mb={1}>
-                      Smoking Habits
-                    </Text>
-                    <Text color="fg" fontWeight="medium">
-                      {formatEnumArray(partnerPrefs?.smokingPreferences, 'SMOKING')}
-                    </Text>
-                  </Box>
-
-                  <Box>
-                    <Text fontSize="sm" color="fg.muted" mb={1}>
-                      Dietary Preferences
-                    </Text>
-                    <Text color="fg" fontWeight="medium">
-                      {formatEnumArray(partnerPrefs?.dietaryPreferences, 'DIETARY')}
-                    </Text>
-                  </Box>
-
-                  <Box>
-                    <Text fontSize="sm" color="fg.muted" mb={1}>
-                      Pet Preferences
-                    </Text>
-                    <Text color="fg" fontWeight="medium">
-                      {formatEnumArray(partnerPrefs?.petPreferences, 'PET')}
-                    </Text>
-                  </Box>
-
-                  <Box>
-                    <Text fontSize="sm" color="fg.muted" mb={1}>
-                      Children Preferences
-                    </Text>
-                    <Text color="fg" fontWeight="medium">
-                      {formatEnumArray(partnerPrefs?.childrenPreferences, 'CHILDREN')}
-                    </Text>
-                  </Box>
+                  <PreferenceField
+                    label="Looking For"
+                    value={formatGenderArray(partnerPrefs?.lookingForGender)}
+                  />
+                  <PreferenceField
+                    label="Age Range"
+                    value={partnerPrefs?.ageRange
+                      ? `${partnerPrefs.ageRange.minAge || 18} - ${partnerPrefs.ageRange.maxAge || 99} years`
+                      : 'Not specified'}
+                  />
+                  <PreferenceField
+                    label="Distance"
+                    value={formatNumber(partnerPrefs?.distancePreference, ' km')}
+                  />
+                  <PreferenceField
+                    label="Height Range"
+                    value={partnerPrefs?.heightRange
+                      ? `${partnerPrefs.heightRange.minHeight || 0} - ${partnerPrefs.heightRange.maxHeight || 0} cm`
+                      : 'Not specified'}
+                  />
+                  <PreferenceField
+                    label="Verified Only"
+                    value={<Badge colorScheme={partnerPrefs?.verifiedOnly ? 'green' : 'gray'}>
+                      {formatBoolean(partnerPrefs?.verifiedOnly)}
+                    </Badge>}
+                  />
                 </SimpleGrid>
-              </Box>
+              </PreferenceSection>
 
-              {/* Additional Preferences Card */}
-              <Box
-                bg="white"
-                borderRadius="xl"
-                borderWidth="1px"
-                borderColor="gray.200"
-                p={{ base: 4, md: 8 }}
-                boxShadow="md"
-              >
-                <Heading size="md" color="fg" mb={4}>
-                  Additional Preferences
-                </Heading>
+              {/* Lifestyle Preferences */}
+              <PreferenceSection title="Lifestyle Preferences">
                 <SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
-                  <Box>
-                    <Text fontSize="sm" color="fg.muted" mb={1}>
-                      Relationship Goals
-                    </Text>
-                    <Text color="fg" fontWeight="medium">
-                      {formatEnumArray(partnerPrefs?.relationshipGoals, 'RELATIONSHIP_GOAL')}
-                    </Text>
-                  </Box>
-
-                  <Box>
-                    <Text fontSize="sm" color="fg.muted" mb={1}>
-                      Education Levels
-                    </Text>
-                    <Text color="fg" fontWeight="medium">
-                      {formatEnumArray(partnerPrefs?.educationLevels, 'EDUCATION')}
-                    </Text>
-                  </Box>
-
-                  <Box>
-                    <Text fontSize="sm" color="fg.muted" mb={1}>
-                      Religions
-                    </Text>
-                    <Text color="fg" fontWeight="medium">
-                      {formatEnumArray(partnerPrefs?.religions, 'RELIGION')}
-                    </Text>
-                  </Box>
-
-                  <Box gridColumn={{ base: '1', md: '1 / -1' }}>
-                    <Text fontSize="sm" color="fg.muted" mb={1}>
-                      Dealbreakers
-                    </Text>
-                    <Text color="fg">
-                      {partnerPrefs?.dealbreakers && partnerPrefs.dealbreakers.length > 0
-                        ? partnerPrefs.dealbreakers.join(', ')
-                        : 'None specified'}
-                    </Text>
-                  </Box>
+                  <PreferenceField
+                    label="Relationship Goals"
+                    value={formatEnumArray(partnerPrefs?.relationshipGoals, 'RELATIONSHIP_GOAL')}
+                  />
+                  <PreferenceField
+                    label="Education Levels"
+                    value={formatEnumArray(partnerPrefs?.educationLevels, 'EDUCATION')}
+                  />
+                  <PreferenceField
+                    label="Religions"
+                    value={formatEnumArray(partnerPrefs?.religions, 'RELIGION')}
+                  />
+                  <PreferenceField
+                    label="Religion Importance"
+                    value={formatImportance(partnerPrefs?.religionImportance)}
+                  />
+                  <PreferenceField
+                    label="Children"
+                    value={formatEnumArray(partnerPrefs?.childrenPreferences, 'CHILDREN')}
+                  />
+                  <PreferenceField
+                    label="Drinking"
+                    value={formatEnumArray(partnerPrefs?.drinkingPreferences, 'DRINKING')}
+                  />
+                  <PreferenceField
+                    label="Smoking"
+                    value={formatEnumArray(partnerPrefs?.smokingPreferences, 'SMOKING')}
+                  />
+                  <PreferenceField
+                    label="Dietary"
+                    value={formatEnumArray(partnerPrefs?.dietaryPreferences, 'DIETARY')}
+                  />
+                  <PreferenceField
+                    label="Pets"
+                    value={formatEnumArray(partnerPrefs?.petPreferences, 'PET')}
+                  />
+                  <PreferenceField
+                    label="Workout"
+                    value={formatEnumArray(partnerPrefs?.workoutPreferences, 'WORKOUT')}
+                  />
                 </SimpleGrid>
-              </Box>
+              </PreferenceSection>
+
+              {/* Personality & Communication */}
+              <PreferenceSection title="Personality & Communication">
+                <SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
+                  <PreferenceField
+                    label="Personality Types"
+                    value={formatStringArray(partnerPrefs?.personalityTypes)}
+                  />
+                  <PreferenceField
+                    label="Communication Styles"
+                    value={formatEnumArray(partnerPrefs?.communicationStyles, 'COMMUNICATION')}
+                  />
+                  <PreferenceField
+                    label="Love Languages"
+                    value={formatEnumArray(partnerPrefs?.loveLanguages, 'LOVE_LANGUAGE')}
+                  />
+                  <PreferenceField
+                    label="Political Views"
+                    value={formatEnumArray(partnerPrefs?.politicalViews, 'POLITICAL')}
+                  />
+                  <PreferenceField
+                    label="Sleep Schedule"
+                    value={formatEnumArray(partnerPrefs?.sleepSchedules, 'SLEEP')}
+                  />
+                </SimpleGrid>
+              </PreferenceSection>
+
+              {/* Cultural & Matrimonial */}
+              <PreferenceSection title="Cultural & Matrimonial">
+                <SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
+                  <PreferenceField
+                    label="Caste Preferences"
+                    value={formatStringArray(partnerPrefs?.castePreferences)}
+                  />
+                  <PreferenceField
+                    label="Sub-Caste"
+                    value={formatStringArray(partnerPrefs?.subCastePreferences)}
+                  />
+                  <PreferenceField
+                    label="Gotra"
+                    value={formatStringArray(partnerPrefs?.gotraPreferences)}
+                  />
+                  <PreferenceField
+                    label="Manglik Preference"
+                    value={partnerPrefs?.manglikPreference ? 'Yes' : 'No preference'}
+                  />
+                  <PreferenceField
+                    label="Mother Tongue"
+                    value={formatStringArray(partnerPrefs?.motherTonguePreferences)}
+                  />
+                  <PreferenceField
+                    label="Ethnicity"
+                    value={formatEnumArray(partnerPrefs?.ethnicityPreferences, 'ETHNICITY')}
+                  />
+                  <PreferenceField
+                    label="Nationality"
+                    value={formatStringArray(partnerPrefs?.nationalityPreferences)}
+                  />
+                  <PreferenceField
+                    label="NRI Preference"
+                    value={partnerPrefs?.nriPreference ? 'Yes' : 'No preference'}
+                  />
+                  <PreferenceField
+                    label="Horoscope Matching"
+                    value={formatBoolean(partnerPrefs?.horoscopeMatchingRequired)}
+                  />
+                  <PreferenceField
+                    label="Relocation"
+                    value={partnerPrefs?.relocationExpectation ? 'Yes' : 'Not specified'}
+                  />
+                </SimpleGrid>
+              </PreferenceSection>
+
+              {/* Appearance Preferences */}
+              <PreferenceSection title="Appearance Preferences">
+                <SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
+                  <PreferenceField
+                    label="Body Type"
+                    value={formatEnumArray(partnerPrefs?.bodyTypePreferences, 'BODY_TYPE')}
+                  />
+                  <PreferenceField
+                    label="Complexion"
+                    value={formatEnumArray(partnerPrefs?.complexionPreferences, 'COMPLEXION')}
+                  />
+                  <PreferenceField
+                    label="Hair Color"
+                    value={formatEnumArray(partnerPrefs?.hairColorPreferences, 'HAIR')}
+                  />
+                  <PreferenceField
+                    label="Eye Color"
+                    value={formatEnumArray(partnerPrefs?.eyeColorPreferences, 'EYE')}
+                  />
+                  <PreferenceField
+                    label="Facial Hair"
+                    value={formatEnumArray(partnerPrefs?.facialHairPreferences, 'FACIAL_HAIR')}
+                  />
+                  <PreferenceField
+                    label="Tattoo Preference"
+                    value={partnerPrefs?.tattooPreference ? 'Acceptable' : 'No preference'}
+                  />
+                  <PreferenceField
+                    label="Piercing Preference"
+                    value={partnerPrefs?.piercingPreference ? 'Acceptable' : 'No preference'}
+                  />
+                  <PreferenceField
+                    label="Disability Acceptance"
+                    value={partnerPrefs?.disabilityAcceptance ? 'Yes' : 'No preference'}
+                  />
+                </SimpleGrid>
+              </PreferenceSection>
+
+              {/* Professional & Financial */}
+              <PreferenceSection title="Professional & Financial">
+                <SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
+                  <PreferenceField
+                    label="Income Range"
+                    value={formatEnumArray(partnerPrefs?.incomePreferences, 'INCOME')}
+                  />
+                  <PreferenceField
+                    label="Employment Type"
+                    value={formatEnumArray(partnerPrefs?.employmentPreferences, 'EMPLOYMENT')}
+                  />
+                  <PreferenceField
+                    label="Industry"
+                    value={formatStringArray(partnerPrefs?.industryPreferences)}
+                  />
+                  <PreferenceField
+                    label="Min Experience"
+                    value={formatNumber(partnerPrefs?.minYearsExperience, ' years')}
+                  />
+                  <PreferenceField
+                    label="Property Preference"
+                    value={partnerPrefs?.propertyPreference ? 'Required' : 'No preference'}
+                  />
+                  <PreferenceField
+                    label="Vehicle Preference"
+                    value={partnerPrefs?.vehiclePreference ? 'Required' : 'No preference'}
+                  />
+                  <PreferenceField
+                    label="Financial Expectation"
+                    value={formatImportance(partnerPrefs?.financialExpectation)}
+                  />
+                </SimpleGrid>
+              </PreferenceSection>
+
+              {/* Family Background */}
+              <PreferenceSection title="Family Background">
+                <SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
+                  <PreferenceField
+                    label="Family Type"
+                    value={formatEnumArray(partnerPrefs?.familyTypePreferences, 'FAMILY_TYPE')}
+                  />
+                  <PreferenceField
+                    label="Family Values"
+                    value={formatEnumArray(partnerPrefs?.familyValuesPreferences, 'FAMILY_VALUES')}
+                  />
+                  <PreferenceField
+                    label="Living Situation"
+                    value={formatEnumArray(partnerPrefs?.livingSituationPreferences, 'LIVING')}
+                  />
+                  <PreferenceField
+                    label="Family Affluence"
+                    value={formatEnumArray(partnerPrefs?.familyAffluencePreferences, 'AFFLUENCE')}
+                  />
+                  <PreferenceField
+                    label="Family Location"
+                    value={formatStringArray(partnerPrefs?.familyLocationPreferences)}
+                  />
+                  <PreferenceField
+                    label="Max Siblings"
+                    value={formatNumber(partnerPrefs?.maxSiblings)}
+                  />
+                </SimpleGrid>
+              </PreferenceSection>
+
+              {/* Language & Location */}
+              <PreferenceSection title="Language & Location">
+                <SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
+                  <PreferenceField
+                    label="Languages"
+                    value={formatEnumArray(partnerPrefs?.languagePreferences, 'LANGUAGE')}
+                  />
+                  <PreferenceField
+                    label="Min Language Proficiency"
+                    value={formatImportance(partnerPrefs?.minLanguageProficiency)}
+                  />
+                  <PreferenceField
+                    label="Location Preferences"
+                    value={formatStringArray(partnerPrefs?.locationPreferences)}
+                  />
+                  <PreferenceField
+                    label="Open to Long Distance"
+                    value={formatBoolean(partnerPrefs?.openToLongDistance)}
+                  />
+                </SimpleGrid>
+              </PreferenceSection>
+
+              {/* Interests */}
+              <PreferenceSection title="Interests">
+                <SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
+                  <PreferenceField
+                    label="Interest Preferences"
+                    value={formatEnumArray(partnerPrefs?.interestPreferences, 'INTEREST')}
+                  />
+                  <PreferenceField
+                    label="Min Shared Interests"
+                    value={formatNumber(partnerPrefs?.minSharedInterests)}
+                  />
+                </SimpleGrid>
+              </PreferenceSection>
+
+              {/* Deal-Breakers & Must-Haves */}
+              <PreferenceSection title="Deal-Breakers & Must-Haves">
+                <SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
+                  <PreferenceField
+                    label="Max Days Inactive"
+                    value={formatNumber(partnerPrefs?.maxDaysInactive, ' days')}
+                  />
+                  <PreferenceField
+                    label="Photos Required"
+                    value={formatBoolean(partnerPrefs?.photosRequired)}
+                  />
+                  <PreferenceField
+                    label="Min Profile Completion"
+                    value={formatNumber(partnerPrefs?.minProfileCompletion, '%')}
+                  />
+                  <PreferenceField
+                    label="Deal Breakers"
+                    value={formatEnumArray(
+                      partnerPrefs?.dealBreakers?.map(v => v as unknown as number),
+                      'DEAL_BREAKER'
+                    )}
+                  />
+                  <PreferenceField
+                    label="Must Haves"
+                    value={formatEnumArray(
+                      partnerPrefs?.mustHaves?.map(v => v as unknown as number),
+                      'MUST_HAVE'
+                    )}
+                  />
+                  <PreferenceField
+                    label="Custom Deal-Breakers"
+                    value={formatStringArray(partnerPrefs?.customDealbreakers)}
+                  />
+                </SimpleGrid>
+              </PreferenceSection>
             </>
           )}
         </VStack>

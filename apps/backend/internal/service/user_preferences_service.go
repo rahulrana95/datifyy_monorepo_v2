@@ -63,6 +63,7 @@ func (s *UserService) UpdatePartnerPreferences(
 	// Build update map
 	updates := make(map[string]interface{})
 
+	// Basic Preferences
 	if req.Preferences.AgeRange != nil {
 		updates["age_range_min"] = req.Preferences.AgeRange.MinAge
 		updates["age_range_max"] = req.Preferences.AgeRange.MaxAge
@@ -83,6 +84,244 @@ func (s *UserService) UpdatePartnerPreferences(
 	}
 
 	updates["verified_only"] = req.Preferences.VerifiedOnly
+
+	// Relationship & Lifestyle Preferences
+	if len(req.Preferences.RelationshipGoals) > 0 {
+		jsonData, _ := json.Marshal(req.Preferences.RelationshipGoals)
+		updates["relationship_goals"] = jsonData
+	}
+
+	if len(req.Preferences.EducationLevels) > 0 {
+		jsonData, _ := json.Marshal(req.Preferences.EducationLevels)
+		updates["education_levels"] = jsonData
+	}
+
+	if len(req.Preferences.Occupations) > 0 {
+		jsonData, _ := json.Marshal(req.Preferences.Occupations)
+		updates["occupations"] = jsonData
+	}
+
+	if len(req.Preferences.Religions) > 0 {
+		jsonData, _ := json.Marshal(req.Preferences.Religions)
+		updates["religions"] = jsonData
+	}
+
+	updates["religion_importance"] = int32(req.Preferences.ReligionImportance)
+
+	if len(req.Preferences.ChildrenPreferences) > 0 {
+		jsonData, _ := json.Marshal(req.Preferences.ChildrenPreferences)
+		updates["children_preferences"] = jsonData
+	}
+
+	if len(req.Preferences.DrinkingPreferences) > 0 {
+		jsonData, _ := json.Marshal(req.Preferences.DrinkingPreferences)
+		updates["drinking_preferences"] = jsonData
+	}
+
+	if len(req.Preferences.SmokingPreferences) > 0 {
+		jsonData, _ := json.Marshal(req.Preferences.SmokingPreferences)
+		updates["smoking_preferences"] = jsonData
+	}
+
+	if len(req.Preferences.DietaryPreferences) > 0 {
+		jsonData, _ := json.Marshal(req.Preferences.DietaryPreferences)
+		updates["dietary_preferences"] = jsonData
+	}
+
+	if len(req.Preferences.PetPreferences) > 0 {
+		jsonData, _ := json.Marshal(req.Preferences.PetPreferences)
+		updates["pet_preferences"] = jsonData
+	}
+
+	if len(req.Preferences.WorkoutPreferences) > 0 {
+		jsonData, _ := json.Marshal(req.Preferences.WorkoutPreferences)
+		updates["workout_preferences"] = jsonData
+	}
+
+	// Personality & Communication Preferences
+	if len(req.Preferences.PersonalityTypes) > 0 {
+		jsonData, _ := json.Marshal(req.Preferences.PersonalityTypes)
+		updates["personality_types"] = jsonData
+	}
+
+	if len(req.Preferences.CommunicationStyles) > 0 {
+		jsonData, _ := json.Marshal(req.Preferences.CommunicationStyles)
+		updates["communication_styles"] = jsonData
+	}
+
+	if len(req.Preferences.LoveLanguages) > 0 {
+		jsonData, _ := json.Marshal(req.Preferences.LoveLanguages)
+		updates["love_languages"] = jsonData
+	}
+
+	if len(req.Preferences.PoliticalViews) > 0 {
+		jsonData, _ := json.Marshal(req.Preferences.PoliticalViews)
+		updates["political_views"] = jsonData
+	}
+
+	if len(req.Preferences.SleepSchedules) > 0 {
+		jsonData, _ := json.Marshal(req.Preferences.SleepSchedules)
+		updates["sleep_schedules"] = jsonData
+	}
+
+	// Cultural & Matrimonial Preferences (India-specific + Global)
+	if len(req.Preferences.CastePreferences) > 0 {
+		jsonData, _ := json.Marshal(req.Preferences.CastePreferences)
+		updates["caste_preferences"] = jsonData
+	}
+
+	if len(req.Preferences.SubCastePreferences) > 0 {
+		jsonData, _ := json.Marshal(req.Preferences.SubCastePreferences)
+		updates["sub_caste_preferences"] = jsonData
+	}
+
+	if len(req.Preferences.GotraPreferences) > 0 {
+		jsonData, _ := json.Marshal(req.Preferences.GotraPreferences)
+		updates["gotra_preferences"] = jsonData
+	}
+
+	updates["manglik_preference"] = int32(req.Preferences.ManglikPreference)
+
+	if len(req.Preferences.MotherTonguePreferences) > 0 {
+		jsonData, _ := json.Marshal(req.Preferences.MotherTonguePreferences)
+		updates["mother_tongue_preferences"] = jsonData
+	}
+
+	if len(req.Preferences.EthnicityPreferences) > 0 {
+		jsonData, _ := json.Marshal(req.Preferences.EthnicityPreferences)
+		updates["ethnicity_preferences"] = jsonData
+	}
+
+	if len(req.Preferences.NationalityPreferences) > 0 {
+		jsonData, _ := json.Marshal(req.Preferences.NationalityPreferences)
+		updates["nationality_preferences"] = jsonData
+	}
+
+	updates["nri_preference"] = int32(req.Preferences.NriPreference)
+	updates["horoscope_matching_required"] = req.Preferences.HoroscopeMatchingRequired
+	updates["relocation_expectation"] = int32(req.Preferences.RelocationExpectation)
+
+	// Appearance Preferences
+	if len(req.Preferences.BodyTypePreferences) > 0 {
+		jsonData, _ := json.Marshal(req.Preferences.BodyTypePreferences)
+		updates["body_type_preferences"] = jsonData
+	}
+
+	if len(req.Preferences.ComplexionPreferences) > 0 {
+		jsonData, _ := json.Marshal(req.Preferences.ComplexionPreferences)
+		updates["complexion_preferences"] = jsonData
+	}
+
+	if len(req.Preferences.HairColorPreferences) > 0 {
+		jsonData, _ := json.Marshal(req.Preferences.HairColorPreferences)
+		updates["hair_color_preferences"] = jsonData
+	}
+
+	if len(req.Preferences.EyeColorPreferences) > 0 {
+		jsonData, _ := json.Marshal(req.Preferences.EyeColorPreferences)
+		updates["eye_color_preferences"] = jsonData
+	}
+
+	if len(req.Preferences.FacialHairPreferences) > 0 {
+		jsonData, _ := json.Marshal(req.Preferences.FacialHairPreferences)
+		updates["facial_hair_preferences"] = jsonData
+	}
+
+	updates["tattoo_preference"] = int32(req.Preferences.TattooPreference)
+	updates["piercing_preference"] = int32(req.Preferences.PiercingPreference)
+	updates["disability_acceptance"] = int32(req.Preferences.DisabilityAcceptance)
+
+	// Professional & Financial Preferences
+	if len(req.Preferences.IncomePreferences) > 0 {
+		jsonData, _ := json.Marshal(req.Preferences.IncomePreferences)
+		updates["income_preferences"] = jsonData
+	}
+
+	if len(req.Preferences.EmploymentPreferences) > 0 {
+		jsonData, _ := json.Marshal(req.Preferences.EmploymentPreferences)
+		updates["employment_preferences"] = jsonData
+	}
+
+	if len(req.Preferences.IndustryPreferences) > 0 {
+		jsonData, _ := json.Marshal(req.Preferences.IndustryPreferences)
+		updates["industry_preferences"] = jsonData
+	}
+
+	updates["min_years_experience"] = req.Preferences.MinYearsExperience
+	updates["property_preference"] = int32(req.Preferences.PropertyPreference)
+	updates["vehicle_preference"] = int32(req.Preferences.VehiclePreference)
+	updates["financial_expectation"] = int32(req.Preferences.FinancialExpectation)
+
+	// Family Background Preferences
+	if len(req.Preferences.FamilyTypePreferences) > 0 {
+		jsonData, _ := json.Marshal(req.Preferences.FamilyTypePreferences)
+		updates["family_type_preferences"] = jsonData
+	}
+
+	if len(req.Preferences.FamilyValuesPreferences) > 0 {
+		jsonData, _ := json.Marshal(req.Preferences.FamilyValuesPreferences)
+		updates["family_values_preferences"] = jsonData
+	}
+
+	if len(req.Preferences.LivingSituationPreferences) > 0 {
+		jsonData, _ := json.Marshal(req.Preferences.LivingSituationPreferences)
+		updates["living_situation_preferences"] = jsonData
+	}
+
+	if len(req.Preferences.FamilyAffluencePreferences) > 0 {
+		jsonData, _ := json.Marshal(req.Preferences.FamilyAffluencePreferences)
+		updates["family_affluence_preferences"] = jsonData
+	}
+
+	if len(req.Preferences.FamilyLocationPreferences) > 0 {
+		jsonData, _ := json.Marshal(req.Preferences.FamilyLocationPreferences)
+		updates["family_location_preferences"] = jsonData
+	}
+
+	updates["max_siblings"] = req.Preferences.MaxSiblings
+
+	// Language & Location Preferences
+	if len(req.Preferences.LanguagePreferences) > 0 {
+		jsonData, _ := json.Marshal(req.Preferences.LanguagePreferences)
+		updates["language_preferences"] = jsonData
+	}
+
+	updates["min_language_proficiency"] = int32(req.Preferences.MinLanguageProficiency)
+
+	if len(req.Preferences.LocationPreferences) > 0 {
+		jsonData, _ := json.Marshal(req.Preferences.LocationPreferences)
+		updates["location_preferences"] = jsonData
+	}
+
+	updates["open_to_long_distance"] = req.Preferences.OpenToLongDistance
+
+	// Interest & Hobby Preferences
+	if len(req.Preferences.InterestPreferences) > 0 {
+		jsonData, _ := json.Marshal(req.Preferences.InterestPreferences)
+		updates["interest_preferences"] = jsonData
+	}
+
+	updates["min_shared_interests"] = req.Preferences.MinSharedInterests
+
+	// Deal-Breakers & Must-Haves
+	updates["max_days_inactive"] = req.Preferences.MaxDaysInactive
+	updates["photos_required"] = req.Preferences.PhotosRequired
+	updates["min_profile_completion"] = req.Preferences.MinProfileCompletion
+
+	if len(req.Preferences.DealBreakers) > 0 {
+		jsonData, _ := json.Marshal(req.Preferences.DealBreakers)
+		updates["deal_breakers"] = jsonData
+	}
+
+	if len(req.Preferences.MustHaves) > 0 {
+		jsonData, _ := json.Marshal(req.Preferences.MustHaves)
+		updates["must_haves"] = jsonData
+	}
+
+	if len(req.Preferences.CustomDealbreakers) > 0 {
+		jsonData, _ := json.Marshal(req.Preferences.CustomDealbreakers)
+		updates["custom_dealbreakers"] = jsonData
+	}
 
 	// Update in database
 	err = s.profileRepo.UpdatePartnerPreferences(ctx, userID, updates)
