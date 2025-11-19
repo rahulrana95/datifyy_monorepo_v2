@@ -48,7 +48,7 @@ interface LocationIQSuggestion {
 }
 
 // LocationIQ API key from environment variables
-const LOCATIONIQ_API_KEY = import.meta.env.VITE_LOCATIONIQ_API_KEY || '';
+const LOCATIONIQ_API_KEY = process.env.REACT_APP_LOCATIONIQ_API_KEY || '';
 
 // ============================================================================
 // Types
