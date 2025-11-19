@@ -268,6 +268,176 @@ message CreateAdminUserResponse {
   AdminUser admin = 1;
 }
 
+// Get All Admins
+message GetAllAdminsRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+}
+
+message GetAllAdminsResponse {
+  repeated AdminUser admins = 1;
+  int32 total_count = 2;
+}
+
+// Update Admin
+message UpdateAdminRequest {
+  string admin_id = 1;
+  string name = 2;
+  string email = 3;
+  AdminRole role = 4;
+}
+
+message UpdateAdminResponse {
+  AdminUser admin = 1;
+}
+
+// Delete Admin
+message DeleteAdminRequest {
+  string admin_id = 1;
+}
+
+message DeleteAdminResponse {
+  bool success = 1;
+}
+
+// Update Admin Profile
+message UpdateAdminProfileRequest {
+  string admin_id = 1;
+  string name = 2;
+  string email = 3;
+}
+
+message UpdateAdminProfileResponse {
+  AdminUser admin = 1;
+}
+
+// Bulk User Actions
+enum BulkUserAction {
+  BULK_USER_ACTION_UNSPECIFIED = 0;
+  BULK_USER_ACTION_ACTIVATE = 1;
+  BULK_USER_ACTION_SUSPEND = 2;
+  BULK_USER_ACTION_DELETE = 3;
+  BULK_USER_ACTION_VERIFY = 4;
+  BULK_USER_ACTION_UNVERIFY = 5;
+}
+
+message BulkUserActionRequest {
+  repeated string user_ids = 1;
+  BulkUserAction action = 2;
+  string reason = 3;
+}
+
+message BulkUserActionResponse {
+  int32 success_count = 1;
+  int32 failed_count = 2;
+  repeated string failed_user_ids = 3;
+  repeated string error_messages = 4;
+}
+
+// Analytics Messages
+message TimeRange {
+  common.v1.Timestamp start_time = 1;
+  common.v1.Timestamp end_time = 2;
+}
+
+enum AnalyticsPeriod {
+  ANALYTICS_PERIOD_UNSPECIFIED = 0;
+  ANALYTICS_PERIOD_DAILY = 1;
+  ANALYTICS_PERIOD_WEEKLY = 2;
+  ANALYTICS_PERIOD_MONTHLY = 3;
+  ANALYTICS_PERIOD_YEARLY = 4;
+}
+
+message DataPoint {
+  string label = 1;       // e.g., "Jan", "Mon", "2024-01-01"
+  int64 value = 2;
+  common.v1.Timestamp timestamp = 3;
+}
+
+message UserGrowthRequest {
+  AnalyticsPeriod period = 1;
+  TimeRange time_range = 2;
+}
+
+message UserGrowthResponse {
+  repeated DataPoint data_points = 1;
+  int64 total_users = 2;
+  double growth_rate = 3;
+}
+
+message ActiveUsersRequest {
+  AnalyticsPeriod period = 1;
+  TimeRange time_range = 2;
+}
+
+message ActiveUsersResponse {
+  repeated DataPoint data_points = 1;
+  int64 current_active = 2;
+  double activity_rate = 3;
+}
+
+message SignupsRequest {
+  AnalyticsPeriod period = 1;
+  TimeRange time_range = 2;
+}
+
+message SignupsResponse {
+  repeated DataPoint data_points = 1;
+  int64 total_signups = 2;
+}
+
+message DemographicsRequest {
+  string metric_type = 1;  // gender, age_group, location
+}
+
+message DemographicsResponse {
+  repeated DemographicData data = 1;
+}
+
+message DemographicData {
+  string category = 1;
+  int64 count = 2;
+  double percentage = 3;
+}
+
+message LocationStatsRequest {
+  string level = 1;  // country, state, city
+  string parent_location = 2;  // Filter by parent (e.g., country for state stats)
+}
+
+message LocationStatsResponse {
+  repeated LocationData locations = 1;
+}
+
+message LocationData {
+  string location_name = 1;
+  string location_code = 2;  // ISO code
+  int64 user_count = 3;
+  double percentage = 4;
+}
+
+message AvailabilityStatsRequest {}
+
+message AvailabilityStatsResponse {
+  int64 available_users = 1;
+  int64 unavailable_users = 2;
+  double availability_rate = 3;
+}
+
+message PlatformStatsRequest {}
+
+message PlatformStatsResponse {
+  int64 total_users = 1;
+  int64 active_users = 2;
+  int64 verified_users = 3;
+  int64 available_for_dating = 4;
+  int64 total_dates_scheduled = 5;
+  int64 total_dates_completed = 6;
+  int64 today_signups = 7;
+  int64 this_week_signups = 8;
+  int64 this_month_signups = 9;
+}
+
 // =============================================================================
 // Admin Service
 // =============================================================================
@@ -280,6 +450,7 @@ service AdminService {
   rpc GetAllUsers(GetAllUsersRequest) returns (GetAllUsersResponse);
   rpc SearchUsers(SearchUsersRequest) returns (SearchUsersResponse);
   rpc GetUserDetails(GetUserDetailsRequest) returns (GetUserDetailsResponse);
+  rpc BulkUserAction(BulkUserActionRequest) returns (BulkUserActionResponse);
 
   // Date Matching
   rpc GetDateSuggestions(GetDateSuggestionsRequest) returns (GetDateSuggestionsResponse);
@@ -291,4 +462,17 @@ service AdminService {
 
   // Admin User Management (Super Admin only)
   rpc CreateAdminUser(CreateAdminUserRequest) returns (CreateAdminUserResponse);
+  rpc GetAllAdmins(GetAllAdminsRequest) returns (GetAllAdminsResponse);
+  rpc UpdateAdmin(UpdateAdminRequest) returns (UpdateAdminResponse);
+  rpc DeleteAdmin(DeleteAdminRequest) returns (DeleteAdminResponse);
+  rpc UpdateAdminProfile(UpdateAdminProfileRequest) returns (UpdateAdminProfileResponse);
+
+  // Analytics
+  rpc GetPlatformStats(PlatformStatsRequest) returns (PlatformStatsResponse);
+  rpc GetUserGrowth(UserGrowthRequest) returns (UserGrowthResponse);
+  rpc GetActiveUsers(ActiveUsersRequest) returns (ActiveUsersResponse);
+  rpc GetSignups(SignupsRequest) returns (SignupsResponse);
+  rpc GetDemographics(DemographicsRequest) returns (DemographicsResponse);
+  rpc GetLocationStats(LocationStatsRequest) returns (LocationStatsResponse);
+  rpc GetAvailabilityStats(AvailabilityStatsRequest) returns (AvailabilityStatsResponse);
 }

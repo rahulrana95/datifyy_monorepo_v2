@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -649,4 +650,605 @@ func (r *AdminRepository) GetUserDates(ctx context.Context, userID int, upcoming
 	}
 
 	return dates, nil
+}
+
+// =============================================================================
+// Analytics Operations
+// =============================================================================
+
+// PlatformStats holds platform-wide statistics
+type PlatformStats struct {
+	TotalUsers           int64
+	ActiveUsers          int64
+	VerifiedUsers        int64
+	AvailableForDating   int64
+	TotalDatesScheduled  int64
+	TotalDatesCompleted  int64
+	TodaySignups         int64
+	ThisWeekSignups      int64
+	ThisMonthSignups     int64
+}
+
+// DataPoint represents a single data point for analytics
+type DataPoint struct {
+	Label     string
+	Value     int64
+	Timestamp int64
+}
+
+// DemographicData represents demographic statistics
+type DemographicData struct {
+	Category   string
+	Count      int64
+	Percentage float64
+}
+
+// LocationData represents location-based statistics
+type LocationData struct {
+	LocationName string
+	LocationCode string
+	UserCount    int64
+	Percentage   float64
+}
+
+// GetPlatformStats retrieves platform-wide statistics
+func (r *AdminRepository) GetPlatformStats(ctx context.Context) (*PlatformStats, error) {
+	stats := &PlatformStats{}
+
+	// Get total users
+	err := r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM users").Scan(&stats.TotalUsers)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count total users: %w", err)
+	}
+
+	// Get active users (logged in within last 30 days)
+	err = r.db.QueryRowContext(ctx, `
+		SELECT COUNT(*) FROM users
+		WHERE last_login_at > NOW() - INTERVAL '30 days'
+	`).Scan(&stats.ActiveUsers)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count active users: %w", err)
+	}
+
+	// Get verified users
+	err = r.db.QueryRowContext(ctx, `
+		SELECT COUNT(*) FROM users
+		WHERE email_verified = TRUE
+	`).Scan(&stats.VerifiedUsers)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count verified users: %w", err)
+	}
+
+	// Get available for dating (users with future availability slots)
+	err = r.db.QueryRowContext(ctx, `
+		SELECT COUNT(DISTINCT user_id) FROM availability_slots
+		WHERE start_time > NOW()
+	`).Scan(&stats.AvailableForDating)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count available users: %w", err)
+	}
+
+	// Get total dates scheduled
+	err = r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM scheduled_dates").Scan(&stats.TotalDatesScheduled)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count scheduled dates: %w", err)
+	}
+
+	// Get total dates completed
+	err = r.db.QueryRowContext(ctx, `
+		SELECT COUNT(*) FROM scheduled_dates
+		WHERE status = 'completed'
+	`).Scan(&stats.TotalDatesCompleted)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count completed dates: %w", err)
+	}
+
+	// Get today's signups
+	err = r.db.QueryRowContext(ctx, `
+		SELECT COUNT(*) FROM users
+		WHERE DATE(created_at) = CURRENT_DATE
+	`).Scan(&stats.TodaySignups)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count today signups: %w", err)
+	}
+
+	// Get this week's signups
+	err = r.db.QueryRowContext(ctx, `
+		SELECT COUNT(*) FROM users
+		WHERE created_at >= DATE_TRUNC('week', CURRENT_DATE)
+	`).Scan(&stats.ThisWeekSignups)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count week signups: %w", err)
+	}
+
+	// Get this month's signups
+	err = r.db.QueryRowContext(ctx, `
+		SELECT COUNT(*) FROM users
+		WHERE created_at >= DATE_TRUNC('month', CURRENT_DATE)
+	`).Scan(&stats.ThisMonthSignups)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count month signups: %w", err)
+	}
+
+	return stats, nil
+}
+
+// GetUserGrowth retrieves user growth data over time
+func (r *AdminRepository) GetUserGrowth(ctx context.Context, period string, startTime, endTime time.Time) ([]DataPoint, int64, error) {
+	var query string
+	var dateFormat string
+	var truncFunc string
+
+	switch period {
+	case "daily":
+		truncFunc = "DATE_TRUNC('day', created_at)"
+		dateFormat = "YYYY-MM-DD"
+	case "weekly":
+		truncFunc = "DATE_TRUNC('week', created_at)"
+		dateFormat = "YYYY-MM-DD"
+	case "monthly":
+		truncFunc = "DATE_TRUNC('month', created_at)"
+		dateFormat = "YYYY-MM"
+	case "yearly":
+		truncFunc = "DATE_TRUNC('year', created_at)"
+		dateFormat = "YYYY"
+	default:
+		truncFunc = "DATE_TRUNC('day', created_at)"
+		dateFormat = "YYYY-MM-DD"
+	}
+
+	query = fmt.Sprintf(`
+		SELECT
+			TO_CHAR(%s, '%s') as label,
+			COUNT(*) as value,
+			EXTRACT(EPOCH FROM %s)::bigint as timestamp
+		FROM users
+		WHERE created_at >= $1 AND created_at <= $2
+		GROUP BY %s
+		ORDER BY %s ASC
+	`, truncFunc, dateFormat, truncFunc, truncFunc, truncFunc)
+
+	rows, err := r.db.QueryContext(ctx, query, startTime, endTime)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to query user growth: %w", err)
+	}
+	defer rows.Close()
+
+	var dataPoints []DataPoint
+	var totalUsers int64
+	for rows.Next() {
+		var dp DataPoint
+		err := rows.Scan(&dp.Label, &dp.Value, &dp.Timestamp)
+		if err != nil {
+			return nil, 0, fmt.Errorf("failed to scan data point: %w", err)
+		}
+		totalUsers += dp.Value
+		dataPoints = append(dataPoints, dp)
+	}
+
+	return dataPoints, totalUsers, nil
+}
+
+// GetActiveUsers retrieves active users data over time
+func (r *AdminRepository) GetActiveUsers(ctx context.Context, period string, startTime, endTime time.Time) ([]DataPoint, error) {
+	var truncFunc string
+	var dateFormat string
+
+	switch period {
+	case "daily":
+		truncFunc = "DATE_TRUNC('day', last_login_at)"
+		dateFormat = "YYYY-MM-DD"
+	case "weekly":
+		truncFunc = "DATE_TRUNC('week', last_login_at)"
+		dateFormat = "YYYY-MM-DD"
+	case "monthly":
+		truncFunc = "DATE_TRUNC('month', last_login_at)"
+		dateFormat = "YYYY-MM"
+	case "yearly":
+		truncFunc = "DATE_TRUNC('year', last_login_at)"
+		dateFormat = "YYYY"
+	default:
+		truncFunc = "DATE_TRUNC('day', last_login_at)"
+		dateFormat = "YYYY-MM-DD"
+	}
+
+	query := fmt.Sprintf(`
+		SELECT
+			TO_CHAR(%s, '%s') as label,
+			COUNT(DISTINCT id) as value,
+			EXTRACT(EPOCH FROM %s)::bigint as timestamp
+		FROM users
+		WHERE last_login_at >= $1 AND last_login_at <= $2
+		GROUP BY %s
+		ORDER BY %s ASC
+	`, truncFunc, dateFormat, truncFunc, truncFunc, truncFunc)
+
+	rows, err := r.db.QueryContext(ctx, query, startTime, endTime)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query active users: %w", err)
+	}
+	defer rows.Close()
+
+	var dataPoints []DataPoint
+	for rows.Next() {
+		var dp DataPoint
+		err := rows.Scan(&dp.Label, &dp.Value, &dp.Timestamp)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan data point: %w", err)
+		}
+		dataPoints = append(dataPoints, dp)
+	}
+
+	return dataPoints, nil
+}
+
+// GetSignups retrieves signup data over time
+func (r *AdminRepository) GetSignups(ctx context.Context, period string, startTime, endTime time.Time) ([]DataPoint, int64, error) {
+	// Reuse GetUserGrowth since it's the same query
+	return r.GetUserGrowth(ctx, period, startTime, endTime)
+}
+
+// GetDemographics retrieves demographic statistics by metric type
+func (r *AdminRepository) GetDemographics(ctx context.Context, metricType string) ([]DemographicData, error) {
+	var query string
+	var column string
+
+	switch metricType {
+	case "gender":
+		column = "gender"
+	case "age_group":
+		query = `
+			SELECT
+				CASE
+					WHEN EXTRACT(YEAR FROM AGE(date_of_birth)) < 25 THEN '18-24'
+					WHEN EXTRACT(YEAR FROM AGE(date_of_birth)) < 35 THEN '25-34'
+					WHEN EXTRACT(YEAR FROM AGE(date_of_birth)) < 45 THEN '35-44'
+					WHEN EXTRACT(YEAR FROM AGE(date_of_birth)) < 55 THEN '45-54'
+					ELSE '55+'
+				END as category,
+				COUNT(*) as count
+			FROM users
+			WHERE date_of_birth IS NOT NULL
+			GROUP BY category
+			ORDER BY category
+		`
+	default:
+		return nil, fmt.Errorf("invalid metric type: %s", metricType)
+	}
+
+	if column != "" {
+		query = fmt.Sprintf(`
+			SELECT
+				COALESCE(%s, 'Unknown') as category,
+				COUNT(*) as count
+			FROM users
+			GROUP BY %s
+			ORDER BY count DESC
+		`, column, column)
+	}
+
+	rows, err := r.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query demographics: %w", err)
+	}
+	defer rows.Close()
+
+	var results []DemographicData
+	var total int64
+	for rows.Next() {
+		var d DemographicData
+		err := rows.Scan(&d.Category, &d.Count)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan demographic data: %w", err)
+		}
+		total += d.Count
+		results = append(results, d)
+	}
+
+	// Calculate percentages
+	for i := range results {
+		if total > 0 {
+			results[i].Percentage = float64(results[i].Count) / float64(total) * 100
+		}
+	}
+
+	return results, nil
+}
+
+// GetLocationStats retrieves location-based statistics
+func (r *AdminRepository) GetLocationStats(ctx context.Context, level, parentLocation string) ([]LocationData, error) {
+	var query string
+
+	// Get column name from user_profiles table
+	switch level {
+	case "country":
+		query = `
+			SELECT
+				COALESCE(up.country, 'Unknown') as location_name,
+				COALESCE(up.country, '') as location_code,
+				COUNT(*) as user_count
+			FROM users u
+			LEFT JOIN user_profiles up ON u.id = up.user_id
+			GROUP BY up.country
+			ORDER BY user_count DESC
+			LIMIT 20
+		`
+	case "state":
+		if parentLocation != "" {
+			query = fmt.Sprintf(`
+				SELECT
+					COALESCE(up.state, 'Unknown') as location_name,
+					COALESCE(up.state, '') as location_code,
+					COUNT(*) as user_count
+				FROM users u
+				LEFT JOIN user_profiles up ON u.id = up.user_id
+				WHERE up.country = '%s'
+				GROUP BY up.state
+				ORDER BY user_count DESC
+				LIMIT 20
+			`, parentLocation)
+		}
+	case "city":
+		query = `
+			SELECT
+				COALESCE(up.city, 'Unknown') as location_name,
+				COALESCE(up.city, '') as location_code,
+				COUNT(*) as user_count
+			FROM users u
+			LEFT JOIN user_profiles up ON u.id = up.user_id
+			GROUP BY up.city
+			ORDER BY user_count DESC
+			LIMIT 20
+		`
+		if parentLocation != "" {
+			query = fmt.Sprintf(`
+				SELECT
+					COALESCE(up.city, 'Unknown') as location_name,
+					COALESCE(up.city, '') as location_code,
+					COUNT(*) as user_count
+				FROM users u
+				LEFT JOIN user_profiles up ON u.id = up.user_id
+				WHERE up.state = '%s' OR up.country = '%s'
+				GROUP BY up.city
+				ORDER BY user_count DESC
+				LIMIT 20
+			`, parentLocation, parentLocation)
+		}
+	default:
+		return nil, fmt.Errorf("invalid level: %s", level)
+	}
+
+	rows, err := r.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query location stats: %w", err)
+	}
+	defer rows.Close()
+
+	var results []LocationData
+	var total int64
+	for rows.Next() {
+		var l LocationData
+		err := rows.Scan(&l.LocationName, &l.LocationCode, &l.UserCount)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan location data: %w", err)
+		}
+		total += l.UserCount
+		results = append(results, l)
+	}
+
+	// Calculate percentages
+	for i := range results {
+		if total > 0 {
+			results[i].Percentage = float64(results[i].UserCount) / float64(total) * 100
+		}
+	}
+
+	return results, nil
+}
+
+// GetAvailabilityStats retrieves availability statistics
+func (r *AdminRepository) GetAvailabilityStats(ctx context.Context) (int64, int64, error) {
+	var availableUsers int64
+	err := r.db.QueryRowContext(ctx, `
+		SELECT COUNT(DISTINCT user_id)
+		FROM availability_slots
+		WHERE start_time > NOW()
+	`).Scan(&availableUsers)
+	if err != nil {
+		return 0, 0, fmt.Errorf("failed to count available users: %w", err)
+	}
+
+	var totalUsers int64
+	err = r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM users").Scan(&totalUsers)
+	if err != nil {
+		return 0, 0, fmt.Errorf("failed to count total users: %w", err)
+	}
+
+	unavailableUsers := totalUsers - availableUsers
+	return availableUsers, unavailableUsers, nil
+}
+
+// =============================================================================
+// Admin Management Operations
+// =============================================================================
+
+// GetAllAdmins retrieves all admin users with pagination
+func (r *AdminRepository) GetAllAdmins(ctx context.Context, page, pageSize int) ([]AdminUser, int, error) {
+	// Get total count
+	var totalCount int
+	err := r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM admin_users").Scan(&totalCount)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to count admins: %w", err)
+	}
+
+	// Get admins
+	offset := (page - 1) * pageSize
+	query := `
+		SELECT id, user_id, email, name, password_hash, role, is_genie, is_active,
+		       last_login_at, created_at, updated_at, created_by
+		FROM admin_users
+		ORDER BY created_at DESC
+		LIMIT $1 OFFSET $2
+	`
+
+	rows, err := r.db.QueryContext(ctx, query, pageSize, offset)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to query admins: %w", err)
+	}
+	defer rows.Close()
+
+	var admins []AdminUser
+	for rows.Next() {
+		var admin AdminUser
+		err := rows.Scan(
+			&admin.ID, &admin.UserID, &admin.Email, &admin.Name, &admin.PasswordHash,
+			&admin.Role, &admin.IsGenie, &admin.IsActive, &admin.LastLoginAt,
+			&admin.CreatedAt, &admin.UpdatedAt, &admin.CreatedBy,
+		)
+		if err != nil {
+			return nil, 0, fmt.Errorf("failed to scan admin: %w", err)
+		}
+		admins = append(admins, admin)
+	}
+
+	return admins, totalCount, nil
+}
+
+// UpdateAdmin updates an admin user's details
+func (r *AdminRepository) UpdateAdmin(ctx context.Context, adminID int, name, email, role string) (*AdminUser, error) {
+	query := `
+		UPDATE admin_users
+		SET name = $1, email = $2, role = $3, updated_at = CURRENT_TIMESTAMP
+		WHERE id = $4
+		RETURNING id, user_id, email, name, password_hash, role, is_genie, is_active,
+		          last_login_at, created_at, updated_at, created_by
+	`
+
+	var admin AdminUser
+	err := r.db.QueryRowContext(ctx, query, name, email, role, adminID).Scan(
+		&admin.ID, &admin.UserID, &admin.Email, &admin.Name, &admin.PasswordHash,
+		&admin.Role, &admin.IsGenie, &admin.IsActive, &admin.LastLoginAt,
+		&admin.CreatedAt, &admin.UpdatedAt, &admin.CreatedBy,
+	)
+	if err == sql.ErrNoRows {
+		return nil, ErrAdminNotFound
+	}
+	if err != nil {
+		if strings.Contains(err.Error(), "duplicate key") {
+			return nil, ErrAdminEmailExists
+		}
+		return nil, fmt.Errorf("failed to update admin: %w", err)
+	}
+
+	return &admin, nil
+}
+
+// DeleteAdmin soft deletes an admin user
+func (r *AdminRepository) DeleteAdmin(ctx context.Context, adminID int) error {
+	query := `UPDATE admin_users SET is_active = FALSE WHERE id = $1`
+	result, err := r.db.ExecContext(ctx, query, adminID)
+	if err != nil {
+		return fmt.Errorf("failed to delete admin: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return ErrAdminNotFound
+	}
+
+	return nil
+}
+
+// UpdateAdminProfile updates an admin's profile (name and email only)
+func (r *AdminRepository) UpdateAdminProfile(ctx context.Context, adminID int, name, email string) (*AdminUser, error) {
+	query := `
+		UPDATE admin_users
+		SET name = $1, email = $2, updated_at = CURRENT_TIMESTAMP
+		WHERE id = $3
+		RETURNING id, user_id, email, name, password_hash, role, is_genie, is_active,
+		          last_login_at, created_at, updated_at, created_by
+	`
+
+	var admin AdminUser
+	err := r.db.QueryRowContext(ctx, query, name, email, adminID).Scan(
+		&admin.ID, &admin.UserID, &admin.Email, &admin.Name, &admin.PasswordHash,
+		&admin.Role, &admin.IsGenie, &admin.IsActive, &admin.LastLoginAt,
+		&admin.CreatedAt, &admin.UpdatedAt, &admin.CreatedBy,
+	)
+	if err == sql.ErrNoRows {
+		return nil, ErrAdminNotFound
+	}
+	if err != nil {
+		if strings.Contains(err.Error(), "duplicate key") {
+			return nil, ErrAdminEmailExists
+		}
+		return nil, fmt.Errorf("failed to update admin profile: %w", err)
+	}
+
+	return &admin, nil
+}
+
+// =============================================================================
+// Bulk User Operations
+// =============================================================================
+
+// BulkActionResult holds the result of a bulk action
+type BulkActionResult struct {
+	SuccessCount    int
+	FailedCount     int
+	FailedUserIDs   []string
+	ErrorMessages   []string
+}
+
+// BulkUserAction performs bulk actions on users
+func (r *AdminRepository) BulkUserAction(ctx context.Context, userIDs []int, action string, reason string) (*BulkActionResult, error) {
+	result := &BulkActionResult{
+		FailedUserIDs: []string{},
+		ErrorMessages: []string{},
+	}
+
+	// Start transaction
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	var query string
+	switch action {
+	case "activate":
+		query = `UPDATE users SET account_status = 'ACTIVE' WHERE id = $1`
+	case "suspend":
+		query = `UPDATE users SET account_status = 'SUSPENDED' WHERE id = $1`
+	case "delete":
+		query = `UPDATE users SET account_status = 'DELETED' WHERE id = $1`
+	case "verify":
+		query = `UPDATE users SET email_verified = TRUE WHERE id = $1`
+	case "unverify":
+		query = `UPDATE users SET email_verified = FALSE WHERE id = $1`
+	default:
+		return nil, fmt.Errorf("invalid action: %s", action)
+	}
+
+	for _, userID := range userIDs {
+		_, err := tx.ExecContext(ctx, query, userID)
+		if err != nil {
+			result.FailedCount++
+			result.FailedUserIDs = append(result.FailedUserIDs, strconv.Itoa(userID))
+			result.ErrorMessages = append(result.ErrorMessages, err.Error())
+		} else {
+			result.SuccessCount++
+		}
+	}
+
+	// Commit transaction
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return result, nil
 }

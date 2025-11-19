@@ -435,9 +435,398 @@ func (s *AdminService) CreateAdminUser(ctx context.Context, req *adminpb.CreateA
 	}, nil
 }
 
+// GetAllAdmins retrieves all admin users
+func (s *AdminService) GetAllAdmins(ctx context.Context, req *adminpb.GetAllAdminsRequest) (*adminpb.GetAllAdminsResponse, error) {
+	page := int(req.Page)
+	if page < 1 {
+		page = 1
+	}
+	pageSize := int(req.PageSize)
+	if pageSize < 1 || pageSize > 100 {
+		pageSize = 20
+	}
+
+	admins, totalCount, err := s.adminRepo.GetAllAdmins(ctx, page, pageSize)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to get admins: %v", err)
+	}
+
+	var protoAdmins []*adminpb.AdminUser
+	for _, admin := range admins {
+		protoAdmins = append(protoAdmins, &adminpb.AdminUser{
+			AdminId:     strconv.Itoa(admin.ID),
+			Email:       admin.Email,
+			Name:        admin.Name,
+			Role:        convertAdminRole(admin.Role),
+			IsGenie:     admin.IsGenie,
+			CreatedAt:   timestampFromTime(admin.CreatedAt),
+			LastLoginAt: timestampFromNullTime(admin.LastLoginAt),
+		})
+	}
+
+	return &adminpb.GetAllAdminsResponse{
+		Admins:     protoAdmins,
+		TotalCount: int32(totalCount),
+	}, nil
+}
+
+// UpdateAdmin updates an admin user's details
+func (s *AdminService) UpdateAdmin(ctx context.Context, req *adminpb.UpdateAdminRequest) (*adminpb.UpdateAdminResponse, error) {
+	adminID, err := strconv.Atoi(req.AdminId)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid admin ID")
+	}
+
+	role := convertAdminRoleToString(req.Role)
+
+	admin, err := s.adminRepo.UpdateAdmin(ctx, adminID, req.Name, req.Email, role)
+	if err != nil {
+		if err == repository.ErrAdminNotFound {
+			return nil, status.Error(codes.NotFound, "admin not found")
+		}
+		if err == repository.ErrAdminEmailExists {
+			return nil, status.Error(codes.AlreadyExists, "email already exists")
+		}
+		return nil, status.Errorf(codes.Internal, "failed to update admin: %v", err)
+	}
+
+	return &adminpb.UpdateAdminResponse{
+		Admin: &adminpb.AdminUser{
+			AdminId:     strconv.Itoa(admin.ID),
+			Email:       admin.Email,
+			Name:        admin.Name,
+			Role:        req.Role,
+			IsGenie:     admin.IsGenie,
+			CreatedAt:   timestampFromTime(admin.CreatedAt),
+			LastLoginAt: timestampFromNullTime(admin.LastLoginAt),
+		},
+	}, nil
+}
+
+// DeleteAdmin deletes an admin user
+func (s *AdminService) DeleteAdmin(ctx context.Context, req *adminpb.DeleteAdminRequest) (*adminpb.DeleteAdminResponse, error) {
+	adminID, err := strconv.Atoi(req.AdminId)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid admin ID")
+	}
+
+	err = s.adminRepo.DeleteAdmin(ctx, adminID)
+	if err != nil {
+		if err == repository.ErrAdminNotFound {
+			return nil, status.Error(codes.NotFound, "admin not found")
+		}
+		return nil, status.Errorf(codes.Internal, "failed to delete admin: %v", err)
+	}
+
+	return &adminpb.DeleteAdminResponse{
+		Success: true,
+	}, nil
+}
+
+// UpdateAdminProfile updates an admin's profile
+func (s *AdminService) UpdateAdminProfile(ctx context.Context, req *adminpb.UpdateAdminProfileRequest) (*adminpb.UpdateAdminProfileResponse, error) {
+	adminID, err := strconv.Atoi(req.AdminId)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid admin ID")
+	}
+
+	admin, err := s.adminRepo.UpdateAdminProfile(ctx, adminID, req.Name, req.Email)
+	if err != nil {
+		if err == repository.ErrAdminNotFound {
+			return nil, status.Error(codes.NotFound, "admin not found")
+		}
+		if err == repository.ErrAdminEmailExists {
+			return nil, status.Error(codes.AlreadyExists, "email already exists")
+		}
+		return nil, status.Errorf(codes.Internal, "failed to update admin profile: %v", err)
+	}
+
+	return &adminpb.UpdateAdminProfileResponse{
+		Admin: &adminpb.AdminUser{
+			AdminId:     strconv.Itoa(admin.ID),
+			Email:       admin.Email,
+			Name:        admin.Name,
+			Role:        convertAdminRole(admin.Role),
+			IsGenie:     admin.IsGenie,
+			CreatedAt:   timestampFromTime(admin.CreatedAt),
+			LastLoginAt: timestampFromNullTime(admin.LastLoginAt),
+		},
+	}, nil
+}
+
+// BulkUserAction performs bulk actions on users
+func (s *AdminService) BulkUserAction(ctx context.Context, req *adminpb.BulkUserActionRequest) (*adminpb.BulkUserActionResponse, error) {
+	if len(req.UserIds) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "no user IDs provided")
+	}
+
+	// Convert string IDs to ints
+	var userIDs []int
+	for _, idStr := range req.UserIds {
+		id, err := strconv.Atoi(idStr)
+		if err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "invalid user ID: %s", idStr)
+		}
+		userIDs = append(userIDs, id)
+	}
+
+	// Convert action enum to string
+	var action string
+	switch req.Action {
+	case adminpb.BulkUserAction_BULK_USER_ACTION_ACTIVATE:
+		action = "activate"
+	case adminpb.BulkUserAction_BULK_USER_ACTION_SUSPEND:
+		action = "suspend"
+	case adminpb.BulkUserAction_BULK_USER_ACTION_DELETE:
+		action = "delete"
+	case adminpb.BulkUserAction_BULK_USER_ACTION_VERIFY:
+		action = "verify"
+	case adminpb.BulkUserAction_BULK_USER_ACTION_UNVERIFY:
+		action = "unverify"
+	default:
+		return nil, status.Error(codes.InvalidArgument, "invalid action")
+	}
+
+	result, err := s.adminRepo.BulkUserAction(ctx, userIDs, action, req.Reason)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to perform bulk action: %v", err)
+	}
+
+	return &adminpb.BulkUserActionResponse{
+		SuccessCount:   int32(result.SuccessCount),
+		FailedCount:    int32(result.FailedCount),
+		FailedUserIds:  result.FailedUserIDs,
+		ErrorMessages:  result.ErrorMessages,
+	}, nil
+}
+
+// =============================================================================
+// Analytics
+// =============================================================================
+
+// GetPlatformStats retrieves platform-wide statistics
+func (s *AdminService) GetPlatformStats(ctx context.Context, req *adminpb.PlatformStatsRequest) (*adminpb.PlatformStatsResponse, error) {
+	stats, err := s.adminRepo.GetPlatformStats(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to get platform stats: %v", err)
+	}
+
+	return &adminpb.PlatformStatsResponse{
+		TotalUsers:          stats.TotalUsers,
+		ActiveUsers:         stats.ActiveUsers,
+		VerifiedUsers:       stats.VerifiedUsers,
+		AvailableForDating:  stats.AvailableForDating,
+		TotalDatesScheduled: stats.TotalDatesScheduled,
+		TotalDatesCompleted: stats.TotalDatesCompleted,
+		TodaySignups:        stats.TodaySignups,
+		ThisWeekSignups:     stats.ThisWeekSignups,
+		ThisMonthSignups:    stats.ThisMonthSignups,
+	}, nil
+}
+
+// GetUserGrowth retrieves user growth data
+func (s *AdminService) GetUserGrowth(ctx context.Context, req *adminpb.UserGrowthRequest) (*adminpb.UserGrowthResponse, error) {
+	period := convertAnalyticsPeriod(req.Period)
+	startTime := timeFromTimestamp(req.TimeRange.StartTime)
+	endTime := timeFromTimestamp(req.TimeRange.EndTime)
+
+	// Default time range if not provided
+	if startTime.IsZero() {
+		startTime = time.Now().AddDate(0, -1, 0) // Last month
+	}
+	if endTime.IsZero() {
+		endTime = time.Now()
+	}
+
+	dataPoints, totalUsers, err := s.adminRepo.GetUserGrowth(ctx, period, startTime, endTime)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to get user growth: %v", err)
+	}
+
+	// Convert to proto
+	var protoDataPoints []*adminpb.DataPoint
+	for _, dp := range dataPoints {
+		protoDataPoints = append(protoDataPoints, &adminpb.DataPoint{
+			Label:     dp.Label,
+			Value:     dp.Value,
+			Timestamp: &commonpb.Timestamp{Seconds: dp.Timestamp},
+		})
+	}
+
+	// Calculate growth rate (simple percentage)
+	var growthRate float64
+	if len(dataPoints) > 1 {
+		firstValue := float64(dataPoints[0].Value)
+		lastValue := float64(dataPoints[len(dataPoints)-1].Value)
+		if firstValue > 0 {
+			growthRate = ((lastValue - firstValue) / firstValue) * 100
+		}
+	}
+
+	return &adminpb.UserGrowthResponse{
+		DataPoints: protoDataPoints,
+		TotalUsers: totalUsers,
+		GrowthRate: growthRate,
+	}, nil
+}
+
+// GetActiveUsers retrieves active users data
+func (s *AdminService) GetActiveUsers(ctx context.Context, req *adminpb.ActiveUsersRequest) (*adminpb.ActiveUsersResponse, error) {
+	period := convertAnalyticsPeriod(req.Period)
+	startTime := timeFromTimestamp(req.TimeRange.StartTime)
+	endTime := timeFromTimestamp(req.TimeRange.EndTime)
+
+	if startTime.IsZero() {
+		startTime = time.Now().AddDate(0, -1, 0)
+	}
+	if endTime.IsZero() {
+		endTime = time.Now()
+	}
+
+	dataPoints, err := s.adminRepo.GetActiveUsers(ctx, period, startTime, endTime)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to get active users: %v", err)
+	}
+
+	var protoDataPoints []*adminpb.DataPoint
+	var currentActive int64
+	for _, dp := range dataPoints {
+		protoDataPoints = append(protoDataPoints, &adminpb.DataPoint{
+			Label:     dp.Label,
+			Value:     dp.Value,
+			Timestamp: &commonpb.Timestamp{Seconds: dp.Timestamp},
+		})
+		currentActive += dp.Value
+	}
+
+	// Calculate activity rate
+	stats, _ := s.adminRepo.GetPlatformStats(ctx)
+	var activityRate float64
+	if stats != nil && stats.TotalUsers > 0 {
+		activityRate = (float64(stats.ActiveUsers) / float64(stats.TotalUsers)) * 100
+	}
+
+	return &adminpb.ActiveUsersResponse{
+		DataPoints:    protoDataPoints,
+		CurrentActive: currentActive,
+		ActivityRate:  activityRate,
+	}, nil
+}
+
+// GetSignups retrieves signup data
+func (s *AdminService) GetSignups(ctx context.Context, req *adminpb.SignupsRequest) (*adminpb.SignupsResponse, error) {
+	period := convertAnalyticsPeriod(req.Period)
+	startTime := timeFromTimestamp(req.TimeRange.StartTime)
+	endTime := timeFromTimestamp(req.TimeRange.EndTime)
+
+	if startTime.IsZero() {
+		startTime = time.Now().AddDate(0, -1, 0)
+	}
+	if endTime.IsZero() {
+		endTime = time.Now()
+	}
+
+	dataPoints, totalSignups, err := s.adminRepo.GetSignups(ctx, period, startTime, endTime)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to get signups: %v", err)
+	}
+
+	var protoDataPoints []*adminpb.DataPoint
+	for _, dp := range dataPoints {
+		protoDataPoints = append(protoDataPoints, &adminpb.DataPoint{
+			Label:     dp.Label,
+			Value:     dp.Value,
+			Timestamp: &commonpb.Timestamp{Seconds: dp.Timestamp},
+		})
+	}
+
+	return &adminpb.SignupsResponse{
+		DataPoints:   protoDataPoints,
+		TotalSignups: totalSignups,
+	}, nil
+}
+
+// GetDemographics retrieves demographic statistics
+func (s *AdminService) GetDemographics(ctx context.Context, req *adminpb.DemographicsRequest) (*adminpb.DemographicsResponse, error) {
+	data, err := s.adminRepo.GetDemographics(ctx, req.MetricType)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to get demographics: %v", err)
+	}
+
+	var protoData []*adminpb.DemographicData
+	for _, d := range data {
+		protoData = append(protoData, &adminpb.DemographicData{
+			Category:   d.Category,
+			Count:      d.Count,
+			Percentage: d.Percentage,
+		})
+	}
+
+	return &adminpb.DemographicsResponse{
+		Data: protoData,
+	}, nil
+}
+
+// GetLocationStats retrieves location-based statistics
+func (s *AdminService) GetLocationStats(ctx context.Context, req *adminpb.LocationStatsRequest) (*adminpb.LocationStatsResponse, error) {
+	locations, err := s.adminRepo.GetLocationStats(ctx, req.Level, req.ParentLocation)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to get location stats: %v", err)
+	}
+
+	var protoLocations []*adminpb.LocationData
+	for _, l := range locations {
+		protoLocations = append(protoLocations, &adminpb.LocationData{
+			LocationName: l.LocationName,
+			LocationCode: l.LocationCode,
+			UserCount:    l.UserCount,
+			Percentage:   l.Percentage,
+		})
+	}
+
+	return &adminpb.LocationStatsResponse{
+		Locations: protoLocations,
+	}, nil
+}
+
+// GetAvailabilityStats retrieves availability statistics
+func (s *AdminService) GetAvailabilityStats(ctx context.Context, req *adminpb.AvailabilityStatsRequest) (*adminpb.AvailabilityStatsResponse, error) {
+	availableUsers, unavailableUsers, err := s.adminRepo.GetAvailabilityStats(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to get availability stats: %v", err)
+	}
+
+	totalUsers := availableUsers + unavailableUsers
+	var availabilityRate float64
+	if totalUsers > 0 {
+		availabilityRate = (float64(availableUsers) / float64(totalUsers)) * 100
+	}
+
+	return &adminpb.AvailabilityStatsResponse{
+		AvailableUsers:   availableUsers,
+		UnavailableUsers: unavailableUsers,
+		AvailabilityRate: availabilityRate,
+	}, nil
+}
+
 // =============================================================================
 // Helper Functions
 // =============================================================================
+
+func convertAnalyticsPeriod(period adminpb.AnalyticsPeriod) string {
+	switch period {
+	case adminpb.AnalyticsPeriod_ANALYTICS_PERIOD_DAILY:
+		return "daily"
+	case adminpb.AnalyticsPeriod_ANALYTICS_PERIOD_WEEKLY:
+		return "weekly"
+	case adminpb.AnalyticsPeriod_ANALYTICS_PERIOD_MONTHLY:
+		return "monthly"
+	case adminpb.AnalyticsPeriod_ANALYTICS_PERIOD_YEARLY:
+		return "yearly"
+	default:
+		return "daily"
+	}
+}
 
 func convertAdminRole(role string) adminpb.AdminRole {
 	switch role {
