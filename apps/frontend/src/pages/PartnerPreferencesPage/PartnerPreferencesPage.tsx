@@ -102,25 +102,283 @@ export const PartnerPreferencesPage = (): JSX.Element => {
 
   const partnerPrefs = profile?.partnerPreferences;
 
-  const formatEnumArray = (values: number[] | undefined, prefix: string): string => {
-    if (!values || values.length === 0) return 'Not specified';
-    return values
-      .map(val => {
-        const strVal = val.toString();
-        return strVal.replace(`${prefix}_`, '').replace(/_/g, ' ').toLowerCase();
-      })
-      .join(', ');
+  // Enum display maps
+  const enumMaps: Record<string, Record<number, string>> = {
+    'RELATIONSHIP_GOAL': {
+      1: 'Casual', 2: 'Serious', 3: 'Marriage', 4: 'Friendship',
+    },
+    'EDUCATION': {
+      1: 'High School', 2: 'Associate', 3: 'Bachelor', 4: 'Master', 5: 'Doctorate', 6: 'Professional',
+    },
+    'OCCUPATION': {
+      1: 'Software', 2: 'Healthcare', 3: 'Finance', 4: 'Education', 5: 'Engineering', 6: 'Legal', 7: 'Marketing', 8: 'Business',
+    },
+    'RELIGION': {
+      1: 'Hindu', 2: 'Muslim', 3: 'Christian', 4: 'Sikh', 5: 'Buddhist', 6: 'Jain', 7: 'Jewish', 8: 'Other',
+    },
+    'CHILDREN': {
+      1: 'Has Children', 2: 'No Children', 3: 'Wants Children', 4: 'Open',
+    },
+    'DRINKING': {
+      1: 'Never', 2: 'Rarely', 3: 'Socially', 4: 'Regularly',
+    },
+    'SMOKING': {
+      1: 'Never', 2: 'Occasionally', 3: 'Regularly', 4: 'Quitting',
+    },
+    'DIETARY': {
+      1: 'Vegetarian', 2: 'Non-Veg', 3: 'Vegan', 4: 'Eggetarian',
+    },
+    'PET': {
+      1: 'Dogs', 2: 'Cats', 3: 'Birds', 4: 'Fish', 5: 'Other', 6: 'None',
+    },
+    'WORKOUT': {
+      1: 'Never', 2: 'Occasionally', 3: 'Regularly', 4: 'Daily',
+    },
+    'COMMUNICATION': {
+      1: 'Direct', 2: 'Indirect', 3: 'Reserved', 4: 'Expressive',
+    },
+    'LOVE_LANGUAGE': {
+      1: 'Words', 2: 'Acts', 3: 'Gifts', 4: 'Time', 5: 'Touch',
+    },
+    'POLITICAL': {
+      1: 'Liberal', 2: 'Conservative', 3: 'Moderate', 4: 'Apolitical',
+    },
+    'SLEEP': {
+      1: 'Early Bird', 2: 'Night Owl', 3: 'Flexible',
+    },
+    'BODY_TYPE': {
+      1: 'Slim', 2: 'Athletic', 3: 'Average', 4: 'Heavy', 5: 'Muscular',
+    },
+    'COMPLEXION': {
+      1: 'Fair', 2: 'Wheatish', 3: 'Dark', 4: 'Very Fair',
+    },
+    'HAIR': {
+      1: 'Black', 2: 'Brown', 3: 'Blonde', 4: 'Red', 5: 'Gray', 6: 'Other',
+    },
+    'EYE': {
+      1: 'Black', 2: 'Brown', 3: 'Blue', 4: 'Green', 5: 'Hazel', 6: 'Gray',
+    },
+    'FACIAL_HAIR': {
+      1: 'Clean', 2: 'Stubble', 3: 'Beard', 4: 'Mustache',
+    },
+    'INCOME': {
+      1: 'Under 25K', 2: '25K-50K', 3: '50K-100K', 4: '100K-200K', 5: '200K+',
+    },
+    'EMPLOYMENT': {
+      1: 'Full-time', 2: 'Part-time', 3: 'Self-employed', 4: 'Student', 5: 'Retired', 6: 'Unemployed',
+    },
+    'FAMILY_TYPE': {
+      1: 'Joint', 2: 'Nuclear', 3: 'Single Parent',
+    },
+    'FAMILY_VALUES': {
+      1: 'Traditional', 2: 'Moderate', 3: 'Liberal',
+    },
+    'LIVING': {
+      1: 'With Family', 2: 'Alone', 3: 'Roommates', 4: 'Partner',
+    },
+    'AFFLUENCE': {
+      1: 'Lower', 2: 'Middle', 3: 'Upper Middle', 4: 'Upper',
+    },
+    'LANGUAGE': {
+      1: 'English', 2: 'Hindi', 3: 'Punjabi', 4: 'Tamil', 5: 'Telugu', 6: 'Bengali', 7: 'Marathi', 8: 'Gujarati',
+    },
+    'ETHNICITY': {
+      1: 'Asian', 2: 'Black', 3: 'Caucasian', 4: 'Hispanic', 5: 'Mixed', 6: 'Other',
+    },
+    'INTEREST': {
+      1: 'Music', 2: 'Movies', 3: 'Sports', 4: 'Travel', 5: 'Reading', 6: 'Cooking', 7: 'Gaming', 8: 'Art',
+    },
   };
 
-  const formatGenderArray = (genders: number[] | undefined): string => {
+  // Reverse maps for string enum values
+  const stringEnumMaps: Record<string, Record<string, string>> = {
+    'RELATIONSHIP_GOAL': {
+      'RELATIONSHIP_GOAL_UNSPECIFIED': 'Unspecified', 'RELATIONSHIP_GOAL_CASUAL': 'Casual',
+      'RELATIONSHIP_GOAL_SERIOUS': 'Serious', 'RELATIONSHIP_GOAL_MARRIAGE': 'Marriage',
+      'RELATIONSHIP_GOAL_FRIENDSHIP': 'Friendship',
+    },
+    'EDUCATION': {
+      'EDUCATION_UNSPECIFIED': 'Unspecified', 'EDUCATION_HIGH_SCHOOL': 'High School',
+      'EDUCATION_ASSOCIATE': 'Associate', 'EDUCATION_BACHELOR': 'Bachelor',
+      'EDUCATION_MASTER': 'Master', 'EDUCATION_DOCTORATE': 'Doctorate',
+      'EDUCATION_PROFESSIONAL': 'Professional',
+    },
+    'OCCUPATION': {
+      'OCCUPATION_UNSPECIFIED': 'Unspecified', 'OCCUPATION_SOFTWARE': 'Software',
+      'OCCUPATION_HEALTHCARE': 'Healthcare', 'OCCUPATION_FINANCE': 'Finance',
+      'OCCUPATION_EDUCATION': 'Education', 'OCCUPATION_ENGINEERING': 'Engineering',
+      'OCCUPATION_LEGAL': 'Legal', 'OCCUPATION_MARKETING': 'Marketing',
+      'OCCUPATION_BUSINESS': 'Business',
+    },
+    'RELIGION': {
+      'RELIGION_UNSPECIFIED': 'Unspecified', 'RELIGION_HINDU': 'Hindu',
+      'RELIGION_MUSLIM': 'Muslim', 'RELIGION_CHRISTIAN': 'Christian',
+      'RELIGION_SIKH': 'Sikh', 'RELIGION_BUDDHIST': 'Buddhist',
+      'RELIGION_JAIN': 'Jain', 'RELIGION_JEWISH': 'Jewish', 'RELIGION_OTHER': 'Other',
+    },
+    'CHILDREN': {
+      'CHILDREN_UNSPECIFIED': 'Unspecified', 'CHILDREN_HAS': 'Has Children',
+      'CHILDREN_NO': 'No Children', 'CHILDREN_WANTS': 'Wants Children', 'CHILDREN_OPEN': 'Open',
+    },
+    'DRINKING': {
+      'DRINKING_UNSPECIFIED': 'Unspecified', 'DRINKING_NEVER': 'Never',
+      'DRINKING_RARELY': 'Rarely', 'DRINKING_SOCIALLY': 'Socially', 'DRINKING_REGULARLY': 'Regularly',
+    },
+    'SMOKING': {
+      'SMOKING_UNSPECIFIED': 'Unspecified', 'SMOKING_NEVER': 'Never',
+      'SMOKING_OCCASIONALLY': 'Occasionally', 'SMOKING_REGULARLY': 'Regularly', 'SMOKING_QUITTING': 'Quitting',
+    },
+    'DIETARY': {
+      'DIETARY_UNSPECIFIED': 'Unspecified', 'DIETARY_VEGETARIAN': 'Vegetarian',
+      'DIETARY_NON_VEG': 'Non-Veg', 'DIETARY_VEGAN': 'Vegan', 'DIETARY_EGGETARIAN': 'Eggetarian',
+    },
+    'PET': {
+      'PET_UNSPECIFIED': 'Unspecified', 'PET_DOGS': 'Dogs', 'PET_CATS': 'Cats',
+      'PET_BIRDS': 'Birds', 'PET_FISH': 'Fish', 'PET_OTHER': 'Other', 'PET_NONE': 'None',
+    },
+    'WORKOUT': {
+      'WORKOUT_UNSPECIFIED': 'Unspecified', 'WORKOUT_NEVER': 'Never',
+      'WORKOUT_OCCASIONALLY': 'Occasionally', 'WORKOUT_REGULARLY': 'Regularly', 'WORKOUT_DAILY': 'Daily',
+    },
+    'COMMUNICATION': {
+      'COMMUNICATION_UNSPECIFIED': 'Unspecified', 'COMMUNICATION_DIRECT': 'Direct',
+      'COMMUNICATION_INDIRECT': 'Indirect', 'COMMUNICATION_RESERVED': 'Reserved', 'COMMUNICATION_EXPRESSIVE': 'Expressive',
+    },
+    'LOVE_LANGUAGE': {
+      'LOVE_LANGUAGE_UNSPECIFIED': 'Unspecified', 'LOVE_LANGUAGE_WORDS': 'Words',
+      'LOVE_LANGUAGE_ACTS': 'Acts', 'LOVE_LANGUAGE_GIFTS': 'Gifts',
+      'LOVE_LANGUAGE_TIME': 'Time', 'LOVE_LANGUAGE_TOUCH': 'Touch',
+    },
+    'POLITICAL': {
+      'POLITICAL_UNSPECIFIED': 'Unspecified', 'POLITICAL_LIBERAL': 'Liberal',
+      'POLITICAL_CONSERVATIVE': 'Conservative', 'POLITICAL_MODERATE': 'Moderate', 'POLITICAL_APOLITICAL': 'Apolitical',
+    },
+    'SLEEP': {
+      'SLEEP_UNSPECIFIED': 'Unspecified', 'SLEEP_EARLY_BIRD': 'Early Bird',
+      'SLEEP_NIGHT_OWL': 'Night Owl', 'SLEEP_FLEXIBLE': 'Flexible',
+    },
+    'BODY_TYPE': {
+      'BODY_TYPE_UNSPECIFIED': 'Unspecified', 'BODY_TYPE_SLIM': 'Slim',
+      'BODY_TYPE_ATHLETIC': 'Athletic', 'BODY_TYPE_AVERAGE': 'Average',
+      'BODY_TYPE_HEAVY': 'Heavy', 'BODY_TYPE_MUSCULAR': 'Muscular',
+    },
+    'COMPLEXION': {
+      'COMPLEXION_UNSPECIFIED': 'Unspecified', 'COMPLEXION_FAIR': 'Fair',
+      'COMPLEXION_WHEATISH': 'Wheatish', 'COMPLEXION_DARK': 'Dark', 'COMPLEXION_VERY_FAIR': 'Very Fair',
+    },
+    'HAIR': {
+      'HAIR_COLOR_UNSPECIFIED': 'Unspecified', 'HAIR_COLOR_BLACK': 'Black',
+      'HAIR_COLOR_BROWN': 'Brown', 'HAIR_COLOR_BLONDE': 'Blonde',
+      'HAIR_COLOR_RED': 'Red', 'HAIR_COLOR_GRAY': 'Gray', 'HAIR_COLOR_OTHER': 'Other',
+    },
+    'EYE': {
+      'EYE_COLOR_UNSPECIFIED': 'Unspecified', 'EYE_COLOR_BLACK': 'Black',
+      'EYE_COLOR_BROWN': 'Brown', 'EYE_COLOR_BLUE': 'Blue',
+      'EYE_COLOR_GREEN': 'Green', 'EYE_COLOR_HAZEL': 'Hazel', 'EYE_COLOR_GRAY': 'Gray',
+    },
+    'FACIAL_HAIR': {
+      'FACIAL_HAIR_UNSPECIFIED': 'Unspecified', 'FACIAL_HAIR_CLEAN': 'Clean',
+      'FACIAL_HAIR_STUBBLE': 'Stubble', 'FACIAL_HAIR_BEARD': 'Beard', 'FACIAL_HAIR_MUSTACHE': 'Mustache',
+    },
+    'INCOME': {
+      'INCOME_UNSPECIFIED': 'Unspecified', 'INCOME_UNDER_25K': 'Under 25K',
+      'INCOME_25K_50K': '25K-50K', 'INCOME_50K_100K': '50K-100K',
+      'INCOME_100K_200K': '100K-200K', 'INCOME_200K_PLUS': '200K+',
+    },
+    'EMPLOYMENT': {
+      'EMPLOYMENT_UNSPECIFIED': 'Unspecified', 'EMPLOYMENT_FULL_TIME': 'Full-time',
+      'EMPLOYMENT_PART_TIME': 'Part-time', 'EMPLOYMENT_SELF_EMPLOYED': 'Self-employed',
+      'EMPLOYMENT_STUDENT': 'Student', 'EMPLOYMENT_RETIRED': 'Retired', 'EMPLOYMENT_UNEMPLOYED': 'Unemployed',
+    },
+    'FAMILY_TYPE': {
+      'FAMILY_TYPE_UNSPECIFIED': 'Unspecified', 'FAMILY_TYPE_JOINT': 'Joint',
+      'FAMILY_TYPE_NUCLEAR': 'Nuclear', 'FAMILY_TYPE_SINGLE_PARENT': 'Single Parent',
+    },
+    'FAMILY_VALUES': {
+      'FAMILY_VALUES_UNSPECIFIED': 'Unspecified', 'FAMILY_VALUES_TRADITIONAL': 'Traditional',
+      'FAMILY_VALUES_MODERATE': 'Moderate', 'FAMILY_VALUES_LIBERAL': 'Liberal',
+    },
+    'LIVING': {
+      'LIVING_SITUATION_UNSPECIFIED': 'Unspecified', 'LIVING_SITUATION_WITH_FAMILY': 'With Family',
+      'LIVING_SITUATION_ALONE': 'Alone', 'LIVING_SITUATION_ROOMMATES': 'Roommates', 'LIVING_SITUATION_PARTNER': 'Partner',
+    },
+    'AFFLUENCE': {
+      'AFFLUENCE_UNSPECIFIED': 'Unspecified', 'AFFLUENCE_LOWER': 'Lower',
+      'AFFLUENCE_MIDDLE': 'Middle', 'AFFLUENCE_UPPER_MIDDLE': 'Upper Middle', 'AFFLUENCE_UPPER': 'Upper',
+    },
+    'LANGUAGE': {
+      'LANGUAGE_UNSPECIFIED': 'Unspecified', 'LANGUAGE_ENGLISH': 'English',
+      'LANGUAGE_HINDI': 'Hindi', 'LANGUAGE_PUNJABI': 'Punjabi',
+      'LANGUAGE_TAMIL': 'Tamil', 'LANGUAGE_TELUGU': 'Telugu',
+      'LANGUAGE_BENGALI': 'Bengali', 'LANGUAGE_MARATHI': 'Marathi', 'LANGUAGE_GUJARATI': 'Gujarati',
+    },
+    'ETHNICITY': {
+      'ETHNICITY_UNSPECIFIED': 'Unspecified', 'ETHNICITY_ASIAN': 'Asian',
+      'ETHNICITY_BLACK': 'Black', 'ETHNICITY_CAUCASIAN': 'Caucasian',
+      'ETHNICITY_HISPANIC': 'Hispanic', 'ETHNICITY_MIXED': 'Mixed', 'ETHNICITY_OTHER': 'Other',
+    },
+    'INTEREST': {
+      'INTEREST_UNSPECIFIED': 'Unspecified', 'INTEREST_MUSIC': 'Music',
+      'INTEREST_MOVIES': 'Movies', 'INTEREST_SPORTS': 'Sports',
+      'INTEREST_TRAVEL': 'Travel', 'INTEREST_READING': 'Reading',
+      'INTEREST_COOKING': 'Cooking', 'INTEREST_GAMING': 'Gaming', 'INTEREST_ART': 'Art',
+    },
+  };
+
+  const formatEnumArray = (values: (number | string)[] | undefined, prefix: string): string => {
+    if (!values || values.length === 0) return 'Not specified';
+
+    return values.map(val => {
+      // Handle numeric values
+      if (typeof val === 'number') {
+        const numMap = enumMaps[prefix];
+        if (numMap && numMap[val]) return numMap[val];
+        return `Unknown (${val})`;
+      }
+      // Handle string values
+      if (typeof val === 'string') {
+        const strMap = stringEnumMaps[prefix];
+        if (strMap && strMap[val]) return strMap[val];
+        // Try to extract label from string (e.g., "RELATIONSHIP_GOAL_CASUAL" -> "Casual")
+        const parts = val.split('_');
+        if (parts.length > 1) {
+          return parts.slice(-1)[0].charAt(0) + parts.slice(-1)[0].slice(1).toLowerCase();
+        }
+        return val;
+      }
+      return `Unknown`;
+    }).join(', ');
+  };
+
+  const formatGenderArray = (genders: (number | string)[] | undefined): string => {
     if (!genders || genders.length === 0) return 'Not specified';
-    const genderMap: Record<number, string> = {
+    const genderNumMap: Record<number, string> = {
       0: 'Unspecified',
       1: 'Male',
       2: 'Female',
       3: 'Non-binary',
+      4: 'Transgender Male',
+      5: 'Transgender Female',
+      6: 'Genderqueer',
+      7: 'Other',
+      8: 'Prefer not to say',
     };
-    return genders.map(g => genderMap[g] || 'Unknown').join(', ');
+    const genderStrMap: Record<string, string> = {
+      'GENDER_UNSPECIFIED': 'Unspecified',
+      'GENDER_MALE': 'Male',
+      'GENDER_FEMALE': 'Female',
+      'GENDER_NON_BINARY': 'Non-binary',
+      'GENDER_TRANSGENDER_MALE': 'Transgender Male',
+      'GENDER_TRANSGENDER_FEMALE': 'Transgender Female',
+      'GENDER_GENDERQUEER': 'Genderqueer',
+      'GENDER_OTHER': 'Other',
+      'GENDER_PREFER_NOT_TO_SAY': 'Prefer not to say',
+    };
+    return genders.map(g => {
+      if (typeof g === 'number') return genderNumMap[g] || `Unknown (${g})`;
+      if (typeof g === 'string') return genderStrMap[g] || g;
+      return 'Unknown';
+    }).join(', ');
   };
 
   const formatImportance = (value: number | undefined): string => {

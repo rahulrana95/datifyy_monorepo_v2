@@ -149,6 +149,116 @@ const EnumCheckboxGroup = ({
   </SimpleGrid>
 );
 
+// Helper to check if array contains a value (handles both string and number enums)
+const includesEnum = (arr: (string | number)[] | undefined, numVal: number, strVal: string): boolean => {
+  if (!arr) return false;
+  return arr.includes(numVal) || arr.includes(strVal);
+};
+
+// Helper to convert string enum array to numbers
+const enumToNumbers = (arr: (string | number)[] | undefined, mapping: Record<string, number>): number[] => {
+  if (!arr) return [];
+  return arr.map(val => {
+    if (typeof val === 'number') return val;
+    return mapping[val] || 0;
+  }).filter(v => v !== 0);
+};
+
+// Enum string to number mappings
+const genderMapping: Record<string, number> = {
+  'GENDER_MALE': 1, 'GENDER_FEMALE': 2, 'GENDER_NON_BINARY': 3,
+};
+const relationshipGoalMapping: Record<string, number> = {
+  'RELATIONSHIP_GOAL_CASUAL': 1, 'RELATIONSHIP_GOAL_SERIOUS': 2,
+  'RELATIONSHIP_GOAL_MARRIAGE': 3, 'RELATIONSHIP_GOAL_FRIENDSHIP': 4,
+};
+const educationMapping: Record<string, number> = {
+  'EDUCATION_HIGH_SCHOOL': 1, 'EDUCATION_ASSOCIATE': 2, 'EDUCATION_BACHELOR': 3,
+  'EDUCATION_MASTER': 4, 'EDUCATION_DOCTORATE': 5, 'EDUCATION_PROFESSIONAL': 6,
+};
+const occupationMapping: Record<string, number> = {
+  'OCCUPATION_SOFTWARE': 1, 'OCCUPATION_HEALTHCARE': 2, 'OCCUPATION_FINANCE': 3,
+  'OCCUPATION_EDUCATION': 4, 'OCCUPATION_ENGINEERING': 5, 'OCCUPATION_LEGAL': 6,
+  'OCCUPATION_MARKETING': 7, 'OCCUPATION_BUSINESS': 8,
+};
+const religionMapping: Record<string, number> = {
+  'RELIGION_HINDU': 1, 'RELIGION_MUSLIM': 2, 'RELIGION_CHRISTIAN': 3, 'RELIGION_SIKH': 4,
+  'RELIGION_BUDDHIST': 5, 'RELIGION_JAIN': 6, 'RELIGION_JEWISH': 7, 'RELIGION_OTHER': 8,
+};
+const childrenMapping: Record<string, number> = {
+  'CHILDREN_HAS': 1, 'CHILDREN_NO': 2, 'CHILDREN_WANTS': 3, 'CHILDREN_OPEN': 4,
+};
+const drinkingMapping: Record<string, number> = {
+  'DRINKING_NEVER': 1, 'DRINKING_RARELY': 2, 'DRINKING_SOCIALLY': 3, 'DRINKING_REGULARLY': 4,
+};
+const smokingMapping: Record<string, number> = {
+  'SMOKING_NEVER': 1, 'SMOKING_OCCASIONALLY': 2, 'SMOKING_REGULARLY': 3, 'SMOKING_QUITTING': 4,
+};
+const dietaryMapping: Record<string, number> = {
+  'DIETARY_VEGETARIAN': 1, 'DIETARY_NON_VEG': 2, 'DIETARY_VEGAN': 3, 'DIETARY_EGGETARIAN': 4,
+};
+const petMapping: Record<string, number> = {
+  'PET_DOGS': 1, 'PET_CATS': 2, 'PET_BIRDS': 3, 'PET_FISH': 4, 'PET_OTHER': 5, 'PET_NONE': 6,
+};
+const workoutMapping: Record<string, number> = {
+  'WORKOUT_NEVER': 1, 'WORKOUT_OCCASIONALLY': 2, 'WORKOUT_REGULARLY': 3, 'WORKOUT_DAILY': 4,
+};
+const communicationMapping: Record<string, number> = {
+  'COMMUNICATION_DIRECT': 1, 'COMMUNICATION_INDIRECT': 2, 'COMMUNICATION_RESERVED': 3, 'COMMUNICATION_EXPRESSIVE': 4,
+};
+const loveLanguageMapping: Record<string, number> = {
+  'LOVE_LANGUAGE_WORDS': 1, 'LOVE_LANGUAGE_ACTS': 2, 'LOVE_LANGUAGE_GIFTS': 3,
+  'LOVE_LANGUAGE_TIME': 4, 'LOVE_LANGUAGE_TOUCH': 5,
+};
+const politicalMapping: Record<string, number> = {
+  'POLITICAL_LIBERAL': 1, 'POLITICAL_CONSERVATIVE': 2, 'POLITICAL_MODERATE': 3, 'POLITICAL_APOLITICAL': 4,
+};
+const sleepMapping: Record<string, number> = {
+  'SLEEP_EARLY_BIRD': 1, 'SLEEP_NIGHT_OWL': 2, 'SLEEP_FLEXIBLE': 3,
+};
+const bodyTypeMapping: Record<string, number> = {
+  'BODY_TYPE_SLIM': 1, 'BODY_TYPE_ATHLETIC': 2, 'BODY_TYPE_AVERAGE': 3, 'BODY_TYPE_HEAVY': 4, 'BODY_TYPE_MUSCULAR': 5,
+};
+const complexionMapping: Record<string, number> = {
+  'COMPLEXION_FAIR': 1, 'COMPLEXION_WHEATISH': 2, 'COMPLEXION_DARK': 3, 'COMPLEXION_VERY_FAIR': 4,
+};
+const hairColorMapping: Record<string, number> = {
+  'HAIR_COLOR_BLACK': 1, 'HAIR_COLOR_BROWN': 2, 'HAIR_COLOR_BLONDE': 3,
+  'HAIR_COLOR_RED': 4, 'HAIR_COLOR_GRAY': 5, 'HAIR_COLOR_OTHER': 6,
+};
+const eyeColorMapping: Record<string, number> = {
+  'EYE_COLOR_BLACK': 1, 'EYE_COLOR_BROWN': 2, 'EYE_COLOR_BLUE': 3,
+  'EYE_COLOR_GREEN': 4, 'EYE_COLOR_HAZEL': 5, 'EYE_COLOR_GRAY': 6,
+};
+const incomeMapping: Record<string, number> = {
+  'INCOME_UNDER_25K': 1, 'INCOME_25K_50K': 2, 'INCOME_50K_100K': 3, 'INCOME_100K_200K': 4, 'INCOME_200K_PLUS': 5,
+};
+const employmentMapping: Record<string, number> = {
+  'EMPLOYMENT_FULL_TIME': 1, 'EMPLOYMENT_PART_TIME': 2, 'EMPLOYMENT_SELF_EMPLOYED': 3,
+  'EMPLOYMENT_STUDENT': 4, 'EMPLOYMENT_RETIRED': 5, 'EMPLOYMENT_UNEMPLOYED': 6,
+};
+const familyTypeMapping: Record<string, number> = {
+  'FAMILY_TYPE_JOINT': 1, 'FAMILY_TYPE_NUCLEAR': 2, 'FAMILY_TYPE_SINGLE_PARENT': 3,
+};
+const familyValuesMapping: Record<string, number> = {
+  'FAMILY_VALUES_TRADITIONAL': 1, 'FAMILY_VALUES_MODERATE': 2, 'FAMILY_VALUES_LIBERAL': 3,
+};
+const livingSituationMapping: Record<string, number> = {
+  'LIVING_SITUATION_WITH_FAMILY': 1, 'LIVING_SITUATION_ALONE': 2, 'LIVING_SITUATION_ROOMMATES': 3, 'LIVING_SITUATION_PARTNER': 4,
+};
+const languageMapping: Record<string, number> = {
+  'LANGUAGE_ENGLISH': 1, 'LANGUAGE_HINDI': 2, 'LANGUAGE_PUNJABI': 3, 'LANGUAGE_TAMIL': 4,
+  'LANGUAGE_TELUGU': 5, 'LANGUAGE_BENGALI': 6, 'LANGUAGE_MARATHI': 7, 'LANGUAGE_GUJARATI': 8,
+};
+const ethnicityMapping: Record<string, number> = {
+  'ETHNICITY_ASIAN': 1, 'ETHNICITY_BLACK': 2, 'ETHNICITY_CAUCASIAN': 3,
+  'ETHNICITY_HISPANIC': 4, 'ETHNICITY_MIXED': 5, 'ETHNICITY_OTHER': 6,
+};
+const interestMapping: Record<string, number> = {
+  'INTEREST_MUSIC': 1, 'INTEREST_MOVIES': 2, 'INTEREST_SPORTS': 3, 'INTEREST_TRAVEL': 4,
+  'INTEREST_READING': 5, 'INTEREST_COOKING': 6, 'INTEREST_GAMING': 7, 'INTEREST_ART': 8,
+};
+
 export const PartnerPreferencesEditForm = ({
   preferences,
   onSave,
@@ -183,21 +293,21 @@ export const PartnerPreferencesEditForm = ({
     minHeight: preferences.heightRange?.minHeight || 150,
     maxHeight: preferences.heightRange?.maxHeight || 200,
     verifiedOnly: preferences.verifiedOnly || false,
-    lookingForMale: preferences.lookingForGender?.includes(1) || false,
-    lookingForFemale: preferences.lookingForGender?.includes(2) || false,
-    lookingForNonBinary: preferences.lookingForGender?.includes(3) || false,
+    lookingForMale: includesEnum(preferences.lookingForGender, 1, 'GENDER_MALE'),
+    lookingForFemale: includesEnum(preferences.lookingForGender, 2, 'GENDER_FEMALE'),
+    lookingForNonBinary: includesEnum(preferences.lookingForGender, 3, 'GENDER_NON_BINARY'),
 
     // Relationship Goals
-    relationshipGoals: preferences.relationshipGoals || [],
+    relationshipGoals: enumToNumbers(preferences.relationshipGoals, relationshipGoalMapping),
 
     // Education & Career
-    educationLevels: preferences.educationLevels || [],
-    occupations: preferences.occupations || [],
+    educationLevels: enumToNumbers(preferences.educationLevels, educationMapping),
+    occupations: enumToNumbers(preferences.occupations, occupationMapping),
     minYearsExperience: preferences.minYearsExperience || 0,
     industryPreferences: preferences.industryPreferences?.join(', ') || '',
 
     // Religion & Culture
-    religions: preferences.religions || [],
+    religions: enumToNumbers(preferences.religions, religionMapping),
     religionImportance: preferences.religionImportance || 0,
     castePreferences: preferences.castePreferences?.join(', ') || '',
     subCastePreferences: preferences.subCastePreferences?.join(', ') || '',
@@ -206,40 +316,40 @@ export const PartnerPreferencesEditForm = ({
     horoscopeMatchingRequired: preferences.horoscopeMatchingRequired || false,
 
     // Lifestyle
-    childrenPreferences: preferences.childrenPreferences || [],
-    drinkingPreferences: preferences.drinkingPreferences || [],
-    smokingPreferences: preferences.smokingPreferences || [],
-    dietaryPreferences: preferences.dietaryPreferences || [],
-    petPreferences: preferences.petPreferences || [],
-    workoutPreferences: preferences.workoutPreferences || [],
+    childrenPreferences: enumToNumbers(preferences.childrenPreferences, childrenMapping),
+    drinkingPreferences: enumToNumbers(preferences.drinkingPreferences, drinkingMapping),
+    smokingPreferences: enumToNumbers(preferences.smokingPreferences, smokingMapping),
+    dietaryPreferences: enumToNumbers(preferences.dietaryPreferences, dietaryMapping),
+    petPreferences: enumToNumbers(preferences.petPreferences, petMapping),
+    workoutPreferences: enumToNumbers(preferences.workoutPreferences, workoutMapping),
 
     // Personality & Communication
     personalityTypes: preferences.personalityTypes?.join(', ') || '',
-    communicationStyles: preferences.communicationStyles || [],
-    loveLanguages: preferences.loveLanguages || [],
-    politicalViews: preferences.politicalViews || [],
-    sleepSchedules: preferences.sleepSchedules || [],
+    communicationStyles: enumToNumbers(preferences.communicationStyles, communicationMapping),
+    loveLanguages: enumToNumbers(preferences.loveLanguages, loveLanguageMapping),
+    politicalViews: enumToNumbers(preferences.politicalViews, politicalMapping),
+    sleepSchedules: enumToNumbers(preferences.sleepSchedules, sleepMapping),
 
     // Physical
-    bodyTypePreferences: preferences.bodyTypePreferences || [],
-    complexionPreferences: preferences.complexionPreferences || [],
-    hairColorPreferences: preferences.hairColorPreferences || [],
-    eyeColorPreferences: preferences.eyeColorPreferences || [],
+    bodyTypePreferences: enumToNumbers(preferences.bodyTypePreferences, bodyTypeMapping),
+    complexionPreferences: enumToNumbers(preferences.complexionPreferences, complexionMapping),
+    hairColorPreferences: enumToNumbers(preferences.hairColorPreferences, hairColorMapping),
+    eyeColorPreferences: enumToNumbers(preferences.eyeColorPreferences, eyeColorMapping),
     facialHairPreferences: preferences.facialHairPreferences || [],
     tattooPreference: preferences.tattooPreference || 0,
     piercingPreference: preferences.piercingPreference || 0,
 
     // Financial
-    incomePreferences: preferences.incomePreferences || [],
-    employmentPreferences: preferences.employmentPreferences || [],
+    incomePreferences: enumToNumbers(preferences.incomePreferences, incomeMapping),
+    employmentPreferences: enumToNumbers(preferences.employmentPreferences, employmentMapping),
     propertyPreference: preferences.propertyPreference || 0,
     vehiclePreference: preferences.vehiclePreference || 0,
     financialExpectation: preferences.financialExpectation || 0,
 
     // Family
-    familyTypePreferences: preferences.familyTypePreferences || [],
-    familyValuesPreferences: preferences.familyValuesPreferences || [],
-    livingSituationPreferences: preferences.livingSituationPreferences || [],
+    familyTypePreferences: enumToNumbers(preferences.familyTypePreferences, familyTypeMapping),
+    familyValuesPreferences: enumToNumbers(preferences.familyValuesPreferences, familyValuesMapping),
+    livingSituationPreferences: enumToNumbers(preferences.livingSituationPreferences, livingSituationMapping),
     familyAffluencePreferences: preferences.familyAffluencePreferences || [],
     maxSiblings: preferences.maxSiblings || 0,
     familyLocationPreferences: preferences.familyLocationPreferences?.join(', ') || '',
@@ -249,14 +359,14 @@ export const PartnerPreferencesEditForm = ({
     openToLongDistance: preferences.openToLongDistance || false,
     nriPreference: preferences.nriPreference || 0,
     relocationExpectation: preferences.relocationExpectation || 0,
-    languagePreferences: preferences.languagePreferences || [],
+    languagePreferences: enumToNumbers(preferences.languagePreferences, languageMapping),
     minLanguageProficiency: preferences.minLanguageProficiency || 0,
     motherTonguePreferences: preferences.motherTonguePreferences?.join(', ') || '',
     nationalityPreferences: preferences.nationalityPreferences?.join(', ') || '',
-    ethnicityPreferences: preferences.ethnicityPreferences || [],
+    ethnicityPreferences: enumToNumbers(preferences.ethnicityPreferences, ethnicityMapping),
 
     // Interests
-    interestPreferences: preferences.interestPreferences || [],
+    interestPreferences: enumToNumbers(preferences.interestPreferences, interestMapping),
     minSharedInterests: preferences.minSharedInterests || 0,
 
     // Accessibility

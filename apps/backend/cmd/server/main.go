@@ -655,9 +655,18 @@ func convertUserProfileToJSON(profile *userpb.UserProfile) map[string]interface{
 		result["prompts"] = profile.Prompts
 	}
 
-	// Partner Preferences
+	// Partner Preferences - use protojson to serialize with string enums
 	if profile.PartnerPreferences != nil {
-		result["partnerPreferences"] = profile.PartnerPreferences
+		marshaler := protojson.MarshalOptions{
+			EmitUnpopulated: true,
+		}
+		prefsJSON, err := marshaler.Marshal(profile.PartnerPreferences)
+		if err == nil {
+			var prefsMap map[string]interface{}
+			if json.Unmarshal(prefsJSON, &prefsMap) == nil {
+				result["partnerPreferences"] = prefsMap
+			}
+		}
 	}
 
 	// User Preferences
