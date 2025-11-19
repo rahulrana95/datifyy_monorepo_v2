@@ -23,17 +23,20 @@ import { useAvailabilityStore } from '../../stores/availabilityStore';
 import type { AvailabilitySlotInput, OfflineLocation } from '../../services/availability';
 
 // ============================================================================
-// LocationIQ Types
+// Nominatim (OpenStreetMap) Types
 // ============================================================================
 
-interface LocationIQSuggestion {
-  place_id: string;
-  osm_id: string;
+interface NominatimSuggestion {
+  place_id: number;
   lat: string;
   lon: string;
   display_name: string;
+  name?: string;
   address: {
-    name?: string;
+    amenity?: string;
+    shop?: string;
+    tourism?: string;
+    building?: string;
     house_number?: string;
     road?: string;
     neighbourhood?: string;
@@ -41,14 +44,12 @@ interface LocationIQSuggestion {
     city?: string;
     town?: string;
     village?: string;
+    municipality?: string;
     state?: string;
     postcode?: string;
     country?: string;
   };
 }
-
-// LocationIQ API key from environment variables
-const LOCATIONIQ_API_KEY = process.env.REACT_APP_LOCATIONIQ_API_KEY || '';
 
 // ============================================================================
 // Types
@@ -177,7 +178,7 @@ export const AvailabilityPage = (): JSX.Element => {
 
   // Location search state
   const [locationQuery, setLocationQuery] = useState('');
-  const [locationSuggestions, setLocationSuggestions] = useState<LocationIQSuggestion[]>([]);
+  const [locationSuggestions, setLocationSuggestions] = useState<NominatimSuggestion[]>([]);
   const [isSearchingLocation, setIsSearchingLocation] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -250,7 +251,7 @@ export const AvailabilityPage = (): JSX.Element => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Search location with debounce
+  // Search location with debounce using Nominatim (OpenStreetMap)
   const searchLocation = useCallback(async (query: string) => {
     if (query.length < 3) {
       setLocationSuggestions([]);
@@ -260,7 +261,14 @@ export const AvailabilityPage = (): JSX.Element => {
     setIsSearchingLocation(true);
     try {
       const response = await fetch(
-        `https://api.locationiq.com/v1/autocomplete?key=${LOCATIONIQ_API_KEY}&q=${encodeURIComponent(query)}&limit=5&dedupe=1&format=json`
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&addressdetails=1&limit=5`,
+        {
+          headers: {
+            'Accept': 'application/json',
+            // Required by Nominatim usage policy
+            'User-Agent': 'Datifyy-Dating-App'
+          }
+        }
       );
 
       if (!response.ok) throw new Error('Search failed');
@@ -290,7 +298,7 @@ export const AvailabilityPage = (): JSX.Element => {
     }, 300);
   };
 
-  const handleSelectLocation = (suggestion: LocationIQSuggestion) => {
+  const handleSelectLocation = (suggestion: NominatimSuggestion) => {
     const addr = suggestion.address;
 
     // Build the address string
@@ -301,11 +309,11 @@ export const AvailabilityPage = (): JSX.Element => {
 
     const streetAddress = addressParts.join(' ') || suggestion.display_name.split(',')[0];
 
-    // Get city (could be city, town, or village)
-    const city = addr.city || addr.town || addr.village || '';
+    // Get city (could be city, town, village, or municipality)
+    const city = addr.city || addr.town || addr.village || addr.municipality || '';
 
-    // Get place name (use the first part of display_name or a specific name)
-    const placeName = addr.name || suggestion.display_name.split(',')[0];
+    // Get place name (amenity, shop, tourism, building, or first part of display_name)
+    const placeName = addr.amenity || addr.shop || addr.tourism || addr.building || suggestion.name || suggestion.display_name.split(',')[0];
 
     setOfflineLocation({
       placeName: placeName,
@@ -631,11 +639,13 @@ export const AvailabilityPage = (): JSX.Element => {
                     {selectedForDelete.size > 0 && (
                       <Button
                         size="sm"
-                        variant="ghost"
-                        color="nope.500"
+                        bg="nope.500"
+                        color="white"
                         onClick={handleDeleteSelected}
                         loading={isDeleting}
-                        _hover={{ bg: 'nope.50' }}
+                        borderRadius="lg"
+                        fontWeight="medium"
+                        _hover={{ bg: 'nope.600' }}
                       >
                         Delete Selected
                       </Button>
@@ -812,22 +822,25 @@ export const AvailabilityPage = (): JSX.Element => {
                         </Box>
                         {/* Clear Button */}
                         {offlineLocation.placeName && (
-                          <Button
+                          <Box
                             position="absolute"
-                            right={1}
+                            right={2}
                             top="50%"
                             transform="translateY(-50%)"
-                            size="xs"
-                            variant="ghost"
+                            w={5}
+                            h={5}
+                            borderRadius="full"
+                            bg="gray.200"
+                            display="flex"
+                            alignItems="center"
+                            justifyContent="center"
+                            cursor="pointer"
                             onClick={clearLocation}
-                            minW="auto"
-                            h="auto"
-                            p={1}
-                            color="gray.500"
-                            _hover={{ color: 'gray.700' }}
+                            _hover={{ bg: 'gray.300' }}
+                            transition="all 0.15s"
                           >
-                            ✕
-                          </Button>
+                            <Text fontSize="xs" color="gray.600" fontWeight="bold" lineHeight={1}>×</Text>
+                          </Box>
                         )}
                       </Box>
 
@@ -848,38 +861,41 @@ export const AvailabilityPage = (): JSX.Element => {
                           maxH="200px"
                           overflowY="auto"
                         >
-                          {locationSuggestions.map(suggestion => (
-                            <Box
-                              key={suggestion.place_id}
-                              p={3}
-                              cursor="pointer"
-                              _hover={{ bg: 'brand.50' }}
-                              onClick={() => handleSelectLocation(suggestion)}
-                              borderBottomWidth="1px"
-                              borderColor="gray.100"
-                              _last={{ borderBottomWidth: 0 }}
-                            >
-                              <Text
-                                fontSize="sm"
-                                color="fg"
-                                fontWeight="medium"
-                                overflow="hidden"
-                                textOverflow="ellipsis"
-                                whiteSpace="nowrap"
+                          {locationSuggestions.map(suggestion => {
+                            const placeName = suggestion.address.amenity || suggestion.address.shop || suggestion.address.tourism || suggestion.address.building || suggestion.name || suggestion.display_name.split(',')[0];
+                            return (
+                              <Box
+                                key={suggestion.place_id}
+                                p={3}
+                                cursor="pointer"
+                                _hover={{ bg: 'brand.50' }}
+                                onClick={() => handleSelectLocation(suggestion)}
+                                borderBottomWidth="1px"
+                                borderColor="gray.100"
+                                _last={{ borderBottomWidth: 0 }}
                               >
-                                {suggestion.address.name || suggestion.display_name.split(',')[0]}
-                              </Text>
-                              <Text
-                                fontSize="xs"
-                                color="fg.muted"
-                                overflow="hidden"
-                                textOverflow="ellipsis"
-                                whiteSpace="nowrap"
-                              >
-                                {suggestion.display_name}
-                              </Text>
-                            </Box>
-                          ))}
+                                <Text
+                                  fontSize="sm"
+                                  color="fg"
+                                  fontWeight="medium"
+                                  overflow="hidden"
+                                  textOverflow="ellipsis"
+                                  whiteSpace="nowrap"
+                                >
+                                  {placeName}
+                                </Text>
+                                <Text
+                                  fontSize="xs"
+                                  color="fg.muted"
+                                  overflow="hidden"
+                                  textOverflow="ellipsis"
+                                  whiteSpace="nowrap"
+                                >
+                                  {suggestion.display_name}
+                                </Text>
+                              </Box>
+                            );
+                          })}
                         </Box>
                       )}
                     </Box>
