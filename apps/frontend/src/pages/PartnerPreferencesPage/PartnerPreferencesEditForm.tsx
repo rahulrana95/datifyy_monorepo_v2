@@ -35,6 +35,120 @@ const ChevronIcon = ({ isOpen }: { isOpen: boolean }) => (
   </Icon>
 );
 
+// Field label component - moved outside to prevent re-creation
+const FieldLabel = ({ children }: { children: React.ReactNode }): JSX.Element => (
+  <Text fontSize="sm" color="fg.muted" mb={1}>{children}</Text>
+);
+
+// Custom checkbox component - moved outside to prevent re-creation
+const FormCheckbox = ({
+  checked,
+  onChange,
+  label
+}: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  label: string;
+}): JSX.Element => (
+  <HStack as="label" cursor="pointer" gap={2} py={1}>
+    <input
+      type="checkbox"
+      checked={checked}
+      onChange={(e) => {
+        e.stopPropagation();
+        onChange(e.target.checked);
+      }}
+      style={{
+        width: '16px',
+        height: '16px',
+        accentColor: 'var(--chakra-colors-brand-500)',
+        cursor: 'pointer'
+      }}
+    />
+    <Text fontSize="sm" color="fg">{label}</Text>
+  </HStack>
+);
+
+// Collapsible section component - moved outside to prevent re-creation
+const CollapsibleSection = ({
+  id,
+  title,
+  subtitle,
+  children,
+  icon,
+  isExpanded,
+  onToggle
+}: {
+  id: string;
+  title: string;
+  subtitle?: string;
+  children: React.ReactNode;
+  icon?: string;
+  isExpanded: boolean;
+  onToggle: () => void;
+}): JSX.Element => (
+  <Box
+    bg="white"
+    borderRadius="lg"
+    borderWidth="1px"
+    borderColor="gray.200"
+    overflow="hidden"
+    mb={3}
+  >
+    <Box
+      as="button"
+      w="100%"
+      p={4}
+      display="flex"
+      alignItems="center"
+      justifyContent="space-between"
+      bg={isExpanded ? 'brand.50' : 'white'}
+      _hover={{ bg: 'gray.50' }}
+      onClick={(e: React.MouseEvent) => {
+        e.preventDefault();
+        onToggle();
+      }}
+      transition="background 0.2s"
+    >
+      <HStack gap={3}>
+        {icon && <Text fontSize="xl">{icon}</Text>}
+        <Box textAlign="left">
+          <Text fontWeight="semibold" color="fg">{title}</Text>
+          {subtitle && <Text fontSize="xs" color="fg.muted">{subtitle}</Text>}
+        </Box>
+      </HStack>
+      <ChevronIcon isOpen={isExpanded} />
+    </Box>
+    {isExpanded && (
+      <Box p={4} pt={2} borderTopWidth="1px" borderColor="gray.100">
+        {children}
+      </Box>
+    )}
+  </Box>
+);
+
+// Multi-select checkbox group for enums - moved outside to prevent re-creation
+const EnumCheckboxGroup = ({
+  values,
+  options,
+  onToggle
+}: {
+  values: number[];
+  options: { value: number; label: string }[];
+  onToggle: (value: number) => void;
+}): JSX.Element => (
+  <SimpleGrid columns={{ base: 2, md: 3, lg: 4 }} gap={1}>
+    {options.map(option => (
+      <FormCheckbox
+        key={option.value}
+        checked={values.includes(option.value)}
+        onChange={() => onToggle(option.value)}
+        label={option.label}
+      />
+    ))}
+  </SimpleGrid>
+);
+
 export const PartnerPreferencesEditForm = ({
   preferences,
   onSave,
@@ -305,113 +419,6 @@ export const PartnerPreferencesEditForm = ({
     }
   };
 
-  // Collapsible section component
-  const CollapsibleSection = ({
-    id,
-    title,
-    subtitle,
-    children,
-    icon
-  }: {
-    id: string;
-    title: string;
-    subtitle?: string;
-    children: React.ReactNode;
-    icon?: string;
-  }): JSX.Element => (
-    <Box
-      bg="white"
-      borderRadius="lg"
-      borderWidth="1px"
-      borderColor="gray.200"
-      overflow="hidden"
-      mb={3}
-    >
-      <Box
-        as="button"
-        w="100%"
-        p={4}
-        display="flex"
-        alignItems="center"
-        justifyContent="space-between"
-        bg={expandedSections[id] ? 'brand.50' : 'white'}
-        _hover={{ bg: 'gray.50' }}
-        onClick={(e: React.MouseEvent) => {
-          e.preventDefault();
-          toggleSection(id);
-        }}
-        transition="background 0.2s"
-      >
-        <HStack gap={3}>
-          {icon && <Text fontSize="xl">{icon}</Text>}
-          <Box textAlign="left">
-            <Text fontWeight="semibold" color="fg">{title}</Text>
-            {subtitle && <Text fontSize="xs" color="fg.muted">{subtitle}</Text>}
-          </Box>
-        </HStack>
-        <ChevronIcon isOpen={expandedSections[id]} />
-      </Box>
-      {expandedSections[id] && (
-        <Box p={4} pt={2} borderTopWidth="1px" borderColor="gray.100">
-          {children}
-        </Box>
-      )}
-    </Box>
-  );
-
-  // Field label component
-  const FieldLabel = ({ children }: { children: React.ReactNode }): JSX.Element => (
-    <Text fontSize="sm" color="fg.muted" mb={1}>{children}</Text>
-  );
-
-  // Custom checkbox component
-  const FormCheckbox = ({
-    checked,
-    onChange,
-    label
-  }: {
-    checked: boolean;
-    onChange: (checked: boolean) => void;
-    label: string;
-  }): JSX.Element => (
-    <HStack as="label" cursor="pointer" gap={2} py={1}>
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(e) => {
-          e.stopPropagation();
-          onChange(e.target.checked);
-        }}
-        style={{
-          width: '16px',
-          height: '16px',
-          accentColor: 'var(--chakra-colors-brand-500)',
-          cursor: 'pointer'
-        }}
-      />
-      <Text fontSize="sm" color="fg">{label}</Text>
-    </HStack>
-  );
-
-  // Multi-select checkbox group for enums
-  const EnumCheckboxGroup = ({
-    field,
-    options
-  }: {
-    field: keyof typeof formData;
-    options: { value: number; label: string }[];
-  }): JSX.Element => (
-    <SimpleGrid columns={{ base: 2, md: 3, lg: 4 }} gap={1}>
-      {options.map(option => (
-        <FormCheckbox
-          key={option.value}
-          checked={(formData[field] as number[]).includes(option.value)}
-          onChange={() => toggleEnumValue(field, option.value)}
-          label={option.label}
-        />
-      ))}
-    </SimpleGrid>
-  );
 
   // Enum options (keeping them compact)
   const relationshipGoalOptions = [
@@ -595,7 +602,7 @@ export const PartnerPreferencesEditForm = ({
         <Box maxH="calc(100vh - 280px)" overflowY="auto" pb={4}>
           <VStack align="stretch" gap={2}>
             {/* Basic Preferences */}
-            <CollapsibleSection id="basic" title="Basic Preferences" subtitle="Age, height, distance" icon="👤">
+            <CollapsibleSection id="basic" title="Basic Preferences" subtitle="Age, height, distance" icon="👤" isExpanded={expandedSections.basic} onToggle={() => toggleSection('basic')}>
               <VStack align="stretch" gap={3}>
                 <Box>
                   <FieldLabel>Looking For</FieldLabel>
@@ -636,20 +643,20 @@ export const PartnerPreferencesEditForm = ({
             </CollapsibleSection>
 
             {/* Relationship Goals */}
-            <CollapsibleSection id="relationship" title="Relationship Goals" subtitle="What are you looking for?" icon="💕">
-              <EnumCheckboxGroup field="relationshipGoals" options={relationshipGoalOptions} />
+            <CollapsibleSection id="relationship" title="Relationship Goals" subtitle="What are you looking for?" icon="💕" isExpanded={expandedSections.relationship} onToggle={() => toggleSection('relationship')}>
+              <EnumCheckboxGroup values={formData.relationshipGoals} options={relationshipGoalOptions} onToggle={(value) => toggleEnumValue('relationshipGoals', value)} />
             </CollapsibleSection>
 
             {/* Education & Career */}
-            <CollapsibleSection id="education" title="Education & Career" subtitle="Education, occupation, experience" icon="🎓">
+            <CollapsibleSection id="education" title="Education & Career" subtitle="Education, occupation, experience" icon="🎓" isExpanded={expandedSections.education} onToggle={() => toggleSection('education')}>
               <VStack align="stretch" gap={3}>
                 <Box>
                   <FieldLabel>Education Level</FieldLabel>
-                  <EnumCheckboxGroup field="educationLevels" options={educationLevelOptions} />
+                  <EnumCheckboxGroup values={formData.educationLevels} options={educationLevelOptions} onToggle={(value) => toggleEnumValue('educationLevels', value)} />
                 </Box>
                 <Box>
                   <FieldLabel>Occupation</FieldLabel>
-                  <EnumCheckboxGroup field="occupations" options={occupationOptions} />
+                  <EnumCheckboxGroup values={formData.occupations} options={occupationOptions} onToggle={(value) => toggleEnumValue('occupations', value)} />
                 </Box>
                 <SimpleGrid columns={{ base: 1, md: 2 }} gap={3}>
                   <Box>
@@ -665,11 +672,11 @@ export const PartnerPreferencesEditForm = ({
             </CollapsibleSection>
 
             {/* Religion & Culture */}
-            <CollapsibleSection id="religion" title="Religion & Culture" subtitle="Religion, caste, traditions" icon="🙏">
+            <CollapsibleSection id="religion" title="Religion & Culture" subtitle="Religion, caste, traditions" icon="🙏" isExpanded={expandedSections.religion} onToggle={() => toggleSection('religion')}>
               <VStack align="stretch" gap={3}>
                 <Box>
                   <FieldLabel>Religion</FieldLabel>
-                  <EnumCheckboxGroup field="religions" options={religionOptions} />
+                  <EnumCheckboxGroup values={formData.religions} options={religionOptions} onToggle={(value) => toggleEnumValue('religions', value)} />
                 </Box>
                 <SimpleGrid columns={{ base: 1, md: 2 }} gap={3}>
                   <Box>
@@ -714,41 +721,41 @@ export const PartnerPreferencesEditForm = ({
             </CollapsibleSection>
 
             {/* Lifestyle */}
-            <CollapsibleSection id="lifestyle" title="Lifestyle" subtitle="Children, habits, diet" icon="🌿">
+            <CollapsibleSection id="lifestyle" title="Lifestyle" subtitle="Children, habits, diet" icon="🌿" isExpanded={expandedSections.lifestyle} onToggle={() => toggleSection('lifestyle')}>
               <VStack align="stretch" gap={3}>
                 <Box>
                   <FieldLabel>Children</FieldLabel>
-                  <EnumCheckboxGroup field="childrenPreferences" options={childrenOptions} />
+                  <EnumCheckboxGroup values={formData.childrenPreferences} options={childrenOptions} onToggle={(value) => toggleEnumValue('childrenPreferences', value)} />
                 </Box>
                 <SimpleGrid columns={{ base: 1, md: 2 }} gap={3}>
                   <Box>
                     <FieldLabel>Drinking</FieldLabel>
-                    <EnumCheckboxGroup field="drinkingPreferences" options={drinkingOptions} />
+                    <EnumCheckboxGroup values={formData.drinkingPreferences} options={drinkingOptions} onToggle={(value) => toggleEnumValue('drinkingPreferences', value)} />
                   </Box>
                   <Box>
                     <FieldLabel>Smoking</FieldLabel>
-                    <EnumCheckboxGroup field="smokingPreferences" options={smokingOptions} />
+                    <EnumCheckboxGroup values={formData.smokingPreferences} options={smokingOptions} onToggle={(value) => toggleEnumValue('smokingPreferences', value)} />
                   </Box>
                 </SimpleGrid>
                 <Box>
                   <FieldLabel>Diet</FieldLabel>
-                  <EnumCheckboxGroup field="dietaryPreferences" options={dietOptions} />
+                  <EnumCheckboxGroup values={formData.dietaryPreferences} options={dietOptions} onToggle={(value) => toggleEnumValue('dietaryPreferences', value)} />
                 </Box>
                 <SimpleGrid columns={{ base: 1, md: 2 }} gap={3}>
                   <Box>
                     <FieldLabel>Pets</FieldLabel>
-                    <EnumCheckboxGroup field="petPreferences" options={petOptions} />
+                    <EnumCheckboxGroup values={formData.petPreferences} options={petOptions} onToggle={(value) => toggleEnumValue('petPreferences', value)} />
                   </Box>
                   <Box>
                     <FieldLabel>Workout</FieldLabel>
-                    <EnumCheckboxGroup field="workoutPreferences" options={workoutOptions} />
+                    <EnumCheckboxGroup values={formData.workoutPreferences} options={workoutOptions} onToggle={(value) => toggleEnumValue('workoutPreferences', value)} />
                   </Box>
                 </SimpleGrid>
               </VStack>
             </CollapsibleSection>
 
             {/* Personality & Communication */}
-            <CollapsibleSection id="personality" title="Personality & Communication" subtitle="Communication style, love language" icon="💬">
+            <CollapsibleSection id="personality" title="Personality & Communication" subtitle="Communication style, love language" icon="💬" isExpanded={expandedSections.personality} onToggle={() => toggleSection('personality')}>
               <VStack align="stretch" gap={3}>
                 <Box>
                   <FieldLabel>Personality Types (e.g., INTJ, ENFP)</FieldLabel>
@@ -757,47 +764,47 @@ export const PartnerPreferencesEditForm = ({
                 <SimpleGrid columns={{ base: 1, md: 2 }} gap={3}>
                   <Box>
                     <FieldLabel>Communication Style</FieldLabel>
-                    <EnumCheckboxGroup field="communicationStyles" options={communicationOptions} />
+                    <EnumCheckboxGroup values={formData.communicationStyles} options={communicationOptions} onToggle={(value) => toggleEnumValue('communicationStyles', value)} />
                   </Box>
                   <Box>
                     <FieldLabel>Love Language</FieldLabel>
-                    <EnumCheckboxGroup field="loveLanguages" options={loveLanguageOptions} />
+                    <EnumCheckboxGroup values={formData.loveLanguages} options={loveLanguageOptions} onToggle={(value) => toggleEnumValue('loveLanguages', value)} />
                   </Box>
                 </SimpleGrid>
                 <SimpleGrid columns={{ base: 1, md: 2 }} gap={3}>
                   <Box>
                     <FieldLabel>Political Views</FieldLabel>
-                    <EnumCheckboxGroup field="politicalViews" options={politicalOptions} />
+                    <EnumCheckboxGroup values={formData.politicalViews} options={politicalOptions} onToggle={(value) => toggleEnumValue('politicalViews', value)} />
                   </Box>
                   <Box>
                     <FieldLabel>Sleep Schedule</FieldLabel>
-                    <EnumCheckboxGroup field="sleepSchedules" options={sleepOptions} />
+                    <EnumCheckboxGroup values={formData.sleepSchedules} options={sleepOptions} onToggle={(value) => toggleEnumValue('sleepSchedules', value)} />
                   </Box>
                 </SimpleGrid>
               </VStack>
             </CollapsibleSection>
 
             {/* Physical Preferences */}
-            <CollapsibleSection id="physical" title="Physical Preferences" subtitle="Body type, appearance" icon="👁️">
+            <CollapsibleSection id="physical" title="Physical Preferences" subtitle="Body type, appearance" icon="👁️" isExpanded={expandedSections.physical} onToggle={() => toggleSection('physical')}>
               <VStack align="stretch" gap={3}>
                 <SimpleGrid columns={{ base: 1, md: 2 }} gap={3}>
                   <Box>
                     <FieldLabel>Body Type</FieldLabel>
-                    <EnumCheckboxGroup field="bodyTypePreferences" options={bodyTypeOptions} />
+                    <EnumCheckboxGroup values={formData.bodyTypePreferences} options={bodyTypeOptions} onToggle={(value) => toggleEnumValue('bodyTypePreferences', value)} />
                   </Box>
                   <Box>
                     <FieldLabel>Complexion</FieldLabel>
-                    <EnumCheckboxGroup field="complexionPreferences" options={complexionOptions} />
+                    <EnumCheckboxGroup values={formData.complexionPreferences} options={complexionOptions} onToggle={(value) => toggleEnumValue('complexionPreferences', value)} />
                   </Box>
                 </SimpleGrid>
                 <SimpleGrid columns={{ base: 1, md: 2 }} gap={3}>
                   <Box>
                     <FieldLabel>Hair Color</FieldLabel>
-                    <EnumCheckboxGroup field="hairColorPreferences" options={hairColorOptions} />
+                    <EnumCheckboxGroup values={formData.hairColorPreferences} options={hairColorOptions} onToggle={(value) => toggleEnumValue('hairColorPreferences', value)} />
                   </Box>
                   <Box>
                     <FieldLabel>Eye Color</FieldLabel>
-                    <EnumCheckboxGroup field="eyeColorPreferences" options={eyeColorOptions} />
+                    <EnumCheckboxGroup values={formData.eyeColorPreferences} options={eyeColorOptions} onToggle={(value) => toggleEnumValue('eyeColorPreferences', value)} />
                   </Box>
                 </SimpleGrid>
                 <SimpleGrid columns={{ base: 1, md: 2 }} gap={3}>
@@ -828,15 +835,15 @@ export const PartnerPreferencesEditForm = ({
             </CollapsibleSection>
 
             {/* Financial */}
-            <CollapsibleSection id="financial" title="Financial & Professional" subtitle="Income, employment, assets" icon="💰">
+            <CollapsibleSection id="financial" title="Financial & Professional" subtitle="Income, employment, assets" icon="💰" isExpanded={expandedSections.financial} onToggle={() => toggleSection('financial')}>
               <VStack align="stretch" gap={3}>
                 <Box>
                   <FieldLabel>Income Range</FieldLabel>
-                  <EnumCheckboxGroup field="incomePreferences" options={incomeOptions} />
+                  <EnumCheckboxGroup values={formData.incomePreferences} options={incomeOptions} onToggle={(value) => toggleEnumValue('incomePreferences', value)} />
                 </Box>
                 <Box>
                   <FieldLabel>Employment Type</FieldLabel>
-                  <EnumCheckboxGroup field="employmentPreferences" options={employmentOptions} />
+                  <EnumCheckboxGroup values={formData.employmentPreferences} options={employmentOptions} onToggle={(value) => toggleEnumValue('employmentPreferences', value)} />
                 </Box>
                 <SimpleGrid columns={{ base: 1, md: 3 }} gap={3}>
                   <Box>
@@ -875,20 +882,20 @@ export const PartnerPreferencesEditForm = ({
             </CollapsibleSection>
 
             {/* Family */}
-            <CollapsibleSection id="family" title="Family Background" subtitle="Family type, values, location" icon="👨‍👩‍👧‍👦">
+            <CollapsibleSection id="family" title="Family Background" subtitle="Family type, values, location" icon="👨‍👩‍👧‍👦" isExpanded={expandedSections.family} onToggle={() => toggleSection('family')}>
               <VStack align="stretch" gap={3}>
                 <SimpleGrid columns={{ base: 1, md: 3 }} gap={3}>
                   <Box>
                     <FieldLabel>Family Type</FieldLabel>
-                    <EnumCheckboxGroup field="familyTypePreferences" options={familyTypeOptions} />
+                    <EnumCheckboxGroup values={formData.familyTypePreferences} options={familyTypeOptions} onToggle={(value) => toggleEnumValue('familyTypePreferences', value)} />
                   </Box>
                   <Box>
                     <FieldLabel>Family Values</FieldLabel>
-                    <EnumCheckboxGroup field="familyValuesPreferences" options={familyValuesOptions} />
+                    <EnumCheckboxGroup values={formData.familyValuesPreferences} options={familyValuesOptions} onToggle={(value) => toggleEnumValue('familyValuesPreferences', value)} />
                   </Box>
                   <Box>
                     <FieldLabel>Living Situation</FieldLabel>
-                    <EnumCheckboxGroup field="livingSituationPreferences" options={livingSituationOptions} />
+                    <EnumCheckboxGroup values={formData.livingSituationPreferences} options={livingSituationOptions} onToggle={(value) => toggleEnumValue('livingSituationPreferences', value)} />
                   </Box>
                 </SimpleGrid>
                 <SimpleGrid columns={{ base: 1, md: 2 }} gap={3}>
@@ -905,11 +912,11 @@ export const PartnerPreferencesEditForm = ({
             </CollapsibleSection>
 
             {/* Location & Language */}
-            <CollapsibleSection id="location" title="Location & Language" subtitle="Location, language, relocation" icon="🌍">
+            <CollapsibleSection id="location" title="Location & Language" subtitle="Location, language, relocation" icon="🌍" isExpanded={expandedSections.location} onToggle={() => toggleSection('location')}>
               <VStack align="stretch" gap={3}>
                 <Box>
                   <FieldLabel>Languages</FieldLabel>
-                  <EnumCheckboxGroup field="languagePreferences" options={languageOptions} />
+                  <EnumCheckboxGroup values={formData.languagePreferences} options={languageOptions} onToggle={(value) => toggleEnumValue('languagePreferences', value)} />
                 </Box>
                 <SimpleGrid columns={{ base: 1, md: 2 }} gap={3}>
                   <Box>
@@ -947,18 +954,18 @@ export const PartnerPreferencesEditForm = ({
                 </SimpleGrid>
                 <Box>
                   <FieldLabel>Ethnicity</FieldLabel>
-                  <EnumCheckboxGroup field="ethnicityPreferences" options={ethnicityOptions} />
+                  <EnumCheckboxGroup values={formData.ethnicityPreferences} options={ethnicityOptions} onToggle={(value) => toggleEnumValue('ethnicityPreferences', value)} />
                 </Box>
                 <FormCheckbox checked={formData.openToLongDistance} onChange={(v) => updateField('openToLongDistance', v)} label="Open to long distance" />
               </VStack>
             </CollapsibleSection>
 
             {/* Interests */}
-            <CollapsibleSection id="interests" title="Interests & Hobbies" subtitle="Shared interests" icon="🎯">
+            <CollapsibleSection id="interests" title="Interests & Hobbies" subtitle="Shared interests" icon="🎯" isExpanded={expandedSections.interests} onToggle={() => toggleSection('interests')}>
               <VStack align="stretch" gap={3}>
                 <Box>
                   <FieldLabel>Interests</FieldLabel>
-                  <EnumCheckboxGroup field="interestPreferences" options={interestOptions} />
+                  <EnumCheckboxGroup values={formData.interestPreferences} options={interestOptions} onToggle={(value) => toggleEnumValue('interestPreferences', value)} />
                 </Box>
                 <Box>
                   <FieldLabel>Minimum Shared Interests</FieldLabel>
@@ -968,7 +975,7 @@ export const PartnerPreferencesEditForm = ({
             </CollapsibleSection>
 
             {/* Requirements */}
-            <CollapsibleSection id="requirements" title="Profile Requirements" subtitle="Activity, photos, deal-breakers" icon="✅">
+            <CollapsibleSection id="requirements" title="Profile Requirements" subtitle="Activity, photos, deal-breakers" icon="✅" isExpanded={expandedSections.requirements} onToggle={() => toggleSection('requirements')}>
               <VStack align="stretch" gap={3}>
                 <SimpleGrid columns={{ base: 1, md: 3 }} gap={3}>
                   <Box>
