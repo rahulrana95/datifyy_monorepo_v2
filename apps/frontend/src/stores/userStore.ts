@@ -6,7 +6,7 @@
 import { create } from 'zustand';
 import { UserService } from '../services/user';
 import { ApiClient } from '../services/base';
-import type { UserProfile } from '../gen/user/v1/user_pb';
+import type { UserProfile, PartnerPreferences } from '../gen/user/v1/user_pb';
 
 // ============================================================================
 // Types
@@ -24,6 +24,7 @@ export interface UserState {
   // Actions
   fetchProfile: () => Promise<void>;
   updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
+  updatePartnerPreferences: (preferences: PartnerPreferences) => Promise<void>;
   clearError: () => void;
   setProfile: (profile: UserProfile | null) => void;
 }
@@ -96,6 +97,34 @@ export const useUserStore = create<UserState>()((set, get) => ({
       });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to update profile';
+      set({ error: errorMessage, isLoading: false });
+      throw err;
+    }
+  },
+
+  // Update Partner Preferences
+  updatePartnerPreferences: async (preferences: PartnerPreferences) => {
+    set({ isLoading: true, error: null });
+    try {
+      const { userService, profile } = get();
+
+      const response = await userService.updatePartnerPreferences(preferences);
+
+      // Update the profile in state with new partner preferences
+      if (profile) {
+        set({
+          profile: {
+            ...profile,
+            partnerPreferences: response.preferences,
+          },
+          isLoading: false,
+          error: null,
+        });
+      } else {
+        set({ isLoading: false, error: null });
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update partner preferences';
       set({ error: errorMessage, isLoading: false });
       throw err;
     }

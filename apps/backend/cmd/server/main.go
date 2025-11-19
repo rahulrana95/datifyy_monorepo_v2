@@ -228,41 +228,41 @@ func createRegisterHandler(authService *service.AuthService) http.HandlerFunc {
 			return
 		}
 
-		// Convert response to JSON
+		// Convert response to JSON (camelCase)
 		jsonResp := map[string]interface{}{
 			"user": map[string]interface{}{
-				"user_id":        resp.User.UserId,
-				"email":          resp.User.Email,
-				"name":           resp.User.Name,
-				"account_status": resp.User.AccountStatus.String(),
-				"email_verified": resp.User.EmailVerified.String(),
-				"created_at": map[string]int64{
+				"userId":        resp.User.UserId,
+				"email":         resp.User.Email,
+				"name":          resp.User.Name,
+				"accountStatus": resp.User.AccountStatus.String(),
+				"emailVerified": resp.User.EmailVerified.String(),
+				"createdAt": map[string]int64{
 					"seconds": resp.User.CreatedAt.Seconds,
 					"nanos":   int64(resp.User.CreatedAt.Nanos),
 				},
 			},
 			"tokens": map[string]interface{}{
-				"access_token": map[string]interface{}{
-					"token":      resp.Tokens.AccessToken.Token,
-					"token_type": resp.Tokens.AccessToken.TokenType,
-					"expires_at": map[string]int64{
+				"accessToken": map[string]interface{}{
+					"token":     resp.Tokens.AccessToken.Token,
+					"tokenType": resp.Tokens.AccessToken.TokenType,
+					"expiresAt": map[string]int64{
 						"seconds": resp.Tokens.AccessToken.ExpiresAt.Seconds,
 						"nanos":   int64(resp.Tokens.AccessToken.ExpiresAt.Nanos),
 					},
 				},
-				"refresh_token": map[string]interface{}{
+				"refreshToken": map[string]interface{}{
 					"token": resp.Tokens.RefreshToken.Token,
-					"expires_at": map[string]int64{
+					"expiresAt": map[string]int64{
 						"seconds": resp.Tokens.RefreshToken.ExpiresAt.Seconds,
 						"nanos":   int64(resp.Tokens.RefreshToken.ExpiresAt.Nanos),
 					},
 				},
 			},
 			"session": map[string]interface{}{
-				"session_id": resp.Session.SessionId,
-				"user_id":    resp.Session.UserId,
+				"sessionId": resp.Session.SessionId,
+				"userId":    resp.Session.UserId,
 			},
-			"requires_email_verification": resp.RequiresEmailVerification,
+			"requiresEmailVerification": resp.RequiresEmailVerification,
 		}
 
 		w.Header().Set("Content-Type", "application/json")
@@ -320,39 +320,39 @@ func createLoginHandler(authService *service.AuthService) http.HandlerFunc {
 			return
 		}
 
-		// Convert response to JSON
+		// Convert response to JSON (camelCase)
 		jsonResp := map[string]interface{}{
 			"user": map[string]interface{}{
-				"user_id":        resp.User.UserId,
-				"email":          resp.User.Email,
-				"name":           resp.User.Name,
-				"account_status": resp.User.AccountStatus.String(),
-				"email_verified": resp.User.EmailVerified.String(),
-				"created_at": map[string]int64{
+				"userId":        resp.User.UserId,
+				"email":         resp.User.Email,
+				"name":          resp.User.Name,
+				"accountStatus": resp.User.AccountStatus.String(),
+				"emailVerified": resp.User.EmailVerified.String(),
+				"createdAt": map[string]int64{
 					"seconds": resp.User.CreatedAt.Seconds,
 					"nanos":   int64(resp.User.CreatedAt.Nanos),
 				},
 			},
 			"tokens": map[string]interface{}{
-				"access_token": map[string]interface{}{
-					"token":      resp.Tokens.AccessToken.Token,
-					"token_type": resp.Tokens.AccessToken.TokenType,
-					"expires_at": map[string]int64{
+				"accessToken": map[string]interface{}{
+					"token":     resp.Tokens.AccessToken.Token,
+					"tokenType": resp.Tokens.AccessToken.TokenType,
+					"expiresAt": map[string]int64{
 						"seconds": resp.Tokens.AccessToken.ExpiresAt.Seconds,
 						"nanos":   int64(resp.Tokens.AccessToken.ExpiresAt.Nanos),
 					},
 				},
-				"refresh_token": map[string]interface{}{
+				"refreshToken": map[string]interface{}{
 					"token": resp.Tokens.RefreshToken.Token,
-					"expires_at": map[string]int64{
+					"expiresAt": map[string]int64{
 						"seconds": resp.Tokens.RefreshToken.ExpiresAt.Seconds,
 						"nanos":   int64(resp.Tokens.RefreshToken.ExpiresAt.Nanos),
 					},
 				},
 			},
 			"session": map[string]interface{}{
-				"session_id": resp.Session.SessionId,
-				"user_id":    resp.Session.UserId,
+				"sessionId": resp.Session.SessionId,
+				"userId":    resp.Session.UserId,
 			},
 		}
 
@@ -407,20 +407,20 @@ func createRefreshTokenHandler(authService *service.AuthService) http.HandlerFun
 			return
 		}
 
-		// Convert response to JSON
+		// Convert response to JSON (camelCase)
 		jsonResp := map[string]interface{}{
 			"tokens": map[string]interface{}{
-				"access_token": map[string]interface{}{
-					"token":      resp.Tokens.AccessToken.Token,
-					"token_type": resp.Tokens.AccessToken.TokenType,
-					"expires_at": map[string]int64{
+				"accessToken": map[string]interface{}{
+					"token":     resp.Tokens.AccessToken.Token,
+					"tokenType": resp.Tokens.AccessToken.TokenType,
+					"expiresAt": map[string]int64{
 						"seconds": resp.Tokens.AccessToken.ExpiresAt.Seconds,
 						"nanos":   int64(resp.Tokens.AccessToken.ExpiresAt.Nanos),
 					},
 				},
-				"refresh_token": map[string]interface{}{
+				"refreshToken": map[string]interface{}{
 					"token": resp.Tokens.RefreshToken.Token,
-					"expires_at": map[string]int64{
+					"expiresAt": map[string]int64{
 						"seconds": resp.Tokens.RefreshToken.ExpiresAt.Seconds,
 						"nanos":   int64(resp.Tokens.RefreshToken.ExpiresAt.Nanos),
 					},
@@ -573,30 +573,30 @@ func createUserProfileHandler(userService *service.UserService) http.HandlerFunc
 	}
 }
 
-// convertUserProfileToJSON converts UserProfile protobuf to JSON-compatible map
+// convertUserProfileToJSON converts UserProfile protobuf to JSON-compatible map (camelCase)
 func convertUserProfileToJSON(profile *userpb.UserProfile) map[string]interface{} {
 	if profile == nil {
 		return nil
 	}
 
 	result := map[string]interface{}{
-		"user_id":               profile.UserId,
-		"completion_percentage": profile.CompletionPercentage,
-		"is_public":             profile.IsPublic,
-		"is_verified":           profile.IsVerified,
+		"userId":               profile.UserId,
+		"completionPercentage": profile.CompletionPercentage,
+		"isPublic":             profile.IsPublic,
+		"isVerified":           profile.IsVerified,
 	}
 
 	// Basic Info
 	if profile.BasicInfo != nil {
-		result["basic_info"] = map[string]interface{}{
-			"name":         profile.BasicInfo.Name,
-			"email":        profile.BasicInfo.Email,
-			"phone_number": profile.BasicInfo.PhoneNumber,
-			"age":          profile.BasicInfo.Age,
-			"gender":       profile.BasicInfo.Gender.String(),
+		result["basicInfo"] = map[string]interface{}{
+			"name":        profile.BasicInfo.Name,
+			"email":       profile.BasicInfo.Email,
+			"phoneNumber": profile.BasicInfo.PhoneNumber,
+			"age":         profile.BasicInfo.Age,
+			"gender":      profile.BasicInfo.Gender.String(),
 		}
 		if profile.BasicInfo.DateOfBirth != nil {
-			result["basic_info"].(map[string]interface{})["date_of_birth"] = map[string]int64{
+			result["basicInfo"].(map[string]interface{})["dateOfBirth"] = map[string]int64{
 				"seconds": profile.BasicInfo.DateOfBirth.Seconds,
 				"nanos":   int64(profile.BasicInfo.DateOfBirth.Nanos),
 			}
@@ -605,32 +605,32 @@ func convertUserProfileToJSON(profile *userpb.UserProfile) map[string]interface{
 
 	// Profile Details
 	if profile.ProfileDetails != nil {
-		result["profile_details"] = map[string]interface{}{
-			"bio":       profile.ProfileDetails.Bio,
-			"company":   profile.ProfileDetails.Company,
-			"job_title": profile.ProfileDetails.JobTitle,
-			"school":    profile.ProfileDetails.School,
-			"height":    profile.ProfileDetails.Height,
-			"hometown":  profile.ProfileDetails.Hometown,
+		result["profileDetails"] = map[string]interface{}{
+			"bio":      profile.ProfileDetails.Bio,
+			"company":  profile.ProfileDetails.Company,
+			"jobTitle": profile.ProfileDetails.JobTitle,
+			"school":   profile.ProfileDetails.School,
+			"height":   profile.ProfileDetails.Height,
+			"hometown": profile.ProfileDetails.Hometown,
 		}
 	}
 
 	// Lifestyle Info
 	if profile.LifestyleInfo != nil {
-		result["lifestyle_info"] = map[string]interface{}{
-			"drinking":            profile.LifestyleInfo.Drinking.String(),
-			"smoking":             profile.LifestyleInfo.Smoking.String(),
-			"workout":             profile.LifestyleInfo.Workout.String(),
-			"dietary_preference":  profile.LifestyleInfo.DietaryPreference.String(),
-			"religion":            profile.LifestyleInfo.Religion.String(),
-			"religion_importance": profile.LifestyleInfo.ReligionImportance.String(),
-			"political_view":      profile.LifestyleInfo.PoliticalView.String(),
-			"pets":                profile.LifestyleInfo.Pets.String(),
-			"children":            profile.LifestyleInfo.Children.String(),
-			"personality_type":    profile.LifestyleInfo.PersonalityType,
-			"communication_style": profile.LifestyleInfo.CommunicationStyle.String(),
-			"love_language":       profile.LifestyleInfo.LoveLanguage.String(),
-			"sleep_schedule":      profile.LifestyleInfo.SleepSchedule.String(),
+		result["lifestyleInfo"] = map[string]interface{}{
+			"drinking":           profile.LifestyleInfo.Drinking.String(),
+			"smoking":            profile.LifestyleInfo.Smoking.String(),
+			"workout":            profile.LifestyleInfo.Workout.String(),
+			"dietaryPreference":  profile.LifestyleInfo.DietaryPreference.String(),
+			"religion":           profile.LifestyleInfo.Religion.String(),
+			"religionImportance": profile.LifestyleInfo.ReligionImportance.String(),
+			"politicalView":      profile.LifestyleInfo.PoliticalView.String(),
+			"pets":               profile.LifestyleInfo.Pets.String(),
+			"children":           profile.LifestyleInfo.Children.String(),
+			"personalityType":    profile.LifestyleInfo.PersonalityType,
+			"communicationStyle": profile.LifestyleInfo.CommunicationStyle.String(),
+			"loveLanguage":       profile.LifestyleInfo.LoveLanguage.String(),
+			"sleepSchedule":      profile.LifestyleInfo.SleepSchedule.String(),
 		}
 	}
 
@@ -639,12 +639,12 @@ func convertUserProfileToJSON(profile *userpb.UserProfile) map[string]interface{
 		photos := make([]map[string]interface{}, len(profile.Photos))
 		for i, photo := range profile.Photos {
 			photos[i] = map[string]interface{}{
-				"photo_id":      photo.PhotoId,
-				"url":           photo.Url,
-				"thumbnail_url": photo.ThumbnailUrl,
-				"order":         photo.Order,
-				"is_primary":    photo.IsPrimary,
-				"caption":       photo.Caption,
+				"photoId":      photo.PhotoId,
+				"url":          photo.Url,
+				"thumbnailUrl": photo.ThumbnailUrl,
+				"order":        photo.Order,
+				"isPrimary":    photo.IsPrimary,
+				"caption":      photo.Caption,
 			}
 		}
 		result["photos"] = photos
@@ -657,30 +657,30 @@ func convertUserProfileToJSON(profile *userpb.UserProfile) map[string]interface{
 
 	// Partner Preferences
 	if profile.PartnerPreferences != nil {
-		result["partner_preferences"] = profile.PartnerPreferences
+		result["partnerPreferences"] = profile.PartnerPreferences
 	}
 
 	// User Preferences
 	if profile.UserPreferences != nil {
-		result["user_preferences"] = profile.UserPreferences
+		result["userPreferences"] = profile.UserPreferences
 	}
 
 	// Metadata
 	if profile.Metadata != nil {
 		result["metadata"] = map[string]interface{}{
-			"status":         profile.Metadata.Status.String(),
-			"email_verified": profile.Metadata.EmailVerified.String(),
-			"phone_verified": profile.Metadata.PhoneVerified.String(),
-			"is_verified":    profile.Metadata.IsVerified,
+			"status":        profile.Metadata.Status.String(),
+			"emailVerified": profile.Metadata.EmailVerified.String(),
+			"phoneVerified": profile.Metadata.PhoneVerified.String(),
+			"isVerified":    profile.Metadata.IsVerified,
 		}
 		if profile.Metadata.CreatedAt != nil {
-			result["metadata"].(map[string]interface{})["created_at"] = map[string]int64{
+			result["metadata"].(map[string]interface{})["createdAt"] = map[string]int64{
 				"seconds": profile.Metadata.CreatedAt.Seconds,
 				"nanos":   int64(profile.Metadata.CreatedAt.Nanos),
 			}
 		}
 		if profile.Metadata.UpdatedAt != nil {
-			result["metadata"].(map[string]interface{})["updated_at"] = map[string]int64{
+			result["metadata"].(map[string]interface{})["updatedAt"] = map[string]int64{
 				"seconds": profile.Metadata.UpdatedAt.Seconds,
 				"nanos":   int64(profile.Metadata.UpdatedAt.Nanos),
 			}
@@ -729,10 +729,9 @@ func createPartnerPreferencesHandler(userService *service.UserService) http.Hand
 				return
 			}
 
-			// Use protojson to marshal with all fields (including zero values)
+			// Use protojson to marshal with all fields (including zero values) in camelCase
 			marshaler := protojson.MarshalOptions{
 				EmitUnpopulated: true,
-				UseProtoNames:   true,
 			}
 
 			prefsJSON, err := marshaler.Marshal(resp.Preferences)
@@ -819,10 +818,9 @@ func createPartnerPreferencesHandler(userService *service.UserService) http.Hand
 				return
 			}
 
-			// Use protojson to marshal with all fields (including zero values)
+			// Use protojson to marshal with all fields (including zero values) in camelCase
 			marshaler := protojson.MarshalOptions{
 				EmitUnpopulated: true,
-				UseProtoNames:   true,
 			}
 
 			prefsJSON, err := marshaler.Marshal(resp.Preferences)
@@ -951,7 +949,7 @@ func (s *Server) rootHandler(w http.ResponseWriter, r *http.Request) {
 			"database": s.db != nil && s.db.Ping() == nil,
 			"redis":    s.redis != nil && s.redis.Ping(context.Background()).Err() == nil,
 		},
-		"available_services": []string{
+		"availableServices": []string{
 			"AuthService (gRPC)",
 			"UserService (gRPC)",
 		},

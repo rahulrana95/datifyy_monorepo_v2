@@ -22,7 +22,7 @@ import { PartnerPreferencesEditForm } from './PartnerPreferencesEditForm';
 import type { PartnerPreferences } from '../../gen/user/v1/user_pb';
 
 export const PartnerPreferencesPage = (): JSX.Element => {
-  const { profile, isLoading, error, fetchProfile, updateProfile } = useUserStore();
+  const { profile, isLoading, error, fetchProfile, updatePartnerPreferences } = useUserStore();
   const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
@@ -31,7 +31,7 @@ export const PartnerPreferencesPage = (): JSX.Element => {
 
   const handleSave = async (updates: PartnerPreferences): Promise<void> => {
     try {
-      await updateProfile({ partnerPreferences: updates });
+      await updatePartnerPreferences(updates);
       setIsEditing(false);
     } catch (err) {
       console.error('Failed to update partner preferences:', err);
@@ -282,6 +282,10 @@ export const PartnerPreferencesPage = (): JSX.Element => {
                   <PreferenceField
                     label="Education Levels"
                     value={formatEnumArray(partnerPrefs?.educationLevels, 'EDUCATION')}
+                  />
+                  <PreferenceField
+                    label="Occupations"
+                    value={formatEnumArray(partnerPrefs?.occupations, 'OCCUPATION')}
                   />
                   <PreferenceField
                     label="Religions"

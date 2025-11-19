@@ -6,12 +6,14 @@
 import type {
   GetMyProfileResponse,
   UpdateProfileResponse,
+  PartnerPreferences,
 } from '../../gen/user/v1/user_pb';
 import { ApiClient } from '../base';
 
 export interface IUserService {
   getMyProfile(request: any): Promise<GetMyProfileResponse>;
   updateProfile(request: any): Promise<UpdateProfileResponse>;
+  updatePartnerPreferences(preferences: PartnerPreferences): Promise<{ preferences: PartnerPreferences }>;
 }
 
 export class UserService implements IUserService {
@@ -31,5 +33,14 @@ export class UserService implements IUserService {
     // Update the current user's profile
     const response = await this.apiClient.put(`${this.basePath}/me`, request);
     return response.data as UpdateProfileResponse;
+  }
+
+  async updatePartnerPreferences(preferences: PartnerPreferences): Promise<{ preferences: PartnerPreferences }> {
+    // Update partner preferences at dedicated endpoint
+    const response = await this.apiClient.put('/api/v1/partner-preferences', {
+      preferences: preferences,
+      updateFields: ['*'], // Update all fields
+    });
+    return response.data as { preferences: PartnerPreferences };
   }
 }
