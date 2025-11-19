@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"net/http"
@@ -22,6 +23,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 type Server struct {
@@ -727,32 +729,63 @@ func createPartnerPreferencesHandler(userService *service.UserService) http.Hand
 				return
 			}
 
-			// Convert response to JSON
-			jsonResp := map[string]interface{}{
-				"preferences": resp.Preferences,
+			// Use protojson to marshal with all fields (including zero values)
+			marshaler := protojson.MarshalOptions{
+				EmitUnpopulated: true,
+				UseProtoNames:   true,
 			}
 
+			prefsJSON, err := marshaler.Marshal(resp.Preferences)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("Failed to marshal preferences: %v", err), http.StatusInternalServerError)
+				return
+			}
+
+			// Wrap in response object
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(jsonResp)
+			fmt.Fprintf(w, `{"preferences":%s}`, prefsJSON)
 			return
 		}
 
 		// Handle PUT request (UpdatePartnerPreferences)
 		if r.Method == http.MethodPut {
-			// Parse JSON request
-			var reqBody struct {
-				Preferences  *userpb.PartnerPreferences `json:"preferences"`
-				UpdateFields []string                   `json:"update_fields"`
+			// Read request body
+			body, err := io.ReadAll(r.Body)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("Failed to read request body: %v", err), http.StatusBadRequest)
+				return
 			}
 
-			if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+			// Parse JSON to extract update_fields first
+			var rawReq map[string]json.RawMessage
+			if err := json.Unmarshal(body, &rawReq); err != nil {
 				http.Error(w, fmt.Sprintf("Invalid JSON: %v", err), http.StatusBadRequest)
 				return
 			}
 
+			// Extract update_fields if present
+			var updateFields []string
+			if uf, ok := rawReq["update_fields"]; ok {
+				if err := json.Unmarshal(uf, &updateFields); err != nil {
+					http.Error(w, fmt.Sprintf("Invalid update_fields: %v", err), http.StatusBadRequest)
+					return
+				}
+			}
+
+			// Parse preferences using protojson
+			preferences := &userpb.PartnerPreferences{}
+			if prefsJSON, ok := rawReq["preferences"]; ok {
+				unmarshaler := protojson.UnmarshalOptions{
+					DiscardUnknown: true,
+				}
+				if err := unmarshaler.Unmarshal(prefsJSON, preferences); err != nil {
+					http.Error(w, fmt.Sprintf("Invalid preferences: %v", err), http.StatusBadRequest)
+					return
+				}
+			}
+
 			// If no update fields specified, update all fields
-			updateFields := reqBody.UpdateFields
 			if len(updateFields) == 0 {
 				updateFields = []string{
 					"looking_for_gender",
@@ -775,7 +808,7 @@ func createPartnerPreferencesHandler(userService *service.UserService) http.Hand
 
 			// Convert to gRPC request
 			grpcReq := &userpb.UpdatePartnerPreferencesRequest{
-				Preferences:  reqBody.Preferences,
+				Preferences:  preferences,
 				UpdateFields: updateFields,
 			}
 
@@ -786,15 +819,22 @@ func createPartnerPreferencesHandler(userService *service.UserService) http.Hand
 				return
 			}
 
-			// Convert response to JSON
-			jsonResp := map[string]interface{}{
-				"preferences": resp.Preferences,
-				"message":     resp.Message,
+			// Use protojson to marshal with all fields (including zero values)
+			marshaler := protojson.MarshalOptions{
+				EmitUnpopulated: true,
+				UseProtoNames:   true,
 			}
 
+			prefsJSON, err := marshaler.Marshal(resp.Preferences)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("Failed to marshal preferences: %v", err), http.StatusInternalServerError)
+				return
+			}
+
+			// Wrap in response object with message
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(jsonResp)
+			fmt.Fprintf(w, `{"preferences":%s,"message":"%s"}`, prefsJSON, resp.Message)
 			return
 		}
 

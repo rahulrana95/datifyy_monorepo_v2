@@ -147,7 +147,7 @@ func TestUpdatePartnerPreferences_Integration(t *testing.T) {
 	assert.Equal(t, int32(35), prefs.AgeRange.MaxAge)
 	assert.Equal(t, int32(100), prefs.DistancePreference)
 	assert.True(t, prefs.VerifiedOnly)
-	assert.Equal(t, int32(3), prefs.ReligionImportance)
+	assert.Equal(t, userpb.Importance(3), prefs.ReligionImportance)
 	assert.True(t, prefs.OpenToLongDistance)
 	assert.Equal(t, int32(3), prefs.MinSharedInterests)
 	assert.Equal(t, int32(5), prefs.MaxSiblings)
@@ -192,7 +192,8 @@ func TestUpdatePartnerPreferences_Validation_Integration(t *testing.T) {
 	registerResp, err := authService.RegisterWithEmail(ctx, registerReq)
 	require.NoError(t, err)
 
-	userID := int(registerResp.User.UserId)
+	userID, err := strconv.Atoi(registerResp.User.UserId)
+	require.NoError(t, err)
 	authCtx := context.WithValue(ctx, "userID", userID)
 
 	// Test 1: Invalid age range (under 18)
@@ -238,7 +239,7 @@ func TestPartnerPreferences_Unauthenticated_Integration(t *testing.T) {
 	defer redisClient.Close()
 
 	ctx := context.Background() // No userID in context
-	userService := service.NewUserService(db, redisClient, nil)
+	userService := service.NewUserService(db, redisClient)
 
 	// Test get without auth
 	getReq := &userpb.GetPartnerPreferencesRequest{}
@@ -298,7 +299,8 @@ func TestUpdatePartnerPreferences_MultipleUpdates_Integration(t *testing.T) {
 	registerResp, err := authService.RegisterWithEmail(ctx, registerReq)
 	require.NoError(t, err)
 
-	userID := int(registerResp.User.UserId)
+	userID, err := strconv.Atoi(registerResp.User.UserId)
+	require.NoError(t, err)
 	authCtx := context.WithValue(ctx, "userID", userID)
 
 	// First update
