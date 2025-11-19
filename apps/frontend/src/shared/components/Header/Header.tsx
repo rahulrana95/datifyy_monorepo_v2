@@ -99,6 +99,18 @@ export const Header = ({ onOpenLogin, onOpenSignup }: HeaderProps) => {
                 Partner Preferences
               </Button>
             </Link>
+            <Link to="/availability">
+              <Button
+                variant="ghost"
+                size="sm"
+                fontWeight="medium"
+                color={isActive('/availability') ? 'brand.600' : 'fg.muted'}
+                bg={isActive('/availability') ? 'brand.50' : 'transparent'}
+                _hover={{ bg: 'bg.subtle', color: 'fg' }}
+              >
+                Availability
+              </Button>
+            </Link>
           </HStack>
         </HStack>
 
@@ -188,6 +200,18 @@ export const Header = ({ onOpenLogin, onOpenSignup }: HeaderProps) => {
                       }}
                     >
                       Partner Preference
+                    </Button>
+                    <Button
+                      bg="transparent"
+                      color="fg"
+                      justifyContent="flex-start"
+                      _hover={{ bg: 'brand.50', color: 'brand.600' }}
+                      onClick={() => {
+                        navigate('/availability');
+                        setIsUserMenuOpen(false);
+                      }}
+                    >
+                      Availability
                     </Button>
                     <Button
                       bg="transparent"

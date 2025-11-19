@@ -1,0 +1,180 @@
+syntax = "proto3";
+
+package datifyy.availability.v1;
+
+import "common/v1/types.proto";
+
+option go_package = "github.com/datifyy/backend/gen/availability/v1";
+
+// AvailabilityService handles user date availability management
+service AvailabilityService {
+  // Get user's availability slots
+  rpc GetAvailability(GetAvailabilityRequest) returns (GetAvailabilityResponse);
+
+  // Submit multiple availability slots (bulk create)
+  rpc SubmitAvailability(SubmitAvailabilityRequest) returns (SubmitAvailabilityResponse);
+
+  // Delete an availability slot
+  rpc DeleteAvailability(DeleteAvailabilityRequest) returns (DeleteAvailabilityResponse);
+}
+
+// ============================================================================
+// Enums
+// ============================================================================
+
+// Type of date/meeting
+enum DateType {
+  DATE_TYPE_UNSPECIFIED = 0;
+  DATE_TYPE_ONLINE = 1;        // Virtual/Video date
+  DATE_TYPE_OFFLINE = 2;       // In-person date at a location
+  DATE_TYPE_OFFLINE_EVENT = 3; // In-person at an event
+}
+
+// ============================================================================
+// Messages
+// ============================================================================
+
+// Offline location details for in-person dates
+message OfflineLocation {
+  // Name of the place (e.g., "Starbucks Downtown")
+  string place_name = 1;
+
+  // Full address
+  string address = 2;
+
+  // City
+  string city = 3;
+
+  // State/Province
+  string state = 4;
+
+  // Country
+  string country = 5;
+
+  // Postal/ZIP code
+  string zipcode = 6;
+
+  // Latitude
+  double latitude = 7;
+
+  // Longitude
+  double longitude = 8;
+
+  // Google Maps place ID (for easy lookup)
+  string google_place_id = 9;
+
+  // Google Maps URL
+  string google_maps_url = 10;
+}
+
+// A single availability slot
+message AvailabilitySlot {
+  // Unique slot ID
+  string slot_id = 1;
+
+  // User ID who created this slot
+  string user_id = 2;
+
+  // Start datetime (Unix timestamp in seconds)
+  int64 start_time = 3;
+
+  // End datetime (Unix timestamp in seconds)
+  int64 end_time = 4;
+
+  // Type of date (online/offline/offline_event)
+  DateType date_type = 5;
+
+  // Offline location details (required for OFFLINE and OFFLINE_EVENT types)
+  OfflineLocation offline_location = 6;
+
+  // Optional notes for the slot
+  string notes = 7;
+
+  // Created timestamp
+  common.v1.Timestamp created_at = 8;
+
+  // Updated timestamp
+  common.v1.Timestamp updated_at = 9;
+}
+
+// Input slot for submission (without generated fields)
+message AvailabilitySlotInput {
+  // Start datetime (Unix timestamp in seconds)
+  int64 start_time = 1;
+
+  // End datetime (Unix timestamp in seconds)
+  int64 end_time = 2;
+
+  // Type of date (online/offline/offline_event)
+  DateType date_type = 3;
+
+  // Offline location details (required for OFFLINE and OFFLINE_EVENT types)
+  OfflineLocation offline_location = 4;
+
+  // Optional notes for the slot
+  string notes = 5;
+}
+
+// ============================================================================
+// Request/Response Messages
+// ============================================================================
+
+// Get availability request
+message GetAvailabilityRequest {
+  // Optional user ID (if not provided, returns current user's availability)
+  string user_id = 1;
+
+  // Optional start time filter (Unix timestamp)
+  int64 from_time = 2;
+
+  // Optional end time filter (Unix timestamp)
+  int64 to_time = 3;
+
+  // Pagination
+  common.v1.PaginationRequest pagination = 4;
+}
+
+// Get availability response
+message GetAvailabilityResponse {
+  // List of availability slots
+  repeated AvailabilitySlot slots = 1;
+
+  // Pagination info
+  common.v1.PaginationResponse pagination = 2;
+}
+
+// Submit availability request (bulk create)
+message SubmitAvailabilityRequest {
+  // List of availability slots to create
+  repeated AvailabilitySlotInput slots = 1;
+}
+
+// Submit availability response
+message SubmitAvailabilityResponse {
+  // Successfully created slots
+  repeated AvailabilitySlot created_slots = 1;
+
+  // Number of slots created
+  int32 created_count = 2;
+
+  // Validation errors for rejected slots (slot index -> error message)
+  map<int32, string> validation_errors = 3;
+
+  // Success message
+  string message = 4;
+}
+
+// Delete availability request
+message DeleteAvailabilityRequest {
+  // Slot ID to delete
+  string slot_id = 1;
+}
+
+// Delete availability response
+message DeleteAvailabilityResponse {
+  // Success flag
+  bool success = 1;
+
+  // Message
+  string message = 2;
+}

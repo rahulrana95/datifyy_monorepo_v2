@@ -9,6 +9,7 @@ import { LandingPage } from './pages/LandingPage/LandingPage';
 import { ThemePreview } from './pages/ThemePreview/ThemePreview';
 import { ProfilePage } from './pages/ProfilePage';
 import { PartnerPreferencesPage } from './pages/PartnerPreferencesPage';
+import { AvailabilityPage } from './pages/AvailabilityPage';
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/partner-preferences" element={<PartnerPreferencesPage />} />
+          <Route path="/availability" element={<AvailabilityPage />} />
           <Route path="/theme-components" element={<ThemePreview />} />
         </Routes>
       </Router>

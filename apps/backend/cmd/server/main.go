@@ -15,6 +15,7 @@ import (
 	"time"
 
 	authpb "github.com/datifyy/backend/gen/auth/v1"
+	availabilitypb "github.com/datifyy/backend/gen/availability/v1"
 	commonpb "github.com/datifyy/backend/gen/common/v1"
 	userpb "github.com/datifyy/backend/gen/user/v1"
 	"github.com/datifyy/backend/internal/email"
@@ -122,6 +123,9 @@ func startGRPCServer(port string, db *sql.DB, redisClient *redis.Client) {
 	userService := service.NewUserService(db, redisClient)
 	userpb.RegisterUserServiceServer(grpcServer, userService)
 
+	availabilityService := service.NewAvailabilityService(db)
+	availabilitypb.RegisterAvailabilityServiceServer(grpcServer, availabilityService)
+
 	// Register reflection service (for grpcurl)
 	reflection.Register(grpcServer)
 
@@ -166,6 +170,10 @@ func startHTTPServer(port string, server *Server, db *sql.DB, redisClient *redis
 	userService := service.NewUserService(db, redisClient)
 	mux.HandleFunc("/api/v1/user/me", createUserProfileHandler(userService))
 	mux.HandleFunc("/api/v1/partner-preferences", createPartnerPreferencesHandler(userService))
+
+	// Availability REST endpoints
+	availabilityService := service.NewAvailabilityService(db)
+	mux.HandleFunc("/api/v1/availability", createAvailabilityHandler(availabilityService))
 
 	// Add CORS middleware
 	handler := enableCORS(mux)
@@ -849,6 +857,258 @@ func createPartnerPreferencesHandler(userService *service.UserService) http.Hand
 	}
 }
 
+// createAvailabilityHandler creates HTTP handler for availability (GET, POST, DELETE)
+func createAvailabilityHandler(availabilityService *service.AvailabilityService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Extract access token from Authorization header
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" {
+			http.Error(w, "Authorization header required", http.StatusUnauthorized)
+			return
+		}
+
+		// Remove "Bearer " prefix
+		accessToken := authHeader
+		if len(authHeader) > 7 && authHeader[:7] == "Bearer " {
+			accessToken = authHeader[7:]
+		}
+
+		// Parse access token to get user ID
+		var userID int
+		var timestamp int64
+		_, err := fmt.Sscanf(accessToken, "access_token_%d_%d", &userID, &timestamp)
+		if err != nil {
+			http.Error(w, "Invalid access token format", http.StatusUnauthorized)
+			return
+		}
+
+		// Add userID to context
+		ctx := context.WithValue(r.Context(), "userID", userID)
+
+		// Handle GET request (GetAvailability)
+		if r.Method == http.MethodGet {
+			// Parse query parameters
+			fromTime := int64(0)
+			toTime := int64(0)
+			if ft := r.URL.Query().Get("from_time"); ft != "" {
+				fromTime, _ = parseInt64(ft)
+			}
+			if tt := r.URL.Query().Get("to_time"); tt != "" {
+				toTime, _ = parseInt64(tt)
+			}
+
+			grpcReq := &availabilitypb.GetAvailabilityRequest{
+				FromTime: fromTime,
+				ToTime:   toTime,
+			}
+
+			resp, err := availabilityService.GetAvailability(ctx, grpcReq)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("Failed to get availability: %v", err), http.StatusInternalServerError)
+				return
+			}
+
+			// Convert to camelCase JSON
+			slots := make([]map[string]interface{}, len(resp.Slots))
+			for i, slot := range resp.Slots {
+				slots[i] = convertSlotToJSON(slot)
+			}
+
+			jsonResp := map[string]interface{}{
+				"slots":      slots,
+				"totalCount": len(slots),
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(jsonResp)
+			return
+		}
+
+		// Handle POST request (SubmitAvailability)
+		if r.Method == http.MethodPost {
+			var reqBody struct {
+				Slots []struct {
+					StartTime       int64  `json:"startTime"`
+					EndTime         int64  `json:"endTime"`
+					DateType        string `json:"dateType"`
+					Notes           string `json:"notes"`
+					OfflineLocation *struct {
+						PlaceName     string  `json:"placeName"`
+						Address       string  `json:"address"`
+						City          string  `json:"city"`
+						State         string  `json:"state"`
+						Country       string  `json:"country"`
+						Zipcode       string  `json:"zipcode"`
+						Latitude      float64 `json:"latitude"`
+						Longitude     float64 `json:"longitude"`
+						GooglePlaceId string  `json:"googlePlaceId"`
+						GoogleMapsUrl string  `json:"googleMapsUrl"`
+					} `json:"offlineLocation"`
+				} `json:"slots"`
+			}
+
+			if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+				http.Error(w, fmt.Sprintf("Invalid JSON: %v", err), http.StatusBadRequest)
+				return
+			}
+
+			// Convert to gRPC request
+			pbSlots := make([]*availabilitypb.AvailabilitySlotInput, len(reqBody.Slots))
+			for i, slot := range reqBody.Slots {
+				pbSlot := &availabilitypb.AvailabilitySlotInput{
+					StartTime: slot.StartTime,
+					EndTime:   slot.EndTime,
+					DateType:  stringToDateTypeEnum(slot.DateType),
+					Notes:     slot.Notes,
+				}
+
+				if slot.OfflineLocation != nil {
+					pbSlot.OfflineLocation = &availabilitypb.OfflineLocation{
+						PlaceName:     slot.OfflineLocation.PlaceName,
+						Address:       slot.OfflineLocation.Address,
+						City:          slot.OfflineLocation.City,
+						State:         slot.OfflineLocation.State,
+						Country:       slot.OfflineLocation.Country,
+						Zipcode:       slot.OfflineLocation.Zipcode,
+						Latitude:      slot.OfflineLocation.Latitude,
+						Longitude:     slot.OfflineLocation.Longitude,
+						GooglePlaceId: slot.OfflineLocation.GooglePlaceId,
+						GoogleMapsUrl: slot.OfflineLocation.GoogleMapsUrl,
+					}
+				}
+
+				pbSlots[i] = pbSlot
+			}
+
+			grpcReq := &availabilitypb.SubmitAvailabilityRequest{
+				Slots: pbSlots,
+			}
+
+			resp, err := availabilityService.SubmitAvailability(ctx, grpcReq)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("Failed to submit availability: %v", err), http.StatusBadRequest)
+				return
+			}
+
+			// Convert to camelCase JSON
+			createdSlots := make([]map[string]interface{}, len(resp.CreatedSlots))
+			for i, slot := range resp.CreatedSlots {
+				createdSlots[i] = convertSlotToJSON(slot)
+			}
+
+			// Convert validation errors map
+			validationErrors := make(map[string]string)
+			for k, v := range resp.ValidationErrors {
+				validationErrors[fmt.Sprintf("%d", k)] = v
+			}
+
+			jsonResp := map[string]interface{}{
+				"createdSlots":     createdSlots,
+				"createdCount":     resp.CreatedCount,
+				"validationErrors": validationErrors,
+				"message":          resp.Message,
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(jsonResp)
+			return
+		}
+
+		// Handle DELETE request (DeleteAvailability)
+		if r.Method == http.MethodDelete {
+			slotID := r.URL.Query().Get("slot_id")
+			if slotID == "" {
+				http.Error(w, "slot_id query parameter required", http.StatusBadRequest)
+				return
+			}
+
+			grpcReq := &availabilitypb.DeleteAvailabilityRequest{
+				SlotId: slotID,
+			}
+
+			resp, err := availabilityService.DeleteAvailability(ctx, grpcReq)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("Failed to delete availability: %v", err), http.StatusBadRequest)
+				return
+			}
+
+			jsonResp := map[string]interface{}{
+				"success": resp.Success,
+				"message": resp.Message,
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(jsonResp)
+			return
+		}
+
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+// Helper functions for availability
+func parseInt64(s string) (int64, error) {
+	var n int64
+	_, err := fmt.Sscanf(s, "%d", &n)
+	return n, err
+}
+
+func stringToDateTypeEnum(s string) availabilitypb.DateType {
+	switch s {
+	case "online", "DATE_TYPE_ONLINE":
+		return availabilitypb.DateType_DATE_TYPE_ONLINE
+	case "offline", "DATE_TYPE_OFFLINE":
+		return availabilitypb.DateType_DATE_TYPE_OFFLINE
+	case "offline_event", "DATE_TYPE_OFFLINE_EVENT":
+		return availabilitypb.DateType_DATE_TYPE_OFFLINE_EVENT
+	default:
+		return availabilitypb.DateType_DATE_TYPE_ONLINE
+	}
+}
+
+func convertSlotToJSON(slot *availabilitypb.AvailabilitySlot) map[string]interface{} {
+	result := map[string]interface{}{
+		"slotId":    slot.SlotId,
+		"userId":    slot.UserId,
+		"startTime": slot.StartTime,
+		"endTime":   slot.EndTime,
+		"dateType":  slot.DateType.String(),
+		"notes":     slot.Notes,
+	}
+
+	if slot.CreatedAt != nil {
+		result["createdAt"] = map[string]int64{
+			"seconds": slot.CreatedAt.Seconds,
+		}
+	}
+
+	if slot.UpdatedAt != nil {
+		result["updatedAt"] = map[string]int64{
+			"seconds": slot.UpdatedAt.Seconds,
+		}
+	}
+
+	if slot.OfflineLocation != nil {
+		result["offlineLocation"] = map[string]interface{}{
+			"placeName":     slot.OfflineLocation.PlaceName,
+			"address":       slot.OfflineLocation.Address,
+			"city":          slot.OfflineLocation.City,
+			"state":         slot.OfflineLocation.State,
+			"country":       slot.OfflineLocation.Country,
+			"zipcode":       slot.OfflineLocation.Zipcode,
+			"latitude":      slot.OfflineLocation.Latitude,
+			"longitude":     slot.OfflineLocation.Longitude,
+			"googlePlaceId": slot.OfflineLocation.GooglePlaceId,
+			"googleMapsUrl": slot.OfflineLocation.GoogleMapsUrl,
+		}
+	}
+
+	return result
+}
+
 func enableCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Set CORS headers
@@ -961,6 +1221,7 @@ func (s *Server) rootHandler(w http.ResponseWriter, r *http.Request) {
 		"availableServices": []string{
 			"AuthService (gRPC)",
 			"UserService (gRPC)",
+			"AvailabilityService (gRPC)",
 		},
 	}
 
