@@ -3,7 +3,7 @@
  * Comprehensive analytics with Nivo charts
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box,
   Grid,
@@ -11,96 +11,148 @@ import {
   HStack,
   Text,
   Button,
+  Spinner,
 } from '@chakra-ui/react';
 import { ResponsiveLine } from '@nivo/line';
 import { ResponsiveBar } from '@nivo/bar';
 import { ResponsivePie } from '@nivo/pie';
 import { AdminLayout } from '../../../components/admin';
-
-// Mock data - replace with real API data
-const userGrowthData = [
-  {
-    id: 'users',
-    data: [
-      { x: 'Jan', y: 120 },
-      { x: 'Feb', y: 180 },
-      { x: 'Mar', y: 250 },
-      { x: 'Apr', y: 320 },
-      { x: 'May', y: 480 },
-      { x: 'Jun', y: 620 },
-    ],
-  },
-];
-
-const signupsData = [
-  { month: 'Jan', signups: 45 },
-  { month: 'Feb', signups: 62 },
-  { month: 'Mar', signups: 78 },
-  { month: 'Apr', signups: 85 },
-  { month: 'May', signups: 120 },
-  { month: 'Jun', signups: 145 },
-];
-
-const activeUsersData = [
-  {
-    id: 'daily_active',
-    data: [
-      { x: 'Mon', y: 280 },
-      { x: 'Tue', y: 320 },
-      { x: 'Wed', y: 350 },
-      { x: 'Thu', y: 310 },
-      { x: 'Fri', y: 420 },
-      { x: 'Sat', y: 480 },
-      { x: 'Sun', y: 390 },
-    ],
-  },
-];
-
-const availabilityData = [
-  { id: 'Available', value: 450, color: '#48BB78' },
-  { id: 'Unavailable', value: 170, color: '#F56565' },
-];
-
-const genderData = [
-  { id: 'Male', value: 320, color: '#4299E1' },
-  { id: 'Female', value: 280, color: '#ED64A6' },
-  { id: 'Non-binary', value: 20, color: '#9F7AEA' },
-];
-
-const cityData = [
-  { city: 'Mumbai', users: 180 },
-  { city: 'Delhi', users: 150 },
-  { city: 'Bangalore', users: 120 },
-  { city: 'Chennai', users: 85 },
-  { city: 'Hyderabad', users: 70 },
-  { city: 'Pune', users: 65 },
-  { city: 'Kolkata', users: 50 },
-];
-
-const countryData = [
-  { country: 'India', users: 520 },
-  { country: 'USA', users: 85 },
-  { country: 'UK', users: 45 },
-  { country: 'Canada', users: 30 },
-  { country: 'Australia', users: 20 },
-];
-
-const ageData = [
-  { age: '18-24', users: 180 },
-  { age: '25-30', users: 220 },
-  { age: '31-35', users: 120 },
-  { age: '36-40', users: 60 },
-  { age: '40+', users: 40 },
-];
+import { useAdminStore } from '../../../stores/adminStore';
 
 export const AdminAnalytics = () => {
   const [timeRange, setTimeRange] = useState<'daily' | 'weekly' | 'monthly' | 'yearly'>('monthly');
 
-  // Summary stats
-  const totalUsers = 620;
-  const activeUsers = 480;
-  const availableForDating = 450;
-  const todaySignups = 12;
+  const [ageDemographics, setAgeDemographics] = useState<any[]>([]);
+  const [countryStats, setCountryStats] = useState<any[]>([]);
+
+  const {
+    platformStats,
+    userGrowthData,
+    activeUsersData,
+    signupsData,
+    demographicsData,
+    locationData,
+    availabilityStats,
+    isLoading,
+    fetchPlatformStats,
+    fetchUserGrowth,
+    fetchActiveUsers,
+    fetchSignups,
+    fetchDemographics,
+    fetchLocationStats,
+    fetchAvailabilityStats,
+  } = useAdminStore();
+
+  // Fetch all analytics data on component mount and when timeRange changes
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      // Calculate date range based on timeRange
+      const endTime = Math.floor(Date.now() / 1000);
+      let startTime: number;
+
+      switch (timeRange) {
+        case 'daily':
+          startTime = Math.floor((Date.now() - 7 * 24 * 60 * 60 * 1000) / 1000); // Last 7 days
+          break;
+        case 'weekly':
+          startTime = Math.floor((Date.now() - 12 * 7 * 24 * 60 * 60 * 1000) / 1000); // Last 12 weeks
+          break;
+        case 'monthly':
+          startTime = Math.floor((Date.now() - 12 * 30 * 24 * 60 * 60 * 1000) / 1000); // Last 12 months
+          break;
+        case 'yearly':
+          startTime = Math.floor((Date.now() - 5 * 365 * 24 * 60 * 60 * 1000) / 1000); // Last 5 years
+          break;
+        default:
+          startTime = Math.floor((Date.now() - 30 * 24 * 60 * 60 * 1000) / 1000); // Last 30 days
+      }
+
+      // Fetch all analytics in parallel
+      await Promise.all([
+        fetchPlatformStats(),
+        fetchUserGrowth(timeRange, startTime, endTime),
+        fetchActiveUsers(timeRange, startTime, endTime),
+        fetchSignups(timeRange, startTime, endTime),
+        fetchDemographics('gender'),
+        fetchLocationStats('city'),
+        fetchAvailabilityStats(),
+      ]);
+
+      // Fetch age demographics separately
+      await fetchDemographics('age_group');
+    };
+
+    fetchAnalytics();
+
+    // Fetch country stats separately
+    const fetchCountryData = async () => {
+      await fetchLocationStats('country');
+    };
+    fetchCountryData();
+  }, [timeRange, fetchPlatformStats, fetchUserGrowth, fetchActiveUsers, fetchSignups, fetchDemographics, fetchLocationStats, fetchAvailabilityStats]);
+
+  // Transform data for charts
+  const userGrowthChartData = [
+    {
+      id: 'users',
+      data: userGrowthData.map(point => ({ x: point.label, y: point.value })),
+    },
+  ];
+
+  const signupsChartData = signupsData.map(point => ({
+    month: point.label,
+    signups: point.value,
+  }));
+
+  const activeUsersChartData = [
+    {
+      id: 'daily_active',
+      data: activeUsersData.map(point => ({ x: point.label, y: point.value })),
+    },
+  ];
+
+  const availabilityChartData = availabilityStats
+    ? [
+        { id: 'Available', value: availabilityStats.availableUsers, color: '#48BB78' },
+        { id: 'Unavailable', value: availabilityStats.unavailableUsers, color: '#F56565' },
+      ]
+    : [];
+
+  const genderChartData = demographicsData.map(item => ({
+    id: item.category,
+    value: item.count,
+    color: item.category === 'MALE' ? '#4299E1' : item.category === 'FEMALE' ? '#ED64A6' : '#9F7AEA',
+  }));
+
+  const cityChartData = locationData.map(item => ({
+    city: item.locationName,
+    users: item.userCount,
+  }));
+
+  // For now, use demographics data for age if available, or empty array
+  const ageData = ageDemographics.length > 0
+    ? ageDemographics
+    : [];
+
+  const countryData = countryStats.length > 0
+    ? countryStats
+    : [];
+
+  // Summary stats from real data
+  const totalUsers = platformStats?.totalUsers || 0;
+  const activeUsers = platformStats?.activeUsers || 0;
+  const availableForDating = platformStats?.availableForDating || 0;
+  const todaySignups = platformStats?.todaySignups || 0;
+
+  if (isLoading && !platformStats) {
+    return (
+      <AdminLayout>
+        <Box display="flex" justifyContent="center" alignItems="center" minH="50vh">
+          <Spinner size="xl" color="pink.500" />
+        </Box>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>
@@ -149,7 +201,7 @@ export const AdminAnalytics = () => {
           <ChartCard title="User Growth" subtitle="Total registered users over time">
             <Box h="300px">
               <ResponsiveLine
-                data={userGrowthData}
+                data={userGrowthChartData}
                 margin={{ top: 20, right: 20, bottom: 50, left: 50 }}
                 xScale={{ type: 'point' }}
                 yScale={{ type: 'linear', min: 0, max: 'auto' }}
@@ -180,7 +232,7 @@ export const AdminAnalytics = () => {
           <ChartCard title="Dating Availability" subtitle="Users available vs unavailable">
             <Box h="300px">
               <ResponsivePie
-                data={availabilityData}
+                data={availabilityChartData}
                 margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
                 innerRadius={0.6}
                 padAngle={2}
@@ -202,7 +254,7 @@ export const AdminAnalytics = () => {
           <ChartCard title="Daily Active Users" subtitle="Users active per day this week">
             <Box h="280px">
               <ResponsiveLine
-                data={activeUsersData}
+                data={activeUsersChartData}
                 margin={{ top: 20, right: 20, bottom: 50, left: 50 }}
                 xScale={{ type: 'point' }}
                 yScale={{ type: 'linear', min: 0, max: 'auto' }}
@@ -231,7 +283,7 @@ export const AdminAnalytics = () => {
           <ChartCard title="Monthly Signups" subtitle="New registrations by month">
             <Box h="280px">
               <ResponsiveBar
-                data={signupsData}
+                data={signupsChartData}
                 keys={['signups']}
                 indexBy="month"
                 margin={{ top: 20, right: 20, bottom: 50, left: 50 }}
@@ -260,7 +312,7 @@ export const AdminAnalytics = () => {
           <ChartCard title="Gender Distribution" subtitle="Users by gender">
             <Box h="250px">
               <ResponsivePie
-                data={genderData}
+                data={genderChartData}
                 margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
                 innerRadius={0.5}
                 padAngle={2}
@@ -333,7 +385,7 @@ export const AdminAnalytics = () => {
         <ChartCard title="Users by City" subtitle="Top cities by user count">
           <Box h="300px">
             <ResponsiveBar
-              data={cityData}
+              data={cityChartData}
               keys={['users']}
               indexBy="city"
               margin={{ top: 20, right: 30, bottom: 50, left: 60 }}

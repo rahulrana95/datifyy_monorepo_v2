@@ -278,6 +278,339 @@ export const updateDateStatus = async (dateId: string, status: string, notes?: s
   return response.json();
 };
 
+// =============================================================================
+// Analytics Interfaces & APIs
+// =============================================================================
+
+export interface PlatformStats {
+  totalUsers: number;
+  activeUsers: number;
+  verifiedUsers: number;
+  availableForDating: number;
+  totalDatesScheduled: number;
+  totalDatesCompleted: number;
+  todaySignups: number;
+  thisWeekSignups: number;
+  thisMonthSignups: number;
+}
+
+export interface DataPoint {
+  label: string;
+  value: number;
+  timestamp: number;
+}
+
+export interface DemographicData {
+  category: string;
+  count: number;
+  percentage: number;
+}
+
+export interface LocationData {
+  locationName: string;
+  locationCode: string;
+  userCount: number;
+  percentage: number;
+}
+
+// Get Platform Stats
+export const getPlatformStats = async (): Promise<PlatformStats> => {
+  const response = await fetch(`${API_BASE}/api/v1/admin/analytics/platform`, {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch platform stats');
+  }
+
+  return response.json();
+};
+
+// Get User Growth
+export const getUserGrowth = async (params: {
+  period: 'daily' | 'weekly' | 'monthly' | 'yearly';
+  startTime?: number;
+  endTime?: number;
+}): Promise<{
+  dataPoints: DataPoint[];
+  totalUsers: number;
+  growthRate: number;
+}> => {
+  const searchParams = new URLSearchParams();
+  searchParams.set('period', params.period);
+  if (params.startTime) searchParams.set('start_time', params.startTime.toString());
+  if (params.endTime) searchParams.set('end_time', params.endTime.toString());
+
+  const response = await fetch(`${API_BASE}/api/v1/admin/analytics/user-growth?${searchParams}`, {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch user growth');
+  }
+
+  return response.json();
+};
+
+// Get Active Users
+export const getActiveUsers = async (params: {
+  period: 'daily' | 'weekly' | 'monthly' | 'yearly';
+  startTime?: number;
+  endTime?: number;
+}): Promise<{
+  dataPoints: DataPoint[];
+  currentActive: number;
+  activityRate: number;
+}> => {
+  const searchParams = new URLSearchParams();
+  searchParams.set('period', params.period);
+  if (params.startTime) searchParams.set('start_time', params.startTime.toString());
+  if (params.endTime) searchParams.set('end_time', params.endTime.toString());
+
+  const response = await fetch(`${API_BASE}/api/v1/admin/analytics/active-users?${searchParams}`, {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch active users');
+  }
+
+  return response.json();
+};
+
+// Get Signups
+export const getSignups = async (params: {
+  period: 'daily' | 'weekly' | 'monthly' | 'yearly';
+  startTime?: number;
+  endTime?: number;
+}): Promise<{
+  dataPoints: DataPoint[];
+  totalSignups: number;
+}> => {
+  const searchParams = new URLSearchParams();
+  searchParams.set('period', params.period);
+  if (params.startTime) searchParams.set('start_time', params.startTime.toString());
+  if (params.endTime) searchParams.set('end_time', params.endTime.toString());
+
+  const response = await fetch(`${API_BASE}/api/v1/admin/analytics/signups?${searchParams}`, {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch signups');
+  }
+
+  return response.json();
+};
+
+// Get Demographics
+export const getDemographics = async (metricType: 'gender' | 'age_group'): Promise<{
+  data: DemographicData[];
+}> => {
+  const response = await fetch(`${API_BASE}/api/v1/admin/analytics/demographics?metric_type=${metricType}`, {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch demographics');
+  }
+
+  return response.json();
+};
+
+// Get Location Stats
+export const getLocationStats = async (level: 'country' | 'state' | 'city', parentLocation?: string): Promise<{
+  locations: LocationData[];
+}> => {
+  const searchParams = new URLSearchParams();
+  searchParams.set('level', level);
+  if (parentLocation) searchParams.set('parent_location', parentLocation);
+
+  const response = await fetch(`${API_BASE}/api/v1/admin/analytics/locations?${searchParams}`, {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch location stats');
+  }
+
+  return response.json();
+};
+
+// Get Availability Stats
+export const getAvailabilityStats = async (): Promise<{
+  availableUsers: number;
+  unavailableUsers: number;
+  availabilityRate: number;
+}> => {
+  const response = await fetch(`${API_BASE}/api/v1/admin/analytics/availability`, {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch availability stats');
+  }
+
+  return response.json();
+};
+
+// =============================================================================
+// Bulk Actions APIs
+// =============================================================================
+
+export type BulkAction = 'activate' | 'suspend' | 'delete' | 'verify' | 'unverify';
+
+export const bulkUserAction = async (
+  userIds: string[],
+  action: BulkAction,
+  reason?: string
+): Promise<{
+  successCount: number;
+  failedCount: number;
+  failedUserIds: string[];
+  errorMessages: string[];
+}> => {
+  const response = await fetch(`${API_BASE}/api/v1/admin/users/bulk`, {
+    method: 'POST',
+    headers: {
+      ...getAuthHeaders(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ userIds, action, reason }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || 'Bulk action failed');
+  }
+
+  return response.json();
+};
+
+// =============================================================================
+// Admin Management APIs
+// =============================================================================
+
+// Get All Admins
+export const getAllAdmins = async (page = 1, pageSize = 20): Promise<{
+  admins: AdminUser[];
+  totalCount: number;
+}> => {
+  const searchParams = new URLSearchParams({
+    page: page.toString(),
+    page_size: pageSize.toString(),
+  });
+
+  const response = await fetch(`${API_BASE}/api/v1/admin/admins?${searchParams}`, {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch admins');
+  }
+
+  return response.json();
+};
+
+// Create Admin User
+export const createAdminUser = async (data: {
+  email: string;
+  password: string;
+  name: string;
+  role: string;
+  isGenie: boolean;
+}): Promise<{ admin: AdminUser }> => {
+  const response = await fetch(`${API_BASE}/api/v1/admin/admins`, {
+    method: 'POST',
+    headers: {
+      ...getAuthHeaders(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || 'Failed to create admin');
+  }
+
+  return response.json();
+};
+
+// Update Admin
+export const updateAdmin = async (
+  adminId: string,
+  data: {
+    name: string;
+    email: string;
+    role: string;
+  }
+): Promise<{ admin: AdminUser }> => {
+  const response = await fetch(`${API_BASE}/api/v1/admin/admins/${adminId}`, {
+    method: 'PUT',
+    headers: {
+      ...getAuthHeaders(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || 'Failed to update admin');
+  }
+
+  return response.json();
+};
+
+// Delete Admin
+export const deleteAdmin = async (adminId: string): Promise<{ success: boolean }> => {
+  const response = await fetch(`${API_BASE}/api/v1/admin/admins/${adminId}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || 'Failed to delete admin');
+  }
+
+  return response.json();
+};
+
+// Update Admin Profile
+export const updateAdminProfile = async (
+  adminId: string,
+  data: {
+    name: string;
+    email: string;
+  }
+): Promise<{ admin: AdminUser }> => {
+  const response = await fetch(`${API_BASE}/api/v1/admin/profile`, {
+    method: 'PUT',
+    headers: {
+      ...getAuthHeaders(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ adminId, ...data }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || 'Failed to update profile');
+  }
+
+  return response.json();
+};
+
 // Helper function to get auth headers
 function getAuthHeaders(): Record<string, string> {
   const token = localStorage.getItem('admin_access_token');

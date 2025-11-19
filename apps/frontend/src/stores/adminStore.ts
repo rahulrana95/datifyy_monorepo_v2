@@ -5,6 +5,11 @@ import {
   UserFullDetails,
   DateSuggestion,
   ScheduledDate,
+  PlatformStats,
+  DataPoint,
+  DemographicData,
+  LocationData,
+  BulkAction,
   adminLogin,
   getAllUsers,
   searchUsers,
@@ -13,6 +18,19 @@ import {
   scheduleDate,
   getGenieDates,
   updateDateStatus,
+  getPlatformStats,
+  getUserGrowth,
+  getActiveUsers,
+  getSignups,
+  getDemographics,
+  getLocationStats,
+  getAvailabilityStats,
+  bulkUserAction,
+  getAllAdmins,
+  createAdminUser,
+  updateAdmin,
+  deleteAdmin,
+  updateAdminProfile,
 } from '../services/admin/adminService';
 
 interface AdminState {
@@ -35,6 +53,23 @@ interface AdminState {
   // Dates
   genieDates: ScheduledDate[];
   totalDates: number;
+
+  // Analytics
+  platformStats: PlatformStats | null;
+  userGrowthData: DataPoint[];
+  activeUsersData: DataPoint[];
+  signupsData: DataPoint[];
+  demographicsData: DemographicData[];
+  locationData: LocationData[];
+  availabilityStats: {
+    availableUsers: number;
+    unavailableUsers: number;
+    availabilityRate: number;
+  } | null;
+
+  // Admins
+  admins: AdminUser[];
+  totalAdmins: number;
 
   // UI State
   isLoading: boolean;
@@ -69,6 +104,26 @@ interface AdminState {
     pageSize?: number;
   }) => Promise<void>;
   updateDateStatus: (dateId: string, status: string, notes?: string) => Promise<void>;
+
+  // Analytics Actions
+  fetchPlatformStats: () => Promise<void>;
+  fetchUserGrowth: (period: 'daily' | 'weekly' | 'monthly' | 'yearly', startTime?: number, endTime?: number) => Promise<void>;
+  fetchActiveUsers: (period: 'daily' | 'weekly' | 'monthly' | 'yearly', startTime?: number, endTime?: number) => Promise<void>;
+  fetchSignups: (period: 'daily' | 'weekly' | 'monthly' | 'yearly', startTime?: number, endTime?: number) => Promise<void>;
+  fetchDemographics: (metricType: 'gender' | 'age_group') => Promise<void>;
+  fetchLocationStats: (level: 'country' | 'state' | 'city', parentLocation?: string) => Promise<void>;
+  fetchAvailabilityStats: () => Promise<void>;
+
+  // Bulk Actions
+  performBulkAction: (userIds: string[], action: BulkAction, reason?: string) => Promise<void>;
+
+  // Admin Management Actions
+  fetchAdmins: (page?: number, pageSize?: number) => Promise<void>;
+  createAdmin: (data: { email: string; password: string; name: string; role: string; isGenie: boolean }) => Promise<void>;
+  updateAdminUser: (adminId: string, data: { name: string; email: string; role: string }) => Promise<void>;
+  deleteAdminUser: (adminId: string) => Promise<void>;
+  updateProfile: (adminId: string, data: { name: string; email: string }) => Promise<void>;
+
   clearError: () => void;
   clearSelectedUser: () => void;
 }
@@ -89,6 +144,15 @@ export const useAdminStore = create<AdminState>()(
       userSuggestions: [],
       genieDates: [],
       totalDates: 0,
+      platformStats: null,
+      userGrowthData: [],
+      activeUsersData: [],
+      signupsData: [],
+      demographicsData: [],
+      locationData: [],
+      availabilityStats: null,
+      admins: [],
+      totalAdmins: 0,
       isLoading: false,
       error: null,
 
@@ -256,6 +320,211 @@ export const useAdminStore = create<AdminState>()(
         } catch (error) {
           set({
             error: error instanceof Error ? error.message : 'Failed to update date status',
+            isLoading: false,
+          });
+          throw error;
+        }
+      },
+
+      // Analytics Actions
+      fetchPlatformStats: async () => {
+        set({ isLoading: true, error: null });
+        try {
+          const stats = await getPlatformStats();
+          set({ platformStats: stats, isLoading: false });
+        } catch (error) {
+          set({
+            error: error instanceof Error ? error.message : 'Failed to fetch platform stats',
+            isLoading: false,
+          });
+        }
+      },
+
+      fetchUserGrowth: async (period, startTime?, endTime?) => {
+        set({ isLoading: true, error: null });
+        try {
+          const response = await getUserGrowth({ period, startTime, endTime });
+          set({ userGrowthData: response.dataPoints, isLoading: false });
+        } catch (error) {
+          set({
+            error: error instanceof Error ? error.message : 'Failed to fetch user growth',
+            isLoading: false,
+          });
+        }
+      },
+
+      fetchActiveUsers: async (period, startTime?, endTime?) => {
+        set({ isLoading: true, error: null });
+        try {
+          const response = await getActiveUsers({ period, startTime, endTime });
+          set({ activeUsersData: response.dataPoints, isLoading: false });
+        } catch (error) {
+          set({
+            error: error instanceof Error ? error.message : 'Failed to fetch active users',
+            isLoading: false,
+          });
+        }
+      },
+
+      fetchSignups: async (period, startTime?, endTime?) => {
+        set({ isLoading: true, error: null });
+        try {
+          const response = await getSignups({ period, startTime, endTime });
+          set({ signupsData: response.dataPoints, isLoading: false });
+        } catch (error) {
+          set({
+            error: error instanceof Error ? error.message : 'Failed to fetch signups',
+            isLoading: false,
+          });
+        }
+      },
+
+      fetchDemographics: async (metricType) => {
+        set({ isLoading: true, error: null });
+        try {
+          const response = await getDemographics(metricType);
+          set({ demographicsData: response.data, isLoading: false });
+        } catch (error) {
+          set({
+            error: error instanceof Error ? error.message : 'Failed to fetch demographics',
+            isLoading: false,
+          });
+        }
+      },
+
+      fetchLocationStats: async (level, parentLocation?) => {
+        set({ isLoading: true, error: null });
+        try {
+          const response = await getLocationStats(level, parentLocation);
+          set({ locationData: response.locations, isLoading: false });
+        } catch (error) {
+          set({
+            error: error instanceof Error ? error.message : 'Failed to fetch location stats',
+            isLoading: false,
+          });
+        }
+      },
+
+      fetchAvailabilityStats: async () => {
+        set({ isLoading: true, error: null });
+        try {
+          const stats = await getAvailabilityStats();
+          set({ availabilityStats: stats, isLoading: false });
+        } catch (error) {
+          set({
+            error: error instanceof Error ? error.message : 'Failed to fetch availability stats',
+            isLoading: false,
+          });
+        }
+      },
+
+      // Bulk Actions
+      performBulkAction: async (userIds, action, reason?) => {
+        set({ isLoading: true, error: null });
+        try {
+          const result = await bulkUserAction(userIds, action, reason);
+
+          // Refresh users list after bulk action
+          await get().fetchUsers();
+
+          // Show result message
+          if (result.failedCount > 0) {
+            set({
+              error: `Action completed with ${result.failedCount} failures. Check console for details.`,
+              isLoading: false,
+            });
+            console.error('Failed operations:', result.failedUserIds, result.errorMessages);
+          } else {
+            set({ isLoading: false });
+          }
+        } catch (error) {
+          set({
+            error: error instanceof Error ? error.message : 'Bulk action failed',
+            isLoading: false,
+          });
+          throw error;
+        }
+      },
+
+      // Admin Management Actions
+      fetchAdmins: async (page = 1, pageSize = 20) => {
+        set({ isLoading: true, error: null });
+        try {
+          const response = await getAllAdmins(page, pageSize);
+          set({
+            admins: response.admins,
+            totalAdmins: response.totalCount,
+            isLoading: false,
+          });
+        } catch (error) {
+          set({
+            error: error instanceof Error ? error.message : 'Failed to fetch admins',
+            isLoading: false,
+          });
+        }
+      },
+
+      createAdmin: async (data) => {
+        set({ isLoading: true, error: null });
+        try {
+          await createAdminUser(data);
+          // Refresh admins list
+          await get().fetchAdmins();
+          set({ isLoading: false });
+        } catch (error) {
+          set({
+            error: error instanceof Error ? error.message : 'Failed to create admin',
+            isLoading: false,
+          });
+          throw error;
+        }
+      },
+
+      updateAdminUser: async (adminId, data) => {
+        set({ isLoading: true, error: null });
+        try {
+          await updateAdmin(adminId, data);
+          // Refresh admins list
+          await get().fetchAdmins();
+          set({ isLoading: false });
+        } catch (error) {
+          set({
+            error: error instanceof Error ? error.message : 'Failed to update admin',
+            isLoading: false,
+          });
+          throw error;
+        }
+      },
+
+      deleteAdminUser: async (adminId) => {
+        set({ isLoading: true, error: null });
+        try {
+          await deleteAdmin(adminId);
+          // Refresh admins list
+          await get().fetchAdmins();
+          set({ isLoading: false });
+        } catch (error) {
+          set({
+            error: error instanceof Error ? error.message : 'Failed to delete admin',
+            isLoading: false,
+          });
+          throw error;
+        }
+      },
+
+      updateProfile: async (adminId, data) => {
+        set({ isLoading: true, error: null });
+        try {
+          const response = await updateAdminProfile(adminId, data);
+          // Update current admin in state if it's the same user
+          const currentAdmin = get().admin;
+          if (currentAdmin && currentAdmin.adminId === adminId) {
+            set({ admin: response.admin });
+          }
+          set({ isLoading: false });
+        } catch (error) {
+          set({
+            error: error instanceof Error ? error.message : 'Failed to update profile',
             isLoading: false,
           });
           throw error;
