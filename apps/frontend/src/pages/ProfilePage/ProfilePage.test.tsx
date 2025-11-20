@@ -80,6 +80,38 @@ describe('ProfilePage', () => {
       love_language: 'LOVE_LANGUAGE_QUALITY_TIME',
       sleep_schedule: 'SLEEP_SCHEDULE_EARLY_BIRD',
     },
+    cultural_info: {
+      mother_tongue: 'English',
+      nationality: 'USA',
+      caste: 'General',
+      sub_caste: 'Sub-General',
+      willing_to_relocate: true,
+    },
+    appearance_info: {
+      body_type: 'BODY_TYPE_ATHLETIC',
+      complexion: 'COMPLEXION_FAIR',
+      hair_color: 'HAIR_COLOR_BLACK',
+      eye_color: 'EYE_COLOR_BROWN',
+      has_tattoos: true,
+      has_piercings: false,
+    },
+    professional_info: {
+      employment_type: 'EMPLOYMENT_TYPE_FULL_TIME',
+      industry: 'Technology',
+      years_of_experience: 5,
+      highest_education: 'EDUCATION_LEVEL_BACHELORS',
+      owns_property: true,
+      owns_vehicle: true,
+    },
+    family_info: {
+      family_type: 'FAMILY_TYPE_NUCLEAR',
+      num_siblings: 2,
+      father_occupation: 'Doctor',
+      mother_occupation: 'Teacher',
+      living_situation: 'LIVING_SITUATION_WITH_PARENTS',
+      family_location: 'New York',
+      about_family: 'Loving family',
+    },
     metadata: {
       status: 'ACCOUNT_STATUS_ACTIVE',
       email_verified: 'EMAIL_VERIFIED',
@@ -102,6 +134,9 @@ describe('ProfilePage', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    // Mock scrollIntoView for Jest environment
+    Element.prototype.scrollIntoView = jest.fn();
+
     (useUserStore as unknown as jest.Mock).mockReturnValue({
       profile: mockProfile,
       isLoading: false,
@@ -383,6 +418,146 @@ describe('ProfilePage', () => {
     });
   });
 
+  describe('New Sections - Phase 2', () => {
+    describe('Cultural Info Section', () => {
+      it('should display cultural information fields', () => {
+        customRender(<ProfilePage />);
+
+        expect(screen.getByText('Cultural & Matrimonial Information')).toBeInTheDocument();
+        expect(screen.getByText('English')).toBeInTheDocument(); // mother_tongue
+        expect(screen.getByText('USA')).toBeInTheDocument(); // nationality
+        expect(screen.getByText('General')).toBeInTheDocument(); // caste
+        expect(screen.getByText('Sub-General')).toBeInTheDocument(); // sub_caste
+      });
+
+      it('should display willing to relocate status', () => {
+        customRender(<ProfilePage />);
+
+        const elements = screen.getAllByText('Yes');
+        expect(elements.length).toBeGreaterThan(0); // willing_to_relocate is true
+      });
+
+      it('should handle missing cultural info gracefully', () => {
+        (useUserStore as unknown as jest.Mock).mockReturnValue({
+          profile: { ...mockProfile, cultural_info: null },
+          isLoading: false,
+          error: null,
+          fetchProfile: mockFetchProfile,
+          updateProfile: mockUpdateProfile,
+        });
+
+        customRender(<ProfilePage />);
+
+        const notSpecifiedElements = screen.getAllByText('Not specified');
+        expect(notSpecifiedElements.length).toBeGreaterThan(0);
+      });
+    });
+
+    describe('Appearance Info Section', () => {
+      it('should display appearance information fields', () => {
+        customRender(<ProfilePage />);
+
+        // "Appearance" appears in both sidebar and section heading
+        const appearanceElements = screen.getAllByText('Appearance');
+        expect(appearanceElements.length).toBeGreaterThan(0);
+        expect(screen.getByText(/athletic/i)).toBeInTheDocument(); // body_type
+        expect(screen.getByText(/fair/i)).toBeInTheDocument(); // complexion
+        expect(screen.getByText(/black/i)).toBeInTheDocument(); // hair_color
+        expect(screen.getByText(/brown/i)).toBeInTheDocument(); // eye_color
+      });
+
+      it('should display tattoos and piercings status', () => {
+        customRender(<ProfilePage />);
+
+        const yesElements = screen.getAllByText('Yes');
+        const noElements = screen.getAllByText('No');
+        expect(yesElements.length).toBeGreaterThan(0); // has_tattoos
+        expect(noElements.length).toBeGreaterThan(0); // has_piercings
+      });
+    });
+
+    describe('Professional Info Section', () => {
+      it('should display professional information fields', () => {
+        customRender(<ProfilePage />);
+
+        expect(screen.getByText('Professional & Financial')).toBeInTheDocument();
+        expect(screen.getByText(/full time/i)).toBeInTheDocument(); // employment_type
+        expect(screen.getByText('Technology')).toBeInTheDocument(); // industry
+        expect(screen.getByText('5 years')).toBeInTheDocument(); // years_of_experience
+        expect(screen.getByText(/bachelors/i)).toBeInTheDocument(); // highest_education
+      });
+
+      it('should display property and vehicle ownership', () => {
+        customRender(<ProfilePage />);
+
+        const yesElements = screen.getAllByText('Yes');
+        expect(yesElements.length).toBeGreaterThan(2); // owns_property and owns_vehicle
+      });
+    });
+
+    describe('Family Info Section', () => {
+      it('should display family information fields', () => {
+        customRender(<ProfilePage />);
+
+        expect(screen.getByText('Family Background')).toBeInTheDocument();
+        expect(screen.getByText(/nuclear/i)).toBeInTheDocument(); // family_type
+        expect(screen.getByText('2')).toBeInTheDocument(); // num_siblings
+        expect(screen.getByText('Doctor')).toBeInTheDocument(); // father_occupation
+        expect(screen.getByText('Teacher')).toBeInTheDocument(); // mother_occupation
+        expect(screen.getByText('New York')).toBeInTheDocument(); // family_location
+        expect(screen.getByText('Loving family')).toBeInTheDocument(); // about_family
+      });
+    });
+
+    describe('Sidebar Navigation', () => {
+      it('should display sidebar with all section links', () => {
+        customRender(<ProfilePage />);
+
+        expect(screen.getByText('QUICK NAVIGATION')).toBeInTheDocument();
+        expect(screen.getByText('Basic Info')).toBeInTheDocument();
+        // "Profile Details", "Lifestyle", and "Appearance" appear in both sidebar and content
+        expect(screen.getAllByText('Profile Details').length).toBeGreaterThan(0);
+        expect(screen.getAllByText('Lifestyle').length).toBeGreaterThan(0);
+        expect(screen.getByText('Cultural Info')).toBeInTheDocument();
+        expect(screen.getAllByText('Appearance').length).toBeGreaterThan(0);
+        expect(screen.getByText('Professional')).toBeInTheDocument();
+        expect(screen.getByText('Family')).toBeInTheDocument();
+        expect(screen.getByText('Account')).toBeInTheDocument();
+      });
+
+      it('should handle section navigation clicks', () => {
+        customRender(<ProfilePage />);
+
+        const culturalLink = screen.getByText('Cultural Info');
+        fireEvent.click(culturalLink);
+
+        // Verify the section exists and is in the document
+        expect(screen.getByText('Cultural & Matrimonial Information')).toBeInTheDocument();
+      });
+    });
+
+    describe('Sticky Header', () => {
+      it('should render sticky header with title', () => {
+        customRender(<ProfilePage />);
+
+        const headings = screen.getAllByText('My Profile');
+        expect(headings.length).toBeGreaterThan(0);
+        expect(screen.getByText('View and manage your profile information')).toBeInTheDocument();
+      });
+
+      it('should show correct subtitle in edit mode', async () => {
+        customRender(<ProfilePage />);
+
+        const editButton = screen.getByRole('button', { name: /edit profile/i });
+        fireEvent.click(editButton);
+
+        await waitFor(() => {
+          expect(screen.getByText('Edit your profile information')).toBeInTheDocument();
+        });
+      });
+    });
+  });
+
   describe('Accessibility', () => {
     it('should have proper heading hierarchy', () => {
       customRender(<ProfilePage />);
@@ -401,6 +576,20 @@ describe('ProfilePage', () => {
         const buttons = screen.getAllByRole('button');
         expect(buttons.length).toBeGreaterThan(0);
       });
+    });
+
+    it('should have proper section headings', () => {
+      customRender(<ProfilePage />);
+
+      expect(screen.getByText('Basic Information')).toBeInTheDocument();
+      // "Profile Details", "Lifestyle", and "Appearance" appear in both sidebar and content
+      expect(screen.getAllByText('Profile Details').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('Lifestyle').length).toBeGreaterThan(0);
+      expect(screen.getByText('Cultural & Matrimonial Information')).toBeInTheDocument();
+      expect(screen.getAllByText('Appearance').length).toBeGreaterThan(0);
+      expect(screen.getByText('Professional & Financial')).toBeInTheDocument();
+      expect(screen.getByText('Family Background')).toBeInTheDocument();
+      expect(screen.getByText('Account Information')).toBeInTheDocument();
     });
   });
 });

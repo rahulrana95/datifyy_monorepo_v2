@@ -14,9 +14,28 @@ import {
   Textarea,
   VStack,
   Text,
+  Heading,
+  Icon,
+  NativeSelect,
 } from '@chakra-ui/react';
 import { useForm } from '@tanstack/react-form';
+import { useState, useCallback, useEffect } from 'react';
 import type { UserProfile } from '../../gen/user/v1/user_pb';
+import {
+  Gender,
+  Drinking,
+  Smoking,
+  Workout,
+  DietaryPreference,
+  Religion,
+  Importance,
+  PoliticalView,
+  Pet,
+  Children,
+  CommunicationStyle,
+  LoveLanguage,
+  SleepSchedule,
+} from '../../gen/user/v1/user_pb';
 
 interface ProfileEditFormProps {
   profile: UserProfile;
@@ -141,13 +160,154 @@ const SLEEP_SCHEDULE_MAP: Record<string, number> = {
   'SLEEP_SCHEDULE_IN_A_SPECTRUM': 3,
 };
 
+// Chevron icon component
+const ChevronIcon = ({ isExpanded }: { isExpanded: boolean }): JSX.Element => (
+  <Icon viewBox="0 0 24 24" boxSize={5}>
+    <path
+      fill="currentColor"
+      d={isExpanded ? 'M7 14l5-5 5 5H7z' : 'M7 10l5 5 5-5H7z'}
+    />
+  </Icon>
+);
+
+// Collapsible section component
+const CollapsibleSection = ({
+  title,
+  subtitle,
+  children,
+  icon,
+  isExpanded,
+  onToggle
+}: {
+  title: string;
+  subtitle?: string;
+  children: React.ReactNode;
+  icon?: string;
+  isExpanded: boolean;
+  onToggle: () => void;
+}): JSX.Element => (
+  <Box
+    bg="white"
+    borderRadius="lg"
+    borderWidth="1px"
+    borderColor="gray.200"
+    overflow="hidden"
+    boxShadow="sm"
+  >
+    <HStack
+      p={4}
+      cursor="pointer"
+      onClick={onToggle}
+      bg={isExpanded ? 'gray.50' : 'white'}
+      _hover={{ bg: 'gray.50' }}
+      transition="background 0.2s"
+      justify="space-between"
+    >
+      <HStack gap={3}>
+        {icon && <Text fontSize="xl">{icon}</Text>}
+        <Box>
+          <Heading size="sm" color="gray.800">{title}</Heading>
+          {subtitle && <Text fontSize="xs" color="gray.600">{subtitle}</Text>}
+        </Box>
+      </HStack>
+      <ChevronIcon isExpanded={isExpanded} />
+    </HStack>
+    {isExpanded && (
+      <Box p={6} borderTop="1px" borderColor="gray.100">
+        {children}
+      </Box>
+    )}
+  </Box>
+);
+
+// Number input component that properly handles zero deletion
+const NumberInput = ({
+  value,
+  onChange,
+  min,
+  max,
+  placeholder,
+  error,
+}: {
+  value: number;
+  onChange: (value: number) => void;
+  min?: number;
+  max?: number;
+  placeholder?: string;
+  error?: string;
+}): JSX.Element => {
+  const [displayValue, setDisplayValue] = useState(value.toString());
+  const [isFocused, setIsFocused] = useState(false);
+
+  useEffect(() => {
+    if (!isFocused) {
+      setDisplayValue(value.toString());
+    }
+  }, [value, isFocused]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+
+    if (newValue === '') {
+      setDisplayValue('');
+      return;
+    }
+
+    if (!/^\d+$/.test(newValue)) {
+      return;
+    }
+
+    const numValue = parseInt(newValue, 10);
+
+    if (max !== undefined && numValue > max) {
+      return;
+    }
+
+    setDisplayValue(newValue);
+    onChange(numValue);
+  };
+
+  const handleBlur = () => {
+    setIsFocused(false);
+    if (displayValue === '') {
+      const fallbackValue = min ?? 0;
+      setDisplayValue(fallbackValue.toString());
+      onChange(fallbackValue);
+    }
+  };
+
+  const handleFocus = () => {
+    setIsFocused(true);
+  };
+
+  return (
+    <Input
+      type="text"
+      inputMode="numeric"
+      size="sm"
+      px={3}
+      value={displayValue}
+      onChange={handleChange}
+      onBlur={handleBlur}
+      onFocus={handleFocus}
+      placeholder={placeholder}
+      borderColor={error ? 'red.500' : 'gray.200'}
+      _focus={{
+        borderColor: error ? 'red.500' : 'brand.500',
+        boxShadow: error ? '0 0 0 1px var(--chakra-colors-red-500)' : '0 0 0 1px var(--chakra-colors-brand-500)',
+      }}
+    />
+  );
+};
+
 // Simple form field wrapper
-const FormField = ({ label, children }: { label: string; children: React.ReactNode }) => (
+const FormField = ({ label, children, error }: { label: string; children: React.ReactNode; error?: string }) => (
   <Box>
     <Text fontSize="sm" mb={2} fontWeight="medium" color="gray.700">
       {label}
     </Text>
     {children}
+    {error && <Text fontSize="xs" color="red.500" mt={1}>{error}</Text>}
   </Box>
 );
 
@@ -157,19 +317,62 @@ export const ProfileEditForm = ({ profile, onSave, onCancel }: ProfileEditFormPr
   const profileDetails = (profile as any)?.profile_details || profile.profileDetails;
   const lifestyleInfo = (profile as any)?.lifestyle_info || profile.lifestyleInfo;
 
+  // Collapsible sections state
+  const [expandedSections, setExpandedSections] = useState({
+    basic: true,
+    profile: true,
+    lifestyle: false,
+  });
+
+  // Field errors state
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  // Toggle section expansion
+  const toggleSection = useCallback((section: 'basic' | 'profile' | 'lifestyle') => {
+    setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
+  }, []);
+
+  // Validation function
+  const validateForm = useCallback((values: any): boolean => {
+    const errors: Record<string, string> = {};
+
+    // Height validation
+    if (values.height && (values.height < 100 || values.height > 250)) {
+      errors.height = 'Height must be between 100-250 cm';
+    }
+
+    // Bio validation
+    if (values.bio && values.bio.length > 500) {
+      errors.bio = 'Bio must be less than 500 characters';
+    }
+
+    // Name validation
+    if (!values.name || values.name.trim().length === 0) {
+      errors.name = 'Name is required';
+    }
+
+    // Email validation
+    if (!values.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) {
+      errors.email = 'Valid email is required';
+    }
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  }, []);
+
   const form = useForm({
     defaultValues: {
-      // Basic Info
+      // Basic Info - prioritize camelCase (from backend) over snake_case (for backwards compatibility)
       name: basicInfo?.name || '',
       email: basicInfo?.email || '',
-      phoneNumber: basicInfo?.phone_number || basicInfo?.phoneNumber || '',
+      phoneNumber: basicInfo?.phoneNumber || basicInfo?.phone_number || '',
       gender: basicInfo?.gender || 'GENDER_UNSPECIFIED',
       pronouns: basicInfo?.pronouns || '',
 
       // Profile Details
       bio: profileDetails?.bio || '',
       height: profileDetails?.height || 0,
-      jobTitle: profileDetails?.job_title || profileDetails?.jobTitle || '',
+      jobTitle: profileDetails?.jobTitle || profileDetails?.job_title || '',
       company: profileDetails?.company || '',
       school: profileDetails?.school || '',
       hometown: profileDetails?.hometown || '',
@@ -178,25 +381,31 @@ export const ProfileEditForm = ({ profile, onSave, onCancel }: ProfileEditFormPr
       drinking: lifestyleInfo?.drinking || 'DRINKING_UNSPECIFIED',
       smoking: lifestyleInfo?.smoking || 'SMOKING_UNSPECIFIED',
       workout: lifestyleInfo?.workout || 'WORKOUT_UNSPECIFIED',
-      dietaryPreference: lifestyleInfo?.dietary_preference || lifestyleInfo?.dietaryPreference || 'DIETARY_UNSPECIFIED',
+      dietaryPreference: lifestyleInfo?.dietaryPreference || lifestyleInfo?.dietary_preference || 'DIETARY_UNSPECIFIED',
       religion: lifestyleInfo?.religion || 'RELIGION_UNSPECIFIED',
-      religionImportance: lifestyleInfo?.religion_importance || lifestyleInfo?.religionImportance || 'IMPORTANCE_UNSPECIFIED',
-      politicalView: lifestyleInfo?.political_view || lifestyleInfo?.politicalView || 'POLITICAL_UNSPECIFIED',
+      religionImportance: lifestyleInfo?.religionImportance || lifestyleInfo?.religion_importance || 'IMPORTANCE_UNSPECIFIED',
+      politicalView: lifestyleInfo?.politicalView || lifestyleInfo?.political_view || 'POLITICAL_UNSPECIFIED',
       pets: lifestyleInfo?.pets || 'PET_UNSPECIFIED',
       children: lifestyleInfo?.children || 'CHILDREN_UNSPECIFIED',
-      personalityType: lifestyleInfo?.personality_type || lifestyleInfo?.personalityType || '',
-      communicationStyle: lifestyleInfo?.communication_style || lifestyleInfo?.communicationStyle || 'COMMUNICATION_UNSPECIFIED',
-      loveLanguage: lifestyleInfo?.love_language || lifestyleInfo?.loveLanguage || 'LOVE_LANGUAGE_UNSPECIFIED',
-      sleepSchedule: lifestyleInfo?.sleep_schedule || lifestyleInfo?.sleepSchedule || 'SLEEP_SCHEDULE_UNSPECIFIED',
+      personalityType: lifestyleInfo?.personalityType || lifestyleInfo?.personality_type || '',
+      communicationStyle: lifestyleInfo?.communicationStyle || lifestyleInfo?.communication_style || 'COMMUNICATION_UNSPECIFIED',
+      loveLanguage: lifestyleInfo?.loveLanguage || lifestyleInfo?.love_language || 'LOVE_LANGUAGE_UNSPECIFIED',
+      sleepSchedule: lifestyleInfo?.sleepSchedule || lifestyleInfo?.sleep_schedule || 'SLEEP_SCHEDULE_UNSPECIFIED',
     },
     onSubmit: async ({ value }) => {
-      // Transform form values back to UserProfile structure with integer enums
+      // Validate form before submission
+      if (!validateForm(value)) {
+        return;
+      }
+
+      // Transform form values to protobuf format
+      // Backend expects snake_case field names and enum strings (e.g., "GENDER_MALE"), not integers
       const updates: any = {
         basic_info: {
           name: value.name,
           email: value.email,
           phone_number: value.phoneNumber,
-          gender: enumToInt(value.gender, GENDER_MAP),
+          gender: value.gender, // Send as string, not integer
           pronouns: value.pronouns,
           age: basicInfo?.age || 0,
         },
@@ -209,41 +418,47 @@ export const ProfileEditForm = ({ profile, onSave, onCancel }: ProfileEditFormPr
           hometown: value.hometown,
         },
         lifestyle_info: {
-          drinking: enumToInt(value.drinking, DRINKING_MAP),
-          smoking: enumToInt(value.smoking, SMOKING_MAP),
-          workout: enumToInt(value.workout, WORKOUT_MAP),
-          dietary_preference: enumToInt(value.dietaryPreference, DIETARY_MAP),
-          religion: enumToInt(value.religion, RELIGION_MAP),
-          religion_importance: enumToInt(value.religionImportance, IMPORTANCE_MAP),
-          political_view: enumToInt(value.politicalView, POLITICAL_MAP),
-          pets: enumToInt(value.pets, PET_MAP),
-          children: enumToInt(value.children, CHILDREN_MAP),
+          drinking: value.drinking, // Send as string, not integer
+          smoking: value.smoking,
+          workout: value.workout,
+          dietary_preference: value.dietaryPreference,
+          religion: value.religion,
+          religion_importance: value.religionImportance,
+          political_view: value.politicalView,
+          pets: value.pets,
+          children: value.children,
           personality_type: value.personalityType,
-          communication_style: enumToInt(value.communicationStyle, COMMUNICATION_MAP),
-          love_language: enumToInt(value.loveLanguage, LOVE_LANGUAGE_MAP),
-          sleep_schedule: enumToInt(value.sleepSchedule, SLEEP_SCHEDULE_MAP),
+          communication_style: value.communicationStyle,
+          love_language: value.loveLanguage,
+          sleep_schedule: value.sleepSchedule,
         },
-        // Add update_fields to specify which fields to update (simple names, not paths)
+        // Add update_fields to specify which fields to update
+        // Use protobuf field paths with snake_case naming (e.g., basic_info.name, profile_details.job_title)
         update_fields: [
-          'bio',
-          'height',
-          'job_title',
-          'company',
-          'school',
-          'hometown',
-          'drinking',
-          'smoking',
-          'workout',
-          'dietary_preference',
-          'religion',
-          'religion_importance',
-          'political_view',
-          'pets',
-          'children',
-          'personality_type',
-          'communication_style',
-          'love_language',
-          'sleep_schedule',
+          'basic_info.name',
+          'basic_info.email',
+          'basic_info.phone_number',
+          'basic_info.gender',
+          'basic_info.pronouns',
+          'profile_details.bio',
+          'profile_details.height',
+          'profile_details.job_title',
+          'profile_details.company',
+          'profile_details.school',
+          'profile_details.hometown',
+          'lifestyle_info.drinking',
+          'lifestyle_info.smoking',
+          'lifestyle_info.workout',
+          'lifestyle_info.dietary_preference',
+          'lifestyle_info.religion',
+          'lifestyle_info.religion_importance',
+          'lifestyle_info.political_view',
+          'lifestyle_info.pets',
+          'lifestyle_info.children',
+          'lifestyle_info.personality_type',
+          'lifestyle_info.communication_style',
+          'lifestyle_info.love_language',
+          'lifestyle_info.sleep_schedule',
         ],
       };
 
@@ -259,26 +474,29 @@ export const ProfileEditForm = ({ profile, onSave, onCancel }: ProfileEditFormPr
         form.handleSubmit();
       }}
     >
-      <VStack align="stretch" gap={6}>
+      <VStack align="stretch" gap={4}>
         {/* Basic Information Section */}
-        <Box
-          bg="white"
-          borderRadius="xl"
-          borderWidth="1px"
-          borderColor="gray.200"
-          p={{ base: 4, md: 8 }}
-          boxShadow="md"
+        <CollapsibleSection
+          title="Basic Information"
+          subtitle="Name, contact, gender"
+          icon="👤"
+          isExpanded={expandedSections.basic}
+          onToggle={() => toggleSection('basic')}
         >
-          <Text fontSize="lg" fontWeight="bold" mb={6}>Basic Information</Text>
+          <VStack align="stretch" gap={4}>
           <SimpleGrid columns={{ base: 1, md: 2 }} gap={6}>
             <form.Field name="name">
               {(field: any) => (
-                <FormField label="Name">
+                <FormField label="Name" error={fieldErrors.name}>
                   <Input
                     value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
+                    onChange={(e) => {
+                      field.handleChange(e.target.value);
+                      setFieldErrors(prev => ({ ...prev, name: '' }));
+                    }}
                     placeholder="Your name"
                     px={4}
+                    borderColor={fieldErrors.name ? 'red.500' : 'gray.200'}
                   />
                 </FormField>
               )}
@@ -286,13 +504,17 @@ export const ProfileEditForm = ({ profile, onSave, onCancel }: ProfileEditFormPr
 
             <form.Field name="email">
               {(field: any) => (
-                <FormField label="Email">
+                <FormField label="Email" error={fieldErrors.email}>
                   <Input
                     type="email"
                     value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
+                    onChange={(e) => {
+                      field.handleChange(e.target.value);
+                      setFieldErrors(prev => ({ ...prev, email: '' }));
+                    }}
                     placeholder="your.email@example.com"
                     px={4}
+                    borderColor={fieldErrors.email ? 'red.500' : 'gray.200'}
                   />
                 </FormField>
               )}
@@ -315,23 +537,18 @@ export const ProfileEditForm = ({ profile, onSave, onCancel }: ProfileEditFormPr
             <form.Field name="gender">
               {(field: any) => (
                 <FormField label="Gender">
-                  <select
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '8px 12px',
-                      borderRadius: '6px',
-                      border: '1px solid #e2e8f0',
-                      fontSize: '16px',
-                    }}
-                  >
-                    <option value="GENDER_UNSPECIFIED">Not specified</option>
-                    <option value="GENDER_MALE">Male</option>
-                    <option value="GENDER_FEMALE">Female</option>
-                    <option value="GENDER_NON_BINARY">Non-binary</option>
-                    <option value="GENDER_OTHER">Other</option>
-                  </select>
+                  <NativeSelect.Root size="sm">
+                    <NativeSelect.Field
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                    >
+                      <option value="GENDER_UNSPECIFIED">Not specified</option>
+                      <option value="GENDER_MALE">Male</option>
+                      <option value="GENDER_FEMALE">Female</option>
+                      <option value="GENDER_NON_BINARY">Non-binary</option>
+                      <option value="GENDER_OTHER">Other</option>
+                    </NativeSelect.Field>
+                  </NativeSelect.Root>
                 </FormField>
               )}
             </form.Field>
@@ -344,39 +561,42 @@ export const ProfileEditForm = ({ profile, onSave, onCancel }: ProfileEditFormPr
                     onChange={(e) => field.handleChange(e.target.value)}
                     placeholder="e.g., he/him, she/her, they/them"
                     px={4}
+                    size="sm"
                   />
                 </FormField>
               )}
             </form.Field>
+          </SimpleGrid>
+          </VStack>
+        </CollapsibleSection>
 
+        {/* Profile Details Section */}
+        <CollapsibleSection
+          title="Profile Details"
+          subtitle="Bio, work, education"
+          icon="📝"
+          isExpanded={expandedSections.profile}
+          onToggle={() => toggleSection('profile')}
+        >
+          <VStack align="stretch" gap={4}>
+            <SimpleGrid columns={{ base: 1, md: 2 }} gap={6}>
             <form.Field name="height">
               {(field: any) => (
-                <FormField label="Height (cm)">
-                  <Input
-                    type="number"
+                <FormField label="Height (cm)" error={fieldErrors.height}>
+                  <NumberInput
                     value={field.state.value}
-                    onChange={(e) => field.handleChange(Number(e.target.value))}
+                    onChange={(v) => {
+                      field.handleChange(v);
+                      setFieldErrors(prev => ({ ...prev, height: '' }));
+                    }}
+                    min={100}
+                    max={250}
                     placeholder="170"
-                    px={4}
+                    error={fieldErrors.height}
                   />
                 </FormField>
               )}
             </form.Field>
-
-            <Box gridColumn={{ base: '1', md: '1 / -1' }}>
-              <form.Field name="bio">
-                {(field: any) => (
-                  <FormField label="Bio">
-                    <Textarea
-                      value={field.state.value}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      placeholder="Tell us about yourself..."
-                      rows={4}
-                    />
-                  </FormField>
-                )}
-              </form.Field>
-            </Box>
 
             <form.Field name="jobTitle">
               {(field: any) => (
@@ -386,6 +606,7 @@ export const ProfileEditForm = ({ profile, onSave, onCancel }: ProfileEditFormPr
                     onChange={(e) => field.handleChange(e.target.value)}
                     placeholder="Software Engineer"
                     px={4}
+                    size="sm"
                   />
                 </FormField>
               )}
@@ -425,23 +646,43 @@ export const ProfileEditForm = ({ profile, onSave, onCancel }: ProfileEditFormPr
                     onChange={(e) => field.handleChange(e.target.value)}
                     placeholder="City, Country"
                     px={4}
+                    size="sm"
                   />
                 </FormField>
               )}
             </form.Field>
+
+            <Box gridColumn={{ base: '1', md: '1 / -1' }}>
+              <form.Field name="bio">
+                {(field: any) => (
+                  <FormField label="Bio" error={fieldErrors.bio}>
+                    <Textarea
+                      value={field.state.value}
+                      onChange={(e) => {
+                        field.handleChange(e.target.value);
+                        setFieldErrors(prev => ({ ...prev, bio: '' }));
+                      }}
+                      placeholder="Tell us about yourself..."
+                      rows={4}
+                      borderColor={fieldErrors.bio ? 'red.500' : 'gray.200'}
+                    />
+                  </FormField>
+                )}
+              </form.Field>
+            </Box>
           </SimpleGrid>
-        </Box>
+          </VStack>
+        </CollapsibleSection>
 
         {/* Lifestyle Section */}
-        <Box
-          bg="white"
-          borderRadius="xl"
-          borderWidth="1px"
-          borderColor="gray.200"
-          p={{ base: 4, md: 8 }}
-          boxShadow="md"
+        <CollapsibleSection
+          title="Lifestyle"
+          subtitle="Habits, preferences, personality"
+          icon="🌿"
+          isExpanded={expandedSections.lifestyle}
+          onToggle={() => toggleSection('lifestyle')}
         >
-          <Text fontSize="lg" fontWeight="bold" mb={6}>Lifestyle</Text>
+          <VStack align="stretch" gap={4}>
           <SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
             {['drinking', 'smoking', 'workout', 'dietaryPreference', 'religion', 'religionImportance',
               'politicalView', 'pets', 'children', 'communicationStyle', 'loveLanguage', 'sleepSchedule'].map((fieldName) => (
@@ -592,12 +833,14 @@ export const ProfileEditForm = ({ profile, onSave, onCancel }: ProfileEditFormPr
                     placeholder="e.g., INTJ, ENFP"
                     maxLength={4}
                     px={4}
+                    size="sm"
                   />
                 </FormField>
               )}
             </form.Field>
           </SimpleGrid>
-        </Box>
+          </VStack>
+        </CollapsibleSection>
 
         {/* Action Buttons */}
         <HStack justify="flex-end" gap={4}>
