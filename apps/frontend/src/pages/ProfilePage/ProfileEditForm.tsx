@@ -21,21 +21,6 @@ import {
 import { useForm } from '@tanstack/react-form';
 import { useState, useCallback, useEffect } from 'react';
 import type { UserProfile } from '../../gen/user/v1/user_pb';
-import {
-  Gender,
-  Drinking,
-  Smoking,
-  Workout,
-  DietaryPreference,
-  Religion,
-  Importance,
-  PoliticalView,
-  Pet,
-  Children,
-  CommunicationStyle,
-  LoveLanguage,
-  SleepSchedule,
-} from '../../gen/user/v1/user_pb';
 
 interface ProfileEditFormProps {
   profile: UserProfile;
@@ -398,67 +383,68 @@ export const ProfileEditForm = ({ profile, onSave, onCancel }: ProfileEditFormPr
         return;
       }
 
-      // Transform form values to protobuf format
-      // Backend expects snake_case field names and enum strings (e.g., "GENDER_MALE"), not integers
+      // Transform form values to camelCase format (as per src/gen TypeScript definitions)
+      // Send enum values as strings (best practice for readability and compatibility)
+      // Backend will parse camelCase field names to snake_case as needed
       const updates: any = {
-        basic_info: {
+        basicInfo: {
           name: value.name,
           email: value.email,
-          phone_number: value.phoneNumber,
-          gender: value.gender, // Send as string, not integer
+          phoneNumber: value.phoneNumber,
+          gender: value.gender, // Send as string: "GENDER_MALE"
           pronouns: value.pronouns,
           age: basicInfo?.age || 0,
         },
-        profile_details: {
+        profileDetails: {
           bio: value.bio,
           height: value.height,
-          job_title: value.jobTitle,
+          jobTitle: value.jobTitle,
           company: value.company,
           school: value.school,
           hometown: value.hometown,
         },
-        lifestyle_info: {
-          drinking: value.drinking, // Send as string, not integer
+        lifestyleInfo: {
+          drinking: value.drinking, // Send as string: "DRINKING_SOCIALLY"
           smoking: value.smoking,
           workout: value.workout,
-          dietary_preference: value.dietaryPreference,
+          dietaryPreference: value.dietaryPreference,
           religion: value.religion,
-          religion_importance: value.religionImportance,
-          political_view: value.politicalView,
+          religionImportance: value.religionImportance,
+          politicalView: value.politicalView,
           pets: value.pets,
           children: value.children,
-          personality_type: value.personalityType,
-          communication_style: value.communicationStyle,
-          love_language: value.loveLanguage,
-          sleep_schedule: value.sleepSchedule,
+          personalityType: value.personalityType,
+          communicationStyle: value.communicationStyle,
+          loveLanguage: value.loveLanguage,
+          sleepSchedule: value.sleepSchedule,
         },
-        // Add update_fields to specify which fields to update
-        // Use protobuf field paths with snake_case naming (e.g., basic_info.name, profile_details.job_title)
-        update_fields: [
-          'basic_info.name',
-          'basic_info.email',
-          'basic_info.phone_number',
-          'basic_info.gender',
-          'basic_info.pronouns',
-          'profile_details.bio',
-          'profile_details.height',
-          'profile_details.job_title',
-          'profile_details.company',
-          'profile_details.school',
-          'profile_details.hometown',
-          'lifestyle_info.drinking',
-          'lifestyle_info.smoking',
-          'lifestyle_info.workout',
-          'lifestyle_info.dietary_preference',
-          'lifestyle_info.religion',
-          'lifestyle_info.religion_importance',
-          'lifestyle_info.political_view',
-          'lifestyle_info.pets',
-          'lifestyle_info.children',
-          'lifestyle_info.personality_type',
-          'lifestyle_info.communication_style',
-          'lifestyle_info.love_language',
-          'lifestyle_info.sleep_schedule',
+        // Add updateFields to specify which fields to update
+        // Backend expects flat snake_case field names (not nested paths)
+        updateFields: [
+          'name',
+          'email',
+          'phone_number',
+          'gender',
+          'pronouns',
+          'bio',
+          'height',
+          'job_title',
+          'company',
+          'school',
+          'hometown',
+          'drinking',
+          'smoking',
+          'workout',
+          'dietary_preference',
+          'religion',
+          'religion_importance',
+          'political_view',
+          'pets',
+          'children',
+          'personality_type',
+          'communication_style',
+          'love_language',
+          'sleep_schedule',
         ],
       };
 

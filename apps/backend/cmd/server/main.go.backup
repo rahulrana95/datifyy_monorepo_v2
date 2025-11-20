@@ -564,21 +564,27 @@ func createUserProfileHandler(userService *service.UserService) http.HandlerFunc
 
 		// Handle PUT request (UpdateProfile)
 		if r.Method == http.MethodPut {
-			// Read request body
-			body, err := io.ReadAll(r.Body)
-			if err != nil {
-				http.Error(w, fmt.Sprintf("Failed to read request body: %v", err), http.StatusBadRequest)
+			// Parse JSON request
+			var reqBody struct {
+				BasicInfo      *userpb.BasicInfo      `json:"basic_info"`
+				ProfileDetails *userpb.ProfileDetails `json:"profile_details"`
+				LifestyleInfo  *userpb.LifestyleInfo  `json:"lifestyle_info"`
+				Prompts        []*userpb.ProfilePrompt `json:"prompts"`
+				UpdateFields   []string               `json:"update_fields"`
+			}
+
+			if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+				http.Error(w, fmt.Sprintf("Invalid JSON: %v", err), http.StatusBadRequest)
 				return
 			}
 
-			// Parse using protojson to handle string enums
-			grpcReq := &userpb.UpdateProfileRequest{}
-			unmarshaler := protojson.UnmarshalOptions{
-				DiscardUnknown: true,
-			}
-			if err := unmarshaler.Unmarshal(body, grpcReq); err != nil {
-				http.Error(w, fmt.Sprintf("Invalid JSON: %v", err), http.StatusBadRequest)
-				return
+			// Convert to gRPC request
+			grpcReq := &userpb.UpdateProfileRequest{
+				BasicInfo:      reqBody.BasicInfo,
+				ProfileDetails: reqBody.ProfileDetails,
+				LifestyleInfo:  reqBody.LifestyleInfo,
+				Prompts:        reqBody.Prompts,
+				UpdateFields:   reqBody.UpdateFields,
 			}
 
 			// Call gRPC service

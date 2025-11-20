@@ -489,20 +489,21 @@ describe('ProfileEditForm', () => {
       });
 
       const savedData = mockOnSave.mock.calls[0][0];
-      expect(savedData).toHaveProperty('basic_info');
-      expect(savedData).toHaveProperty('profile_details');
-      expect(savedData).toHaveProperty('lifestyle_info');
-      expect(savedData).toHaveProperty('update_fields');
+      expect(savedData).toHaveProperty('basicInfo');
+      expect(savedData).toHaveProperty('profileDetails');
+      expect(savedData).toHaveProperty('lifestyleInfo');
+      expect(savedData).toHaveProperty('updateFields');
 
-      expect(savedData.basic_info.name).toBe('Jane Doe');
-      expect(savedData.profile_details.bio).toBe('Updated bio text');
+      expect(savedData.basicInfo.name).toBe('Jane Doe');
+      expect(savedData.profileDetails.bio).toBe('Updated bio text');
 
-      // Verify update_fields contains protobuf field paths (snake_case with parent prefixes)
-      expect(savedData.update_fields).toContain('basic_info.name');
-      expect(savedData.update_fields).toContain('basic_info.email');
-      expect(savedData.update_fields).toContain('profile_details.bio');
-      expect(savedData.update_fields).toContain('profile_details.job_title');
-      expect(savedData.update_fields).toContain('lifestyle_info.drinking');
+      // Verify updateFields contains flat snake_case field names (as backend expects)
+      expect(savedData.updateFields).toContain('name');
+      expect(savedData.updateFields).toContain('email');
+      expect(savedData.updateFields).toContain('phone_number');
+      expect(savedData.updateFields).toContain('bio');
+      expect(savedData.updateFields).toContain('job_title');
+      expect(savedData.updateFields).toContain('drinking');
     });
 
     it('should send enum values as strings in submitted data', async () => {
@@ -522,12 +523,12 @@ describe('ProfileEditForm', () => {
 
       const savedData = mockOnSave.mock.calls[0][0];
 
-      // Check that enums are sent as strings (backend expects enum strings, not integers)
-      expect(typeof savedData.basic_info.gender).toBe('string');
-      expect(typeof savedData.lifestyle_info.drinking).toBe('string');
-      expect(typeof savedData.lifestyle_info.smoking).toBe('string');
-      expect(savedData.basic_info.gender).toBe('GENDER_MALE');
-      expect(savedData.lifestyle_info.drinking).toBe('DRINKING_SOCIALLY');
+      // Check that enums are sent as strings (best practice for APIs)
+      expect(typeof savedData.basicInfo.gender).toBe('string');
+      expect(typeof savedData.lifestyleInfo.drinking).toBe('string');
+      expect(typeof savedData.lifestyleInfo.smoking).toBe('string');
+      expect(savedData.basicInfo.gender).toBe('GENDER_MALE');
+      expect(savedData.lifestyleInfo.drinking).toBe('DRINKING_SOCIALLY');
     });
 
     it('should not call onSave when validation fails', async () => {
