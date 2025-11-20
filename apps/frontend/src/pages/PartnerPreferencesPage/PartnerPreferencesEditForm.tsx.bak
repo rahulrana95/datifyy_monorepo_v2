@@ -248,6 +248,9 @@ const enumToNumbers = (arr: (string | number)[] | undefined, mapping: Record<str
 };
 
 // Enum string to number mappings
+const genderMapping: Record<string, number> = {
+  'GENDER_MALE': 1, 'GENDER_FEMALE': 2, 'GENDER_NON_BINARY': 3,
+};
 const relationshipGoalMapping: Record<string, number> = {
   'RELATIONSHIP_GOAL_CASUAL': 1, 'RELATIONSHIP_GOAL_SERIOUS': 2,
   'RELATIONSHIP_GOAL_MARRIAGE': 3, 'RELATIONSHIP_GOAL_FRIENDSHIP': 4,
@@ -843,7 +846,7 @@ export const PartnerPreferencesEditForm = ({
         <Box maxH="calc(100vh - 280px)" overflowY="auto" pb={4}>
           <VStack align="stretch" gap={2}>
             {/* Basic Preferences */}
-            <CollapsibleSection title="Basic Preferences" subtitle="Age, height, distance" icon="👤" isExpanded={expandedSections.basic} onToggle={() => toggleSection('basic')}>
+            <CollapsibleSection id="basic" title="Basic Preferences" subtitle="Age, height, distance" icon="👤" isExpanded={expandedSections.basic} onToggle={() => toggleSection('basic')}>
               <VStack align="stretch" gap={3}>
                 <Box>
                   <FieldLabel>Looking For</FieldLabel>
@@ -889,12 +892,12 @@ export const PartnerPreferencesEditForm = ({
             </CollapsibleSection>
 
             {/* Relationship Goals */}
-            <CollapsibleSection title="Relationship Goals" subtitle="What are you looking for?" icon="💕" isExpanded={expandedSections.relationship} onToggle={() => toggleSection('relationship')}>
+            <CollapsibleSection id="relationship" title="Relationship Goals" subtitle="What are you looking for?" icon="💕" isExpanded={expandedSections.relationship} onToggle={() => toggleSection('relationship')}>
               <EnumCheckboxGroup values={formData.relationshipGoals} options={relationshipGoalOptions} onToggle={(value) => toggleEnumValue('relationshipGoals', value)} />
             </CollapsibleSection>
 
             {/* Education & Career */}
-            <CollapsibleSection title="Education & Career" subtitle="Education, occupation, experience" icon="🎓" isExpanded={expandedSections.education} onToggle={() => toggleSection('education')}>
+            <CollapsibleSection id="education" title="Education & Career" subtitle="Education, occupation, experience" icon="🎓" isExpanded={expandedSections.education} onToggle={() => toggleSection('education')}>
               <VStack align="stretch" gap={3}>
                 <Box>
                   <FieldLabel>Education Level</FieldLabel>
@@ -918,7 +921,7 @@ export const PartnerPreferencesEditForm = ({
             </CollapsibleSection>
 
             {/* Religion & Culture */}
-            <CollapsibleSection title="Religion & Culture" subtitle="Religion, caste, traditions" icon="🙏" isExpanded={expandedSections.religion} onToggle={() => toggleSection('religion')}>
+            <CollapsibleSection id="religion" title="Religion & Culture" subtitle="Religion, caste, traditions" icon="🙏" isExpanded={expandedSections.religion} onToggle={() => toggleSection('religion')}>
               <VStack align="stretch" gap={3}>
                 <Box>
                   <FieldLabel>Religion</FieldLabel>
@@ -967,7 +970,7 @@ export const PartnerPreferencesEditForm = ({
             </CollapsibleSection>
 
             {/* Lifestyle */}
-            <CollapsibleSection title="Lifestyle" subtitle="Children, habits, diet" icon="🌿" isExpanded={expandedSections.lifestyle} onToggle={() => toggleSection('lifestyle')}>
+            <CollapsibleSection id="lifestyle" title="Lifestyle" subtitle="Children, habits, diet" icon="🌿" isExpanded={expandedSections.lifestyle} onToggle={() => toggleSection('lifestyle')}>
               <VStack align="stretch" gap={3}>
                 <Box>
                   <FieldLabel>Children</FieldLabel>
@@ -1001,7 +1004,7 @@ export const PartnerPreferencesEditForm = ({
             </CollapsibleSection>
 
             {/* Personality & Communication */}
-            <CollapsibleSection title="Personality & Communication" subtitle="Communication style, love language" icon="💬" isExpanded={expandedSections.personality} onToggle={() => toggleSection('personality')}>
+            <CollapsibleSection id="personality" title="Personality & Communication" subtitle="Communication style, love language" icon="💬" isExpanded={expandedSections.personality} onToggle={() => toggleSection('personality')}>
               <VStack align="stretch" gap={3}>
                 <Box>
                   <FieldLabel>Personality Types (e.g., INTJ, ENFP)</FieldLabel>
@@ -1031,7 +1034,7 @@ export const PartnerPreferencesEditForm = ({
             </CollapsibleSection>
 
             {/* Physical Preferences */}
-            <CollapsibleSection title="Physical Preferences" subtitle="Body type, appearance" icon="👁️" isExpanded={expandedSections.physical} onToggle={() => toggleSection('physical')}>
+            <CollapsibleSection id="physical" title="Physical Preferences" subtitle="Body type, appearance" icon="👁️" isExpanded={expandedSections.physical} onToggle={() => toggleSection('physical')}>
               <VStack align="stretch" gap={3}>
                 <SimpleGrid columns={{ base: 1, md: 2 }} gap={3}>
                   <Box>
@@ -1081,7 +1084,7 @@ export const PartnerPreferencesEditForm = ({
             </CollapsibleSection>
 
             {/* Financial */}
-            <CollapsibleSection title="Financial & Professional" subtitle="Income, employment, assets" icon="💰" isExpanded={expandedSections.financial} onToggle={() => toggleSection('financial')}>
+            <CollapsibleSection id="financial" title="Financial & Professional" subtitle="Income, employment, assets" icon="💰" isExpanded={expandedSections.financial} onToggle={() => toggleSection('financial')}>
               <VStack align="stretch" gap={3}>
                 <Box>
                   <FieldLabel>Income Range</FieldLabel>
@@ -1128,7 +1131,7 @@ export const PartnerPreferencesEditForm = ({
             </CollapsibleSection>
 
             {/* Family */}
-            <CollapsibleSection title="Family Background" subtitle="Family type, values, location" icon="👨‍👩‍👧‍👦" isExpanded={expandedSections.family} onToggle={() => toggleSection('family')}>
+            <CollapsibleSection id="family" title="Family Background" subtitle="Family type, values, location" icon="👨‍👩‍👧‍👦" isExpanded={expandedSections.family} onToggle={() => toggleSection('family')}>
               <VStack align="stretch" gap={3}>
                 <SimpleGrid columns={{ base: 1, md: 3 }} gap={3}>
                   <Box>
@@ -1158,7 +1161,7 @@ export const PartnerPreferencesEditForm = ({
             </CollapsibleSection>
 
             {/* Location & Language */}
-            <CollapsibleSection title="Location & Language" subtitle="Location, language, relocation" icon="🌍" isExpanded={expandedSections.location} onToggle={() => toggleSection('location')}>
+            <CollapsibleSection id="location" title="Location & Language" subtitle="Location, language, relocation" icon="🌍" isExpanded={expandedSections.location} onToggle={() => toggleSection('location')}>
               <VStack align="stretch" gap={3}>
                 <Box>
                   <FieldLabel>Languages</FieldLabel>
@@ -1207,7 +1210,7 @@ export const PartnerPreferencesEditForm = ({
             </CollapsibleSection>
 
             {/* Interests */}
-            <CollapsibleSection title="Interests & Hobbies" subtitle="Shared interests" icon="🎯" isExpanded={expandedSections.interests} onToggle={() => toggleSection('interests')}>
+            <CollapsibleSection id="interests" title="Interests & Hobbies" subtitle="Shared interests" icon="🎯" isExpanded={expandedSections.interests} onToggle={() => toggleSection('interests')}>
               <VStack align="stretch" gap={3}>
                 <Box>
                   <FieldLabel>Interests</FieldLabel>
@@ -1221,7 +1224,7 @@ export const PartnerPreferencesEditForm = ({
             </CollapsibleSection>
 
             {/* Requirements */}
-            <CollapsibleSection title="Profile Requirements" subtitle="Activity, photos, deal-breakers" icon="✅" isExpanded={expandedSections.requirements} onToggle={() => toggleSection('requirements')}>
+            <CollapsibleSection id="requirements" title="Profile Requirements" subtitle="Activity, photos, deal-breakers" icon="✅" isExpanded={expandedSections.requirements} onToggle={() => toggleSection('requirements')}>
               <VStack align="stretch" gap={3}>
                 <SimpleGrid columns={{ base: 1, md: 3 }} gap={3}>
                   <Box>

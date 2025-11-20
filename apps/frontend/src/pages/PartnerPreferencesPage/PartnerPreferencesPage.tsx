@@ -14,8 +14,10 @@ import {
   Spinner,
   Button,
   Badge,
+  Flex,
+  Link,
 } from '@chakra-ui/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Header } from '../../shared/components/Header/Header';
 import { useUserStore } from '../../stores/userStore';
 import { PartnerPreferencesEditForm } from './PartnerPreferencesEditForm';
@@ -28,6 +30,37 @@ export const PartnerPreferencesPage = (): JSX.Element => {
     type: 'success' | 'error';
     message: string;
   } | null>(null);
+  const [activeSection, setActiveSection] = useState('basic');
+
+  // Refs for each section
+  const basicRef = useRef<HTMLDivElement>(null);
+  const lifestyleRef = useRef<HTMLDivElement>(null);
+  const personalityRef = useRef<HTMLDivElement>(null);
+  const culturalRef = useRef<HTMLDivElement>(null);
+  const appearanceRef = useRef<HTMLDivElement>(null);
+  const professionalRef = useRef<HTMLDivElement>(null);
+  const familyRef = useRef<HTMLDivElement>(null);
+  const languageRef = useRef<HTMLDivElement>(null);
+  const interestsRef = useRef<HTMLDivElement>(null);
+  const dealBreakersRef = useRef<HTMLDivElement>(null);
+
+  const sections = [
+    { id: 'basic', label: 'Basic', ref: basicRef },
+    { id: 'lifestyle', label: 'Lifestyle', ref: lifestyleRef },
+    { id: 'personality', label: 'Personality', ref: personalityRef },
+    { id: 'cultural', label: 'Cultural', ref: culturalRef },
+    { id: 'appearance', label: 'Appearance', ref: appearanceRef },
+    { id: 'professional', label: 'Professional', ref: professionalRef },
+    { id: 'family', label: 'Family', ref: familyRef },
+    { id: 'language', label: 'Language', ref: languageRef },
+    { id: 'interests', label: 'Interests', ref: interestsRef },
+    { id: 'dealbreakers', label: 'Deal-Breakers', ref: dealBreakersRef },
+  ];
+
+  const scrollToSection = (ref: React.RefObject<HTMLDivElement>, id: string): void => {
+    setActiveSection(id);
+    ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   useEffect(() => {
     fetchProfile();
@@ -408,18 +441,22 @@ export const PartnerPreferencesPage = (): JSX.Element => {
   // Section component for consistency
   const PreferenceSection = ({
     title,
-    children
+    children,
+    sectionRef,
   }: {
     title: string;
     children: React.ReactNode;
+    sectionRef?: React.RefObject<HTMLDivElement>;
   }): JSX.Element => (
     <Box
+      ref={sectionRef}
       bg="white"
       borderRadius="xl"
       borderWidth="1px"
       borderColor="gray.200"
       p={{ base: 4, md: 6 }}
       boxShadow="sm"
+      scrollMarginTop="150px"
     >
       <Heading size="md" color="fg" mb={4}>{title}</Heading>
       {children}
@@ -451,92 +488,107 @@ export const PartnerPreferencesPage = (): JSX.Element => {
   return (
     <Box minH="100vh" bg="gray.50">
       <Header />
-      <Container maxW="1200px" py={8} px={{ base: 4, md: 8 }} mx="auto">
-        <VStack align="stretch" gap={6} mx="auto" w="100%" maxW="1000px">
-          {/* Success/Error Notification */}
-          {notification && (
-            <Box
-              position="fixed"
-              top={4}
-              right={4}
-              zIndex={1000}
-              maxW="400px"
-              bg={notification.type === 'success' ? 'green.500' : 'red.500'}
-              color="white"
-              p={4}
-              borderRadius="md"
-              boxShadow="lg"
-              display="flex"
-              alignItems="center"
-              gap={3}
-            >
-              <Text fontSize="xl">
-                {notification.type === 'success' ? '✓' : '✕'}
-              </Text>
-              <Box flex={1}>
-                <Text fontWeight="semibold" mb={1}>
-                  {notification.type === 'success' ? 'Success' : 'Error'}
-                </Text>
-                <Text fontSize="sm">{notification.message}</Text>
-              </Box>
-              <Button
-                size="xs"
-                variant="ghost"
-                color="white"
-                _hover={{ bg: notification.type === 'success' ? 'green.600' : 'red.600' }}
-                onClick={() => setNotification(null)}
-              >
-                ✕
-              </Button>
-            </Box>
-          )}
 
-          {/* Header Section */}
-          <Box mb={2}>
-            <HStack justify="space-between" align="center" mb={4}>
-              <Box>
-                <Heading size="xl" color="gray.800" mb={2}>
-                  Partner Preferences
-                </Heading>
-                <Text color="gray.600">
-                  {isEditing
-                    ? 'Edit your partner preferences'
-                    : 'View and manage your partner preferences'}
-                </Text>
-              </Box>
-              {!isEditing && (
-                <Button
-                  bg="brand.500"
-                  color="white"
-                  _hover={{ bg: 'brand.600' }}
-                  _active={{ bg: 'brand.700' }}
-                  onClick={() => setIsEditing(true)}
-                >
-                  Edit Preferences
-                </Button>
-              )}
-            </HStack>
+      {/* Success/Error Notification */}
+      {notification && (
+        <Box
+          position="fixed"
+          top={4}
+          right={4}
+          zIndex={1000}
+          maxW="400px"
+          bg={notification.type === 'success' ? 'green.500' : 'red.500'}
+          color="white"
+          p={4}
+          borderRadius="md"
+          boxShadow="lg"
+          display="flex"
+          alignItems="center"
+          gap={3}
+        >
+          <Text fontSize="xl">
+            {notification.type === 'success' ? '✓' : '✕'}
+          </Text>
+          <Box flex={1}>
+            <Text fontWeight="semibold" mb={1}>
+              {notification.type === 'success' ? 'Success' : 'Error'}
+            </Text>
+            <Text fontSize="sm">{notification.message}</Text>
           </Box>
+          <Button
+            size="xs"
+            variant="ghost"
+            color="white"
+            _hover={{ bg: notification.type === 'success' ? 'green.600' : 'red.600' }}
+            onClick={() => setNotification(null)}
+          >
+            ✕
+          </Button>
+        </Box>
+      )}
+
+      {/* Sticky Header Section */}
+      <Box
+        position="sticky"
+        top="64px"
+        zIndex={10}
+        bg="white"
+        borderBottom="1px"
+        borderColor="gray.200"
+        boxShadow="sm"
+      >
+        <Container maxW="1400px" py={4} px={{ base: 4, md: 8 }}>
+          <HStack justify="space-between" align="center">
+            <Box>
+              <Heading size="lg" color="gray.800" mb={1}>
+                Partner Preferences
+              </Heading>
+              <Text color="gray.600" fontSize="sm">
+                {isEditing
+                  ? 'Edit your partner preferences'
+                  : 'View and manage your partner preferences'}
+              </Text>
+            </Box>
+            {!isEditing && (
+              <Button
+                bg="brand.500"
+                color="white"
+                _hover={{ bg: 'brand.600' }}
+                _active={{ bg: 'brand.700' }}
+                onClick={() => setIsEditing(true)}
+                size={{ base: 'sm', md: 'md' }}
+              >
+                Edit Preferences
+              </Button>
+            )}
+          </HStack>
+        </Container>
+      </Box>
+
+      <Container maxW="1400px" py={6} px={{ base: 4, md: 8 }} mx="auto">
 
           {/* Edit Mode */}
           {isEditing && partnerPrefs && (
-            <PartnerPreferencesEditForm
-              preferences={partnerPrefs}
-              onSave={handleSave}
-              onCancel={handleCancel}
-            />
+            <Box maxW="900px" mx={{ base: 0, lg: "220px" }} w="100%">
+              <PartnerPreferencesEditForm
+                preferences={partnerPrefs}
+                onSave={handleSave}
+                onCancel={handleCancel}
+              />
+            </Box>
           )}
 
           {/* Show message if no partner preferences exist yet */}
           {isEditing && !partnerPrefs && (
-            <Box
-              bg="white"
-              borderRadius="xl"
-              borderWidth="1px"
-              borderColor="gray.200"
-              p={{ base: 4, md: 8 }}
-              boxShadow="md"
-            >
+            <Box maxW="900px" mx={{ base: 0, lg: "220px" }} w="100%">
+              <Box
+                bg="white"
+                borderRadius="xl"
+                borderWidth="1px"
+                borderColor="gray.200"
+                p={{ base: 4, md: 8 }}
+                boxShadow="md"
+              >
               <Heading size="md" color="fg" mb={4}>
                 Set Up Partner Preferences
               </Heading>
@@ -552,14 +604,62 @@ export const PartnerPreferencesPage = (): JSX.Element => {
               >
                 Go Back
               </Button>
+              </Box>
             </Box>
           )}
 
           {/* View Mode */}
           {!isEditing && (
-            <>
-              {/* Basic Preferences */}
-              <PreferenceSection title="Basic Preferences">
+            <Flex gap={6} align="flex-start">
+              {/* Sidebar Navigation - Hidden on mobile */}
+              <Box
+                display={{ base: 'none', lg: 'block' }}
+                position="sticky"
+                top="150px"
+                w="220px"
+                flexShrink={0}
+              >
+                <Box
+                  bg="white"
+                  borderRadius="xl"
+                  borderWidth="1px"
+                  borderColor="gray.200"
+                  p={4}
+                  boxShadow="sm"
+                >
+                  <Text fontWeight="bold" color="gray.700" mb={3} fontSize="sm">
+                    QUICK NAVIGATION
+                  </Text>
+                  <VStack align="stretch" gap={1}>
+                    {sections.map((section) => (
+                      <Link
+                        key={section.id}
+                        onClick={() => scrollToSection(section.ref, section.id)}
+                        px={3}
+                        py={2}
+                        borderRadius="md"
+                        fontSize="sm"
+                        fontWeight="medium"
+                        cursor="pointer"
+                        bg={activeSection === section.id ? 'brand.50' : 'transparent'}
+                        color={activeSection === section.id ? 'brand.600' : 'gray.600'}
+                        _hover={{
+                          bg: activeSection === section.id ? 'brand.100' : 'gray.100',
+                          color: activeSection === section.id ? 'brand.700' : 'gray.800',
+                        }}
+                        transition="all 0.2s"
+                      >
+                        {section.label}
+                      </Link>
+                    ))}
+                  </VStack>
+                </Box>
+              </Box>
+
+              {/* Main Content */}
+              <VStack align="stretch" gap={6} flex={1} maxW="900px">
+                {/* Basic Preferences */}
+                <PreferenceSection title="Basic Preferences" sectionRef={basicRef}>
                 <SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
                   <PreferenceField
                     label="Looking For"
@@ -591,7 +691,7 @@ export const PartnerPreferencesPage = (): JSX.Element => {
               </PreferenceSection>
 
               {/* Lifestyle Preferences */}
-              <PreferenceSection title="Lifestyle Preferences">
+              <PreferenceSection title="Lifestyle Preferences" sectionRef={lifestyleRef}>
                 <SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
                   <PreferenceField
                     label="Relationship Goals"
@@ -641,7 +741,7 @@ export const PartnerPreferencesPage = (): JSX.Element => {
               </PreferenceSection>
 
               {/* Personality & Communication */}
-              <PreferenceSection title="Personality & Communication">
+              <PreferenceSection title="Personality & Communication" sectionRef={personalityRef}>
                 <SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
                   <PreferenceField
                     label="Personality Types"
@@ -667,7 +767,7 @@ export const PartnerPreferencesPage = (): JSX.Element => {
               </PreferenceSection>
 
               {/* Cultural & Matrimonial */}
-              <PreferenceSection title="Cultural & Matrimonial">
+              <PreferenceSection title="Cultural & Matrimonial" sectionRef={culturalRef}>
                 <SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
                   <PreferenceField
                     label="Caste Preferences"
@@ -713,7 +813,7 @@ export const PartnerPreferencesPage = (): JSX.Element => {
               </PreferenceSection>
 
               {/* Appearance Preferences */}
-              <PreferenceSection title="Appearance Preferences">
+              <PreferenceSection title="Appearance Preferences" sectionRef={appearanceRef}>
                 <SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
                   <PreferenceField
                     label="Body Type"
@@ -751,7 +851,7 @@ export const PartnerPreferencesPage = (): JSX.Element => {
               </PreferenceSection>
 
               {/* Professional & Financial */}
-              <PreferenceSection title="Professional & Financial">
+              <PreferenceSection title="Professional & Financial" sectionRef={professionalRef}>
                 <SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
                   <PreferenceField
                     label="Income Range"
@@ -785,7 +885,7 @@ export const PartnerPreferencesPage = (): JSX.Element => {
               </PreferenceSection>
 
               {/* Family Background */}
-              <PreferenceSection title="Family Background">
+              <PreferenceSection title="Family Background" sectionRef={familyRef}>
                 <SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
                   <PreferenceField
                     label="Family Type"
@@ -815,7 +915,7 @@ export const PartnerPreferencesPage = (): JSX.Element => {
               </PreferenceSection>
 
               {/* Language & Location */}
-              <PreferenceSection title="Language & Location">
+              <PreferenceSection title="Language & Location" sectionRef={languageRef}>
                 <SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
                   <PreferenceField
                     label="Languages"
@@ -837,7 +937,7 @@ export const PartnerPreferencesPage = (): JSX.Element => {
               </PreferenceSection>
 
               {/* Interests */}
-              <PreferenceSection title="Interests">
+              <PreferenceSection title="Interests" sectionRef={interestsRef}>
                 <SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
                   <PreferenceField
                     label="Interest Preferences"
@@ -851,7 +951,7 @@ export const PartnerPreferencesPage = (): JSX.Element => {
               </PreferenceSection>
 
               {/* Deal-Breakers & Must-Haves */}
-              <PreferenceSection title="Deal-Breakers & Must-Haves">
+              <PreferenceSection title="Deal-Breakers & Must-Haves" sectionRef={dealBreakersRef}>
                 <SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
                   <PreferenceField
                     label="Max Days Inactive"
@@ -885,9 +985,9 @@ export const PartnerPreferencesPage = (): JSX.Element => {
                   />
                 </SimpleGrid>
               </PreferenceSection>
-            </>
+              </VStack>
+            </Flex>
           )}
-        </VStack>
       </Container>
     </Box>
   );
