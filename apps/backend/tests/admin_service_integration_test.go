@@ -558,6 +558,13 @@ func TestAdminService_CurateDates(t *testing.T) {
 
 	ctx := context.Background()
 
+	// Cleanup any existing test data first
+	db.Exec("DELETE FROM availability_slots WHERE user_id IN (SELECT id FROM users WHERE email LIKE 'test_admin_curate_%@test.com')")
+	db.Exec("DELETE FROM curated_matches WHERE user1_id IN (SELECT id FROM users WHERE email LIKE 'test_admin_curate_%@test.com') OR user2_id IN (SELECT id FROM users WHERE email LIKE 'test_admin_curate_%@test.com')")
+	db.Exec("DELETE FROM partner_preferences WHERE user_id IN (SELECT id FROM users WHERE email LIKE 'test_admin_curate_%@test.com')")
+	db.Exec("DELETE FROM user_profiles WHERE user_id IN (SELECT id FROM users WHERE email LIKE 'test_admin_curate_%@test.com')")
+	db.Exec("DELETE FROM users WHERE email LIKE 'test_admin_curate_%@test.com'")
+
 	// Create test users
 	user1ID := createTestUserForCuration(t, db, "test_admin_curate_1@test.com", "Alice", "FEMALE", 28, true)
 	user2ID := createTestUserForCuration(t, db, "test_admin_curate_2@test.com", "Bob", "MALE", 30, true)

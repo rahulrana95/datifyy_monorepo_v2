@@ -37,7 +37,7 @@ func NewDatesService(db *sql.DB, redisClient *redis.Client) (*DatesService, erro
 		aiConfig := ai.Config{
 			Provider: "gemini",
 			APIKey:   apiKey,
-			Model:    "gemini-1.5-flash",
+			Model:    "gemini-2.5-flash",
 		}
 
 		var err error

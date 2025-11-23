@@ -29,7 +29,7 @@ func NewGeminiProvider(ctx context.Context, apiKey string, model string) (*Gemin
 	}
 
 	if model == "" {
-		model = "gemini-1.5-flash" // Default model
+		model = "gemini-2.5-flash" // Default model
 	}
 
 	return &GeminiProvider{
