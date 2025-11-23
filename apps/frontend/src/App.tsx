@@ -17,6 +17,7 @@ import { AdminProfile } from './pages/Admin/Profile/AdminProfile';
 import { AdminManagement } from './pages/Admin/Admins/AdminManagement';
 import { AdminGenie } from './pages/Admin/Genie/AdminGenie';
 import { UserDetails } from './pages/Admin/UserDetails/UserDetails';
+import { CurateDates } from './pages/Admin/CurateDates';
 
 function App() {
   return (
@@ -34,6 +35,7 @@ function App() {
           <Route path="/admin/dashboard" element={<AdminAnalytics />} />
           <Route path="/admin/users" element={<AdminUsers />} />
           <Route path="/admin/users/:userId" element={<UserDetails />} />
+          <Route path="/admin/curate" element={<CurateDates />} />
           <Route path="/admin/profile" element={<AdminProfile />} />
           <Route path="/admin/admins" element={<AdminManagement />} />
           <Route path="/admin/genie" element={<AdminGenie />} />

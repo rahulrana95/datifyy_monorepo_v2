@@ -23,6 +23,7 @@ interface MenuItem {
 const menuItems: MenuItem[] = [
   { id: 'dashboard', label: 'Dashboard', icon: '📊', path: '/admin/dashboard' },
   { id: 'users', label: 'Users', icon: '👥', path: '/admin/users' },
+  { id: 'curate', label: 'Curate Dates', icon: '💝', path: '/admin/curate' },
   { id: 'admins', label: 'Admins', icon: '🔐', path: '/admin/admins', roles: ['ADMIN_ROLE_SUPER'] },
   { id: 'profile', label: 'Profile', icon: '👤', path: '/admin/profile' },
   { id: 'genie', label: 'Genie', icon: '✨', path: '/admin/genie', roles: ['ADMIN_ROLE_GENIE', 'ADMIN_ROLE_SUPER'] },

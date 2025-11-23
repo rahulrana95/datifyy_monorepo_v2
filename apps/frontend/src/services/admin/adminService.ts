@@ -611,6 +611,76 @@ export const updateAdminProfile = async (
   return response.json();
 };
 
+// ============================================================================
+// Date Curation (AI-Powered Matching)
+// ============================================================================
+
+export interface CurationCandidate {
+  userId: string;
+  email: string;
+  name: string;
+  age: number;
+  gender: string;
+  profileCompletion: number;
+  emailVerified: boolean;
+  aadharVerified: boolean;
+  workEmailVerified: boolean;
+  availableSlotsCount: number;
+  nextAvailableDate: number;
+}
+
+export interface MatchResult {
+  userId: string;
+  name: string;
+  age: number;
+  gender: string;
+  compatibilityScore: number; // 0-100
+  isMatch: boolean; // true if score >= 60
+  reasoning: string;
+  matchedAspects: string[];
+  mismatchedAspects: string[];
+}
+
+// Get Curation Candidates (users available for dates)
+export const getCurationCandidates = async (): Promise<{ candidates: CurationCandidate[] }> => {
+  const response = await fetch(`${API_BASE}/api/v1/admin/curation/candidates`, {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || 'Failed to fetch curation candidates');
+  }
+
+  return response.json();
+};
+
+// Curate Dates (AI compatibility analysis)
+export const curateDates = async (
+  userId: string,
+  candidateIds: string[]
+): Promise<{ matches: MatchResult[] }> => {
+  const response = await fetch(`${API_BASE}/api/v1/admin/curation/analyze`, {
+    method: 'POST',
+    headers: {
+      ...getAuthHeaders(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      userId,
+      candidateIds,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || 'Failed to curate dates');
+  }
+
+  return response.json();
+};
+
 // Helper function to get auth headers
 function getAuthHeaders(): Record<string, string> {
   const token = localStorage.getItem('admin_access_token');
