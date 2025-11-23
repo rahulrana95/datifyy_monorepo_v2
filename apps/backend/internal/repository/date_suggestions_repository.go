@@ -225,3 +225,25 @@ func (r *DateSuggestionsRepository) GetRejectionsBetweenUsers(ctx context.Contex
 
 	return rejections, nil
 }
+
+// CountByUserStatus counts date suggestions by status for a user
+func (r *DateSuggestionsRepository) CountByUserStatus(ctx context.Context, userID int, status string) (int, error) {
+	var count int
+	query := `SELECT COUNT(*) FROM date_suggestions WHERE user_id = $1 AND status = $2`
+	err := r.db.QueryRowContext(ctx, query, userID, status).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count suggestions by status: %w", err)
+	}
+	return count, nil
+}
+
+// CountByUser counts total date suggestions for a user
+func (r *DateSuggestionsRepository) CountByUser(ctx context.Context, userID int) (int, error) {
+	var count int
+	query := `SELECT COUNT(*) FROM date_suggestions WHERE user_id = $1`
+	err := r.db.QueryRowContext(ctx, query, userID).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count suggestions: %w", err)
+	}
+	return count, nil
+}

@@ -75,6 +75,28 @@ service UserService {
   
   // Report a user
   rpc ReportUser(ReportUserRequest) returns (ReportUserResponse);
+
+  // ============================================================================
+  // Love Zone (User Dates Dashboard)
+  // ============================================================================
+
+  // Get Love Zone dashboard (all date views in one call)
+  rpc GetLoveZoneDashboard(GetLoveZoneDashboardRequest) returns (GetLoveZoneDashboardResponse);
+
+  // Get date suggestions (pending)
+  rpc GetDateSuggestions(GetDateSuggestionsRequest) returns (GetDateSuggestionsResponse);
+
+  // Get upcoming dates
+  rpc GetUpcomingDates(GetUpcomingDatesRequest) returns (GetUpcomingDatesResponse);
+
+  // Get past dates
+  rpc GetPastDates(GetPastDatesRequest) returns (GetPastDatesResponse);
+
+  // Get rejected dates
+  rpc GetRejectedDates(GetRejectedDatesRequest) returns (GetRejectedDatesResponse);
+
+  // Get Love Zone statistics
+  rpc GetLoveZoneStatistics(GetLoveZoneStatisticsRequest) returns (GetLoveZoneStatisticsResponse);
 }
 
 // ============================================================================
@@ -1949,7 +1971,277 @@ message ReportUserRequest {
 message ReportUserResponse {
   // Report ID
   string report_id = 1;
-  
+
   // Success message
   string message = 2;
+}
+
+// ============================================================================
+// Love Zone Messages (User Dates Dashboard)
+// ============================================================================
+
+// User summary for date displays (lighter than full UserProfile)
+message UserSummary {
+  // User ID
+  int32 id = 1;
+
+  // Name
+  string name = 2;
+
+  // Age
+  int32 age = 3;
+
+  // Gender
+  Gender gender = 4;
+
+  // Location (city, country)
+  string location = 5;
+
+  // Primary photo URL
+  string photo_url = 6;
+
+  // Bio (first 100 chars)
+  string bio = 7;
+
+  // Occupation
+  string occupation = 8;
+}
+
+// Date suggestion detail (pending suggestions)
+message DateSuggestionDetail {
+  // Suggestion ID
+  int32 id = 1;
+
+  // Suggested user details
+  UserSummary suggested_user = 2;
+
+  // Compatibility score
+  double compatibility_score = 3;
+
+  // AI reasoning
+  string reasoning = 4;
+
+  // Status (pending, accepted, rejected)
+  string status = 5;
+
+  // Created timestamp
+  common.v1.Timestamp created_at = 6;
+}
+
+// Scheduled date detail (upcoming/past dates)
+message ScheduledDateDetail {
+  // Date ID
+  int32 id = 1;
+
+  // Other user (not the current user)
+  UserSummary other_user = 2;
+
+  // Scheduled time
+  common.v1.Timestamp scheduled_time = 3;
+
+  // Duration in minutes
+  int32 duration_minutes = 4;
+
+  // Status (scheduled, confirmed, in_progress, completed, cancelled, no_show)
+  string status = 5;
+
+  // Date type (online, offline, event)
+  string date_type = 6;
+
+  // Location details (for offline dates)
+  string place_name = 7;
+  string address = 8;
+  string city = 9;
+
+  // Notes (includes Google Meet link for online dates)
+  string notes = 10;
+
+  // Created timestamp
+  common.v1.Timestamp created_at = 11;
+
+  // Confirmed timestamp
+  common.v1.Timestamp confirmed_at = 12;
+
+  // Completed timestamp
+  common.v1.Timestamp completed_at = 13;
+}
+
+// Rejected date detail
+message RejectedDateDetail {
+  // Suggestion ID
+  int32 id = 1;
+
+  // Rejected user details
+  UserSummary rejected_user = 2;
+
+  // Compatibility score
+  double compatibility_score = 3;
+
+  // Rejected timestamp
+  common.v1.Timestamp rejected_at = 4;
+}
+
+// Love Zone statistics
+message LoveZoneStatistics {
+  // Total date suggestions received
+  int32 total_suggestions = 1;
+
+  // Pending suggestions count
+  int32 pending_suggestions = 2;
+
+  // Accepted suggestions count
+  int32 accepted_suggestions = 3;
+
+  // Rejected suggestions count
+  int32 rejected_suggestions = 4;
+
+  // Total scheduled dates
+  int32 total_scheduled_dates = 5;
+
+  // Upcoming dates count
+  int32 upcoming_dates = 6;
+
+  // Past dates count
+  int32 past_dates = 7;
+
+  // Completed dates count
+  int32 completed_dates = 8;
+
+  // Cancelled dates count
+  int32 cancelled_dates = 9;
+
+  // Acceptance rate (percentage)
+  double acceptance_rate = 10;
+
+  // Completion rate (percentage)
+  double completion_rate = 11;
+}
+
+// Get Love Zone Dashboard (all-in-one)
+message GetLoveZoneDashboardRequest {
+  // User ID (from auth context)
+  int32 user_id = 1;
+}
+
+message GetLoveZoneDashboardResponse {
+  // Pending date suggestions
+  repeated DateSuggestionDetail pending_suggestions = 1;
+
+  // Upcoming dates
+  repeated ScheduledDateDetail upcoming_dates = 2;
+
+  // Past dates (last 10)
+  repeated ScheduledDateDetail past_dates = 3;
+
+  // Rejected dates (last 10)
+  repeated RejectedDateDetail rejected_dates = 4;
+
+  // Statistics
+  LoveZoneStatistics statistics = 5;
+}
+
+// Get Date Suggestions
+message GetDateSuggestionsRequest {
+  // User ID (from auth context)
+  int32 user_id = 1;
+
+  // Status filter (optional: pending, accepted, rejected, all)
+  string status = 2;
+
+  // Pagination
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message GetDateSuggestionsResponse {
+  // Date suggestions
+  repeated DateSuggestionDetail suggestions = 1;
+
+  // Total count
+  int32 total_count = 2;
+
+  // Pagination
+  int32 page = 3;
+  int32 page_size = 4;
+  int32 total_pages = 5;
+}
+
+// Get Upcoming Dates
+message GetUpcomingDatesRequest {
+  // User ID (from auth context)
+  int32 user_id = 1;
+
+  // Pagination
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+message GetUpcomingDatesResponse {
+  // Upcoming dates
+  repeated ScheduledDateDetail dates = 1;
+
+  // Total count
+  int32 total_count = 2;
+
+  // Pagination
+  int32 page = 3;
+  int32 page_size = 4;
+  int32 total_pages = 5;
+}
+
+// Get Past Dates
+message GetPastDatesRequest {
+  // User ID (from auth context)
+  int32 user_id = 1;
+
+  // Pagination
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+message GetPastDatesResponse {
+  // Past dates
+  repeated ScheduledDateDetail dates = 1;
+
+  // Total count
+  int32 total_count = 2;
+
+  // Pagination
+  int32 page = 3;
+  int32 page_size = 4;
+  int32 total_pages = 5;
+}
+
+// Get Rejected Dates
+message GetRejectedDatesRequest {
+  // User ID (from auth context)
+  int32 user_id = 1;
+
+  // Pagination
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+message GetRejectedDatesResponse {
+  // Rejected dates
+  repeated RejectedDateDetail dates = 1;
+
+  // Total count
+  int32 total_count = 2;
+
+  // Pagination
+  int32 page = 3;
+  int32 page_size = 4;
+  int32 total_pages = 5;
+}
+
+// Get Love Zone Statistics
+message GetLoveZoneStatisticsRequest {
+  // User ID (from auth context)
+  int32 user_id = 1;
+}
+
+message GetLoveZoneStatisticsResponse {
+  // Statistics
+  LoveZoneStatistics statistics = 1;
 }

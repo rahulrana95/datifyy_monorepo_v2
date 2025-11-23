@@ -233,6 +233,15 @@ func startHTTPServer(port string, server *Server, db *sql.DB, redisClient *redis
 	mux.HandleFunc("/api/v1/user/suggestions", createUserGetSuggestionsHandler(datesService))
 	mux.HandleFunc("/api/v1/user/suggestions/", createUserRespondToSuggestionHandler(datesService))
 
+	// Love Zone endpoints (User Dates Dashboard)
+	loveZoneService := service.NewLoveZoneService(db)
+	mux.HandleFunc("/api/v1/user/love-zone/dashboard", createLoveZoneDashboardHandler(loveZoneService))
+	mux.HandleFunc("/api/v1/user/love-zone/suggestions", createLoveZoneSuggestionsHandler(loveZoneService))
+	mux.HandleFunc("/api/v1/user/love-zone/upcoming", createLoveZoneUpcomingHandler(loveZoneService))
+	mux.HandleFunc("/api/v1/user/love-zone/past", createLoveZonePastHandler(loveZoneService))
+	mux.HandleFunc("/api/v1/user/love-zone/rejected", createLoveZoneRejectedHandler(loveZoneService))
+	mux.HandleFunc("/api/v1/user/love-zone/statistics", createLoveZoneStatisticsHandler(loveZoneService))
+
 	// Admin Analytics endpoints
 	mux.HandleFunc("/api/v1/admin/analytics/platform", createAdminGetPlatformStatsHandler(adminService))
 	mux.HandleFunc("/api/v1/admin/analytics/user-growth", createAdminGetUserGrowthHandler(adminService))
@@ -3651,6 +3660,280 @@ func createSlackTestHandler(slackService *slack.SlackService) http.HandlerFunc {
 			"success": true,
 			"message": "Test message sent successfully to Slack!",
 			"sent_at": time.Now().Format("2006-01-02 15:04:05"),
+		})
+	}
+}
+
+// ============================================================================
+// Love Zone Handlers
+// ============================================================================
+
+// createLoveZoneDashboardHandler returns the complete Love Zone dashboard
+func createLoveZoneDashboardHandler(loveZoneService *service.LoveZoneService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		// Get user ID from query parameter (in production, get from auth context)
+		userIDStr := r.URL.Query().Get("userId")
+		if userIDStr == "" {
+			http.Error(w, "userId is required", http.StatusBadRequest)
+			return
+		}
+
+		userID, err := strconv.Atoi(userIDStr)
+		if err != nil {
+			http.Error(w, "Invalid userId", http.StatusBadRequest)
+			return
+		}
+
+		dashboard, err := loveZoneService.GetLoveZoneDashboard(r.Context(), userID)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Failed to get dashboard: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"success":            true,
+			"pendingSuggestions": dashboard.PendingSuggestions,
+			"upcomingDates":      dashboard.UpcomingDates,
+			"pastDates":          dashboard.PastDates,
+			"rejectedDates":      dashboard.RejectedDates,
+			"statistics":         dashboard.Statistics,
+		})
+	}
+}
+
+// createLoveZoneSuggestionsHandler returns date suggestions for a user
+func createLoveZoneSuggestionsHandler(loveZoneService *service.LoveZoneService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		userIDStr := r.URL.Query().Get("userId")
+		if userIDStr == "" {
+			http.Error(w, "userId is required", http.StatusBadRequest)
+			return
+		}
+
+		userID, err := strconv.Atoi(userIDStr)
+		if err != nil {
+			http.Error(w, "Invalid userId", http.StatusBadRequest)
+			return
+		}
+
+		status := r.URL.Query().Get("status")
+		if status == "" {
+			status = "pending"
+		}
+
+		page, _ := strconv.Atoi(r.URL.Query().Get("page"))
+		if page < 1 {
+			page = 1
+		}
+
+		pageSize, _ := strconv.Atoi(r.URL.Query().Get("pageSize"))
+		if pageSize < 1 || pageSize > 100 {
+			pageSize = 20
+		}
+
+		offset := (page - 1) * pageSize
+
+		suggestions, err := loveZoneService.GetDateSuggestions(r.Context(), userID, status, pageSize, offset)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Failed to get suggestions: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"success":     true,
+			"suggestions": suggestions,
+			"page":        page,
+			"pageSize":    pageSize,
+		})
+	}
+}
+
+// createLoveZoneUpcomingHandler returns upcoming dates for a user
+func createLoveZoneUpcomingHandler(loveZoneService *service.LoveZoneService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		userIDStr := r.URL.Query().Get("userId")
+		if userIDStr == "" {
+			http.Error(w, "userId is required", http.StatusBadRequest)
+			return
+		}
+
+		userID, err := strconv.Atoi(userIDStr)
+		if err != nil {
+			http.Error(w, "Invalid userId", http.StatusBadRequest)
+			return
+		}
+
+		page, _ := strconv.Atoi(r.URL.Query().Get("page"))
+		if page < 1 {
+			page = 1
+		}
+
+		pageSize, _ := strconv.Atoi(r.URL.Query().Get("pageSize"))
+		if pageSize < 1 || pageSize > 100 {
+			pageSize = 20
+		}
+
+		offset := (page - 1) * pageSize
+
+		dates, err := loveZoneService.GetUpcomingDates(r.Context(), userID, pageSize, offset)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Failed to get upcoming dates: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"success":  true,
+			"dates":    dates,
+			"page":     page,
+			"pageSize": pageSize,
+		})
+	}
+}
+
+// createLoveZonePastHandler returns past dates for a user
+func createLoveZonePastHandler(loveZoneService *service.LoveZoneService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		userIDStr := r.URL.Query().Get("userId")
+		if userIDStr == "" {
+			http.Error(w, "userId is required", http.StatusBadRequest)
+			return
+		}
+
+		userID, err := strconv.Atoi(userIDStr)
+		if err != nil {
+			http.Error(w, "Invalid userId", http.StatusBadRequest)
+			return
+		}
+
+		page, _ := strconv.Atoi(r.URL.Query().Get("page"))
+		if page < 1 {
+			page = 1
+		}
+
+		pageSize, _ := strconv.Atoi(r.URL.Query().Get("pageSize"))
+		if pageSize < 1 || pageSize > 100 {
+			pageSize = 20
+		}
+
+		offset := (page - 1) * pageSize
+
+		dates, err := loveZoneService.GetPastDates(r.Context(), userID, pageSize, offset)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Failed to get past dates: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"success":  true,
+			"dates":    dates,
+			"page":     page,
+			"pageSize": pageSize,
+		})
+	}
+}
+
+// createLoveZoneRejectedHandler returns rejected date suggestions
+func createLoveZoneRejectedHandler(loveZoneService *service.LoveZoneService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		userIDStr := r.URL.Query().Get("userId")
+		if userIDStr == "" {
+			http.Error(w, "userId is required", http.StatusBadRequest)
+			return
+		}
+
+		userID, err := strconv.Atoi(userIDStr)
+		if err != nil {
+			http.Error(w, "Invalid userId", http.StatusBadRequest)
+			return
+		}
+
+		page, _ := strconv.Atoi(r.URL.Query().Get("page"))
+		if page < 1 {
+			page = 1
+		}
+
+		pageSize, _ := strconv.Atoi(r.URL.Query().Get("pageSize"))
+		if pageSize < 1 || pageSize > 100 {
+			pageSize = 20
+		}
+
+		offset := (page - 1) * pageSize
+
+		dates, err := loveZoneService.GetRejectedDates(r.Context(), userID, pageSize, offset)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Failed to get rejected dates: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"success":  true,
+			"dates":    dates,
+			"page":     page,
+			"pageSize": pageSize,
+		})
+	}
+}
+
+// createLoveZoneStatisticsHandler returns Love Zone statistics
+func createLoveZoneStatisticsHandler(loveZoneService *service.LoveZoneService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		userIDStr := r.URL.Query().Get("userId")
+		if userIDStr == "" {
+			http.Error(w, "userId is required", http.StatusBadRequest)
+			return
+		}
+
+		userID, err := strconv.Atoi(userIDStr)
+		if err != nil {
+			http.Error(w, "Invalid userId", http.StatusBadRequest)
+			return
+		}
+
+		statistics, err := loveZoneService.GetLoveZoneStatistics(r.Context(), userID)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Failed to get statistics: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"success":    true,
+			"statistics": statistics,
 		})
 	}
 }

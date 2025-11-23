@@ -77,3 +77,154 @@ func (r *ScheduledDatesRepository) UpdateStatus(ctx context.Context, id int, sta
 	}
 	return nil
 }
+
+// ListByUserUpcoming retrieves upcoming scheduled dates for a user
+func (r *ScheduledDatesRepository) ListByUserUpcoming(ctx context.Context, userID int, limit, offset int) ([]*ScheduledDate, error) {
+	query := `
+		SELECT id, user1_id, user2_id, genie_id, scheduled_time, duration_minutes,
+			   status, date_type, place_name, address, city, state, country, zipcode,
+			   latitude, longitude, notes, admin_notes, created_at, updated_at,
+			   confirmed_at, completed_at, cancelled_at
+		FROM scheduled_dates
+		WHERE (user1_id = $1 OR user2_id = $1)
+		  AND scheduled_time > NOW()
+		  AND status IN ('scheduled', 'confirmed')
+		ORDER BY scheduled_time ASC
+		LIMIT $2 OFFSET $3
+	`
+
+	rows, err := r.db.QueryContext(ctx, query, userID, limit, offset)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list upcoming dates: %w", err)
+	}
+	defer rows.Close()
+
+	var dates []*ScheduledDate
+	for rows.Next() {
+		date := &ScheduledDate{}
+		err := rows.Scan(
+			&date.ID, &date.User1ID, &date.User2ID, &date.GenieID, &date.ScheduledTime, &date.DurationMinutes,
+			&date.Status, &date.DateType, &date.PlaceName, &date.Address, &date.City, &date.State, &date.Country, &date.Zipcode,
+			&date.Latitude, &date.Longitude, &date.Notes, &date.AdminNotes, &date.CreatedAt, &date.UpdatedAt,
+			&date.ConfirmedAt, &date.CompletedAt, &date.CancelledAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan scheduled date: %w", err)
+		}
+		dates = append(dates, date)
+	}
+
+	return dates, nil
+}
+
+// ListByUserPast retrieves past scheduled dates for a user
+func (r *ScheduledDatesRepository) ListByUserPast(ctx context.Context, userID int, limit, offset int) ([]*ScheduledDate, error) {
+	query := `
+		SELECT id, user1_id, user2_id, genie_id, scheduled_time, duration_minutes,
+			   status, date_type, place_name, address, city, state, country, zipcode,
+			   latitude, longitude, notes, admin_notes, created_at, updated_at,
+			   confirmed_at, completed_at, cancelled_at
+		FROM scheduled_dates
+		WHERE (user1_id = $1 OR user2_id = $1)
+		  AND (
+			status = 'completed'
+			OR status = 'cancelled'
+			OR status = 'no_show'
+			OR (scheduled_time < NOW() AND status IN ('scheduled', 'confirmed'))
+		  )
+		ORDER BY scheduled_time DESC
+		LIMIT $2 OFFSET $3
+	`
+
+	rows, err := r.db.QueryContext(ctx, query, userID, limit, offset)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list past dates: %w", err)
+	}
+	defer rows.Close()
+
+	var dates []*ScheduledDate
+	for rows.Next() {
+		date := &ScheduledDate{}
+		err := rows.Scan(
+			&date.ID, &date.User1ID, &date.User2ID, &date.GenieID, &date.ScheduledTime, &date.DurationMinutes,
+			&date.Status, &date.DateType, &date.PlaceName, &date.Address, &date.City, &date.State, &date.Country, &date.Zipcode,
+			&date.Latitude, &date.Longitude, &date.Notes, &date.AdminNotes, &date.CreatedAt, &date.UpdatedAt,
+			&date.ConfirmedAt, &date.CompletedAt, &date.CancelledAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan scheduled date: %w", err)
+		}
+		dates = append(dates, date)
+	}
+
+	return dates, nil
+}
+
+// CountByUserUpcoming counts upcoming dates for a user
+func (r *ScheduledDatesRepository) CountByUserUpcoming(ctx context.Context, userID int) (int, error) {
+	var count int
+	query := `
+		SELECT COUNT(*)
+		FROM scheduled_dates
+		WHERE (user1_id = $1 OR user2_id = $1)
+		  AND scheduled_time > NOW()
+		  AND status IN ('scheduled', 'confirmed')
+	`
+	err := r.db.QueryRowContext(ctx, query, userID).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count upcoming dates: %w", err)
+	}
+	return count, nil
+}
+
+// CountByUserPast counts past dates for a user
+func (r *ScheduledDatesRepository) CountByUserPast(ctx context.Context, userID int) (int, error) {
+	var count int
+	query := `
+		SELECT COUNT(*)
+		FROM scheduled_dates
+		WHERE (user1_id = $1 OR user2_id = $1)
+		  AND (
+			status = 'completed'
+			OR status = 'cancelled'
+			OR status = 'no_show'
+			OR (scheduled_time < NOW() AND status IN ('scheduled', 'confirmed'))
+		  )
+	`
+	err := r.db.QueryRowContext(ctx, query, userID).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count past dates: %w", err)
+	}
+	return count, nil
+}
+
+// CountByUserStatus counts dates by status for a user
+func (r *ScheduledDatesRepository) CountByUserStatus(ctx context.Context, userID int, status string) (int, error) {
+	var count int
+	query := `
+		SELECT COUNT(*)
+		FROM scheduled_dates
+		WHERE (user1_id = $1 OR user2_id = $1)
+		  AND status = $2
+	`
+	err := r.db.QueryRowContext(ctx, query, userID, status).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count dates by status: %w", err)
+	}
+	return count, nil
+}
+
+// CountByUser counts total scheduled dates for a user
+func (r *ScheduledDatesRepository) CountByUser(ctx context.Context, userID int) (int, error) {
+	var count int
+	query := `
+		SELECT COUNT(*)
+		FROM scheduled_dates
+		WHERE user1_id = $1 OR user2_id = $1
+	`
+	err := r.db.QueryRowContext(ctx, query, userID).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count user dates: %w", err)
+	}
+	return count, nil
+}
