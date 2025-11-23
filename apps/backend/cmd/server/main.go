@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -225,6 +226,11 @@ func startHTTPServer(port string, server *Server, db *sql.DB, redisClient *redis
 	mux.HandleFunc("/api/v1/admin/curation/analyze", createAdminCurateDatesHandler(adminService, db))
 	mux.HandleFunc("/api/v1/admin/curation/action", createAdminUpdateCuratedMatchActionHandler(datesService))
 	mux.HandleFunc("/api/v1/admin/curation/matches", createAdminGetCuratedMatchesByStatusHandler(datesService))
+	mux.HandleFunc("/api/v1/admin/curation/matches/", createAdminCreateSuggestionsHandler(datesService))
+
+	// User Date Suggestions endpoints
+	mux.HandleFunc("/api/v1/user/suggestions", createUserGetSuggestionsHandler(datesService))
+	mux.HandleFunc("/api/v1/user/suggestions/", createUserRespondToSuggestionHandler(datesService))
 
 	// Admin Analytics endpoints
 	mux.HandleFunc("/api/v1/admin/analytics/platform", createAdminGetPlatformStatsHandler(adminService))
@@ -2074,6 +2080,169 @@ func createAdminGetCuratedMatchesByStatusHandler(datesService *service.DatesServ
 			"page":       page,
 			"pageSize":   pageSize,
 			"totalPages": totalPages,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(jsonResp)
+	}
+}
+
+// createAdminCreateSuggestionsHandler creates date suggestions from an accepted match
+func createAdminCreateSuggestionsHandler(datesService *service.DatesService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		// Extract match ID from path /api/v1/admin/curation/matches/{id}/suggest
+		pathParts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
+		if len(pathParts) < 6 {
+			http.Error(w, "Invalid URL format", http.StatusBadRequest)
+			return
+		}
+
+		matchIDStr := pathParts[5]
+		matchID, err := strconv.Atoi(matchIDStr)
+		if err != nil {
+			http.Error(w, "Invalid match ID", http.StatusBadRequest)
+			return
+		}
+
+		// Create suggestions for both users
+		err = datesService.CreateSuggestionsFromMatch(r.Context(), matchID)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Failed to create suggestions: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		jsonResp := map[string]interface{}{
+			"success": true,
+			"message": fmt.Sprintf("Date suggestions created for match %d", matchID),
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(jsonResp)
+	}
+}
+
+// =============================================================================
+// User Date Suggestion HTTP Handlers
+// =============================================================================
+
+// createUserGetSuggestionsHandler gets date suggestions for a user
+func createUserGetSuggestionsHandler(datesService *service.DatesService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		// TODO: Get user ID from authentication token
+		// For now, get from query parameter
+		userIDStr := r.URL.Query().Get("userId")
+		if userIDStr == "" {
+			http.Error(w, "User ID is required", http.StatusBadRequest)
+			return
+		}
+
+		userID, err := strconv.Atoi(userIDStr)
+		if err != nil {
+			http.Error(w, "Invalid user ID", http.StatusBadRequest)
+			return
+		}
+
+		status := r.URL.Query().Get("status") // Optional: pending, accepted, rejected
+
+		// Get suggestions
+		suggestions, err := datesService.GetUserSuggestions(r.Context(), userID, status)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Failed to get suggestions: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		// Convert to JSON
+		var suggestionsJSON []map[string]interface{}
+		for _, sugg := range suggestions {
+			suggestionsJSON = append(suggestionsJSON, map[string]interface{}{
+				"id": sugg.ID,
+				"suggestedUser": map[string]interface{}{
+					"userId": sugg.SuggestedUserID,
+					"name":   sugg.SuggestedUserName,
+					"email":  sugg.SuggestedUserEmail,
+					"age":    sugg.SuggestedUserAge,
+					"gender": sugg.SuggestedUserGender,
+				},
+				"compatibilityScore": sugg.CompatibilityScore,
+				"reasoning":          sugg.Reasoning,
+				"status":             sugg.Status,
+				"createdAt":          sugg.CreatedAt.Unix(),
+			})
+		}
+
+		jsonResp := map[string]interface{}{
+			"suggestions": suggestionsJSON,
+			"count":       len(suggestionsJSON),
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(jsonResp)
+	}
+}
+
+// createUserRespondToSuggestionHandler allows users to accept/reject suggestions
+func createUserRespondToSuggestionHandler(datesService *service.DatesService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		// Extract suggestion ID from path /api/v1/user/suggestions/{id}/respond
+		pathParts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
+		if len(pathParts) < 5 {
+			http.Error(w, "Invalid URL format", http.StatusBadRequest)
+			return
+		}
+
+		suggestionIDStr := pathParts[4]
+		suggestionID, err := strconv.Atoi(suggestionIDStr)
+		if err != nil {
+			http.Error(w, "Invalid suggestion ID", http.StatusBadRequest)
+			return
+		}
+
+		var reqBody struct {
+			UserID int  `json:"userId"` // TODO: Get from auth token
+			Accept bool `json:"accept"`
+		}
+
+		if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+			http.Error(w, fmt.Sprintf("Invalid JSON: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		if reqBody.UserID <= 0 {
+			http.Error(w, "User ID is required", http.StatusBadRequest)
+			return
+		}
+
+		// Respond to suggestion
+		err = datesService.RespondToSuggestion(r.Context(), suggestionID, reqBody.UserID, reqBody.Accept)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Failed to respond to suggestion: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		action := "rejected"
+		if reqBody.Accept {
+			action = "accepted"
+		}
+
+		jsonResp := map[string]interface{}{
+			"success": true,
+			"message": fmt.Sprintf("Suggestion %s successfully", action),
+			"action":  action,
 		}
 
 		w.Header().Set("Content-Type", "application/json")

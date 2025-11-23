@@ -660,3 +660,138 @@ func (s *DatesService) GetCuratedMatchesByStatus(ctx context.Context, status str
 
 	return enrichedMatches, totalCount, nil
 }
+
+// CreateSuggestionsFromMatch creates date suggestions for both users from a curated match
+func (s *DatesService) CreateSuggestionsFromMatch(ctx context.Context, matchID int) error {
+	// Get the curated match
+	match, err := s.curatedMatchesRepo.GetByID(ctx, matchID)
+	if err != nil {
+		return fmt.Errorf("failed to get curated match: %w", err)
+	}
+
+	// Verify match is in accepted status
+	if match.Status != "accepted" {
+		return fmt.Errorf("can only create suggestions from accepted matches, current status: %s", match.Status)
+	}
+
+	// Check if suggestions already exist for this match
+	existingSuggestions, err := s.suggestionsRepo.ListByUser(ctx, match.User1ID, "", 100, 0)
+	if err == nil {
+		for _, sugg := range existingSuggestions {
+			if sugg.CuratedMatchID != nil && *sugg.CuratedMatchID == matchID {
+				return fmt.Errorf("suggestions already exist for this match")
+			}
+		}
+	}
+
+	// Create suggestion for user1 (suggesting user2)
+	suggestion1 := &repository.DateSuggestion{
+		UserID:             match.User1ID,
+		SuggestedUserID:    match.User2ID,
+		CuratedMatchID:     &matchID,
+		CompatibilityScore: match.CompatibilityScore,
+		Reasoning:          match.Reasoning,
+		Status:             "pending",
+	}
+	if err := s.suggestionsRepo.Create(ctx, suggestion1); err != nil {
+		return fmt.Errorf("failed to create suggestion for user1: %w", err)
+	}
+
+	// Create suggestion for user2 (suggesting user1)
+	suggestion2 := &repository.DateSuggestion{
+		UserID:             match.User2ID,
+		SuggestedUserID:    match.User1ID,
+		CuratedMatchID:     &matchID,
+		CompatibilityScore: match.CompatibilityScore,
+		Reasoning:          match.Reasoning,
+		Status:             "pending",
+	}
+	if err := s.suggestionsRepo.Create(ctx, suggestion2); err != nil {
+		return fmt.Errorf("failed to create suggestion for user2: %w", err)
+	}
+
+	log.Printf("Created date suggestions for match %d (users %d and %d)", matchID, match.User1ID, match.User2ID)
+	return nil
+}
+
+// DateSuggestionWithUser represents a suggestion with suggested user details
+type DateSuggestionWithUser struct {
+	ID                  int
+	SuggestedUserID     int
+	SuggestedUserName   string
+	SuggestedUserEmail  string
+	SuggestedUserAge    int
+	SuggestedUserGender string
+	CompatibilityScore  float64
+	Reasoning           string
+	Status              string
+	CreatedAt           time.Time
+}
+
+// GetUserSuggestions retrieves date suggestions for a user with suggested user details
+func (s *DatesService) GetUserSuggestions(ctx context.Context, userID int, status string) ([]*DateSuggestionWithUser, error) {
+	// Get suggestions from repository
+	suggestions, err := s.suggestionsRepo.ListByUser(ctx, userID, status, 100, 0)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list user suggestions: %w", err)
+	}
+
+	// Enrich with suggested user details
+	var enriched []*DateSuggestionWithUser
+	for _, sugg := range suggestions {
+		// Get suggested user details
+		suggestedUser, err := s.userRepo.GetByID(ctx, sugg.SuggestedUserID)
+		if err != nil {
+			log.Printf("Failed to get suggested user %d: %v", sugg.SuggestedUserID, err)
+			continue
+		}
+
+		enriched = append(enriched, &DateSuggestionWithUser{
+			ID:                  sugg.ID,
+			SuggestedUserID:     sugg.SuggestedUserID,
+			SuggestedUserName:   suggestedUser.Name,
+			SuggestedUserEmail:  suggestedUser.Email,
+			SuggestedUserAge:    calculateAge(suggestedUser.DateOfBirth.Time),
+			SuggestedUserGender: suggestedUser.Gender.String,
+			CompatibilityScore:  sugg.CompatibilityScore,
+			Reasoning:           sugg.Reasoning,
+			Status:              sugg.Status,
+			CreatedAt:           sugg.CreatedAt,
+		})
+	}
+
+	return enriched, nil
+}
+
+// RespondToSuggestion allows a user to accept or reject a date suggestion
+func (s *DatesService) RespondToSuggestion(ctx context.Context, suggestionID int, userID int, accept bool) error {
+	// Get the suggestion
+	suggestion, err := s.suggestionsRepo.GetByID(ctx, suggestionID)
+	if err != nil {
+		return fmt.Errorf("failed to get suggestion: %w", err)
+	}
+
+	// Verify the suggestion belongs to this user
+	if suggestion.UserID != userID {
+		return fmt.Errorf("suggestion does not belong to this user")
+	}
+
+	// Check if already responded
+	if suggestion.Status != "pending" {
+		return fmt.Errorf("suggestion already responded to with status: %s", suggestion.Status)
+	}
+
+	// Update suggestion status
+	if accept {
+		err = s.suggestionsRepo.Accept(ctx, suggestionID)
+	} else {
+		err = s.suggestionsRepo.Reject(ctx, suggestionID)
+	}
+
+	if err != nil {
+		return fmt.Errorf("failed to update suggestion status: %w", err)
+	}
+
+	log.Printf("User %d %s suggestion %d", userID, map[bool]string{true: "accepted", false: "rejected"}[accept], suggestionID)
+	return nil
+}
