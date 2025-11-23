@@ -10,17 +10,6 @@ _No tasks currently in progress_
 
 ## 📋 Pending Tasks
 
-### Task 2: AI Curation Analyze Backend Route
-- [ ] Update proto definitions in proto/
-- [ ] Create /api/v1/admin/curation/analyze endpoint
-- [ ] Send full user profile to AI
-- [ ] Send complete partner preferences data
-- [ ] Implement admin service layer methods
-- [ ] Add admin repository methods
-- [ ] Test endpoint functionality
-
-**Files**: proto/, main.go, admin service, admin repo
-
 ### Task 3: Admin Curate Page - Tabbed Interface
 - [ ] Create tab component structure
 - [ ] Add "AI Dates Curation" tab (move existing content)
@@ -89,6 +78,20 @@ _No tasks currently in progress_
 
 ## ✅ Completed Tasks
 
+### AI Curation Analyze Backend Route (Completed: 2025-11-23)
+- ✅ Verified proto definitions (already correct)
+- ✅ Endpoint /api/v1/admin/curation/analyze exists and working
+- ✅ Backend sends full user profile to AI (dates_service.go:185-188)
+- ✅ Backend sends complete partner preferences to AI (dates_service.go:190-196)
+- ✅ Admin service layer methods already implemented
+- ✅ Repository methods already in place
+- ✅ Fixed gender preferences parsing bug (int[] vs string[])
+- ✅ Tested endpoint functionality - returns matches correctly
+- **Implementation**: Full profile data fetched in backend and sent to AI:
+  - User profile: name, age, gender, location, bio, interests, occupation, education, lifestyle
+  - Partner preferences: age range, gender preference, location, interests, education, lifestyle
+  - Gemini AI analyzes compatibility and returns scored matches
+
 ### Central API Rate Limiting (Completed: 2025-11-23)
 - ✅ Created rate limiter middleware (`internal/middleware/rate_limiter.go`)
 - ✅ Implemented user-based rate limiting
@@ -135,4 +138,4 @@ _No tasks currently in progress_
 ## 🎯 Current Focus
 
 **Working on**: Nothing (awaiting next task)
-**Next up**: Task 2 - AI Curation Analyze Backend Route
+**Next up**: Task 3 - Admin Curate Page - Tabbed Interface
