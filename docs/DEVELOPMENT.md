@@ -18,9 +18,13 @@ This document provides comprehensive guidelines for adding new services, RPC met
 **Current Backend Status**:
 - **AuthService**: 26/26 RPCs complete (100%)
 - **UserService**: 15/15 RPCs complete (100%)
-- **Test Coverage**: 43.6% (108 tests passing)
-- **Database**: 4 migrations with comprehensive schema
+- **AdminService**: 40/40 RPCs complete (100%)
+- **AvailabilityService**: 8/8 RPCs complete (100%)
+- **DatesService**: 2/2 RPCs complete (100%) - AI-powered curation
+- **Total API Surface**: 100 endpoints (34 HTTP REST + 66 gRPC RPCs)
+- **Database**: 8 migrations with comprehensive schema
 - **Email Service**: MailerSend integration complete
+- **AI Integration**: Google Gemini 2.5-flash for compatibility analysis
 
 ---
 
@@ -76,33 +80,27 @@ The backend runs two servers simultaneously:
 
 ### Current Service Organization
 
-The backend is organized into modular service files for better maintainability:
+The backend is organized into modular service files:
 
-**AuthService** (`internal/service/auth_*.go` - 6 files):
-- `auth_service.go` - Core service initialization, email auth (Register/Login)
-- `auth_password_service.go` - Password management (Change, Reset)
-- `auth_session_service.go` - Session & token management (Refresh, Revoke)
-- `auth_phone_service.go` - Phone authentication (Register, Login, Verify)
-- `auth_device_service.go` - Device management (Register, Update, List)
-- `auth_verification_service.go` - Email/phone verification codes
+**Services** (`internal/service/`):
+- `auth_service.go` - Authentication (26 RPCs): email/phone auth, sessions, passwords, devices
+- `user_service.go` - User management (15 RPCs): profiles, photos, preferences, blocking
+- `admin_service.go` - Admin operations (40 RPCs): user management, analytics, verification
+- `availability_service.go` - Availability management (8 RPCs): date slots, scheduling
+- `dates_service.go` - AI-powered date curation (2 RPCs): candidate matching, compatibility analysis
+- `ai_*.go` - AI/Gemini integration for compatibility scoring
 
-**UserService** (`internal/service/user_*.go` - 6 files):
-- `user_service.go` - Core service initialization
-- `user_profile_service.go` - Profile CRUD operations
-- `user_photo_service.go` - Photo upload and management
-- `user_preferences_service.go` - User & partner preferences
-- `user_discovery_service.go` - User search and discovery
-- `user_blocking_service.go` - Block, unblock, report functionality
+**Repositories** (`internal/repository/` - 6 repositories):
+- `user_repository.go` - User CRUD operations
+- `session_repository.go` - Session management
+- `admin_repository.go` - Admin operations
+- `availability_repository.go` - Availability slots
+- `dates_repository.go` - Date matching
+- `curated_matches_repository.go` - AI match storage
 
-**Utilities** (`internal/service/utils_*.go` - 4 files):
-- `utils_user_profile.go` - Profile builders and DB conversions
-- `utils_user.go` - User-related helper functions
-- `utils_conversion.go` - Type conversion utilities
-- `utils_token.go` - Token generation functions
-
-**Other Modules**:
-- `internal/auth/password.go` - Password hashing with bcrypt
-- `internal/email/mailersend.go` - Email service integration
+**Utilities**:
+- `internal/auth/` - Password hashing, JWT tokens, session management
+- `internal/email/` - Email service (MailerSend integration)
 
 ---
 

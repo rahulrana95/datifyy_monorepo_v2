@@ -1,0 +1,912 @@
+{
+	"info": {
+		"_postman_id": "datifyy-api-v1",
+		"name": "Datifyy API - Complete Collection",
+		"description": "Complete HTTP REST API collection for Datifyy dating platform.\n\n**34 Endpoints Total:**\n- Health & Diagnostics (5)\n- Authentication (4)\n- User Profile (6)\n- Availability (4)\n- Admin Operations (15)\n\n**Setup:**\n1. Create environment with variables: base_url, access_token, admin_token\n2. Set base_url to: http://localhost:8080\n3. Tokens auto-populate after login\n\nSee POSTMAN_GUIDE.md for detailed usage instructions.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Health & Diagnostics",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/health",
+							"host": ["{{base_url}}"],
+							"path": ["health"]
+						},
+						"description": "Basic health check endpoint. Returns 200 OK if service is running."
+					}
+				},
+				{
+					"name": "Readiness Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/ready",
+							"host": ["{{base_url}}"],
+							"path": ["ready"]
+						},
+						"description": "Readiness check that validates database and Redis connections."
+					}
+				},
+				{
+					"name": "Service Info",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/",
+							"host": ["{{base_url}}"],
+							"path": [""]
+						},
+						"description": "Returns service information including connection status."
+					}
+				},
+				{
+					"name": "Test Database Connection",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/test-db",
+							"host": ["{{base_url}}"],
+							"path": ["api", "test-db"]
+						},
+						"description": "Tests PostgreSQL database connection."
+					}
+				},
+				{
+					"name": "Test Redis Connection",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/test-redis",
+							"host": ["{{base_url}}"],
+							"path": ["api", "test-redis"]
+						},
+						"description": "Tests Redis cache connection."
+					}
+				}
+			],
+			"description": "Health and diagnostic endpoints to verify service status."
+		},
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Register with Email",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Save tokens and user ID to environment",
+									"if (pm.response.code === 200 || pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.accessToken) {",
+									"        pm.environment.set(\"access_token\", jsonData.accessToken);",
+									"    }",
+									"    if (jsonData.refreshToken) {",
+									"        pm.environment.set(\"refresh_token\", jsonData.refreshToken);",
+									"    }",
+									"    if (jsonData.userId) {",
+									"        pm.environment.set(\"user_id\", jsonData.userId);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"SecurePass123!\",\n  \"name\": \"Test User\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/auth/register/email",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "auth", "register", "email"]
+						},
+						"description": "Register a new user with email and password."
+					}
+				},
+				{
+					"name": "Login with Email",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Save tokens and user ID to environment",
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.accessToken) {",
+									"        pm.environment.set(\"access_token\", jsonData.accessToken);",
+									"    }",
+									"    if (jsonData.refreshToken) {",
+									"        pm.environment.set(\"refresh_token\", jsonData.refreshToken);",
+									"    }",
+									"    if (jsonData.userId) {",
+									"        pm.environment.set(\"user_id\", jsonData.userId);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"SecurePass123!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/auth/login/email",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "auth", "login", "email"]
+						},
+						"description": "Login with email and password. Returns access and refresh tokens."
+					}
+				},
+				{
+					"name": "Refresh Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Save new access token",
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.accessToken) {",
+									"        pm.environment.set(\"access_token\", jsonData.accessToken);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"refreshToken\": \"{{refresh_token}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/auth/token/refresh",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "auth", "token", "refresh"]
+						},
+						"description": "Refresh access token using refresh token."
+					}
+				},
+				{
+					"name": "Revoke Token (Logout)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"token\": \"{{access_token}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/auth/token/revoke",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "auth", "token", "revoke"]
+						},
+						"description": "Logout and revoke access token."
+					}
+				}
+			],
+			"description": "User authentication endpoints for registration, login, and token management."
+		},
+		{
+			"name": "User Profile",
+			"item": [
+				{
+					"name": "Get My Profile",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/user/profile",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "user", "profile"]
+						},
+						"description": "Get current user's profile information."
+					}
+				},
+				{
+					"name": "Update Profile",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"John Doe\",\n  \"dateOfBirth\": \"1995-05-15\",\n  \"gender\": \"MALE\",\n  \"bio\": \"Looking for meaningful connections\",\n  \"location\": \"Mumbai, India\",\n  \"occupation\": \"Software Engineer\",\n  \"education\": \"B.Tech Computer Science\",\n  \"height\": 175,\n  \"religion\": \"Hindu\",\n  \"smoking\": \"NON_SMOKER\",\n  \"drinking\": \"SOCIAL_DRINKER\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/user/profile",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "user", "profile"]
+						},
+						"description": "Update user profile information."
+					}
+				},
+				{
+					"name": "Upload Profile Photo",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "photo",
+									"type": "file",
+									"src": []
+								},
+								{
+									"key": "isPrimary",
+									"value": "true",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/user/photos/upload",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "user", "photos", "upload"]
+						},
+						"description": "Upload a profile photo. Max 6 photos allowed."
+					}
+				},
+				{
+					"name": "Delete Profile Photo",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/user/photos/:photoId",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "user", "photos", ":photoId"],
+							"variable": [
+								{
+									"key": "photoId",
+									"value": "1"
+								}
+							]
+						},
+						"description": "Delete a profile photo by ID."
+					}
+				},
+				{
+					"name": "Get Partner Preferences",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/user/preferences/partner",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "user", "preferences", "partner"]
+						},
+						"description": "Get user's partner preferences."
+					}
+				},
+				{
+					"name": "Update Partner Preferences",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"ageMin\": 25,\n  \"ageMax\": 35,\n  \"preferredGenders\": [\"FEMALE\"],\n  \"maxDistance\": 50,\n  \"heightMin\": 160,\n  \"heightMax\": 180,\n  \"religions\": [\"Hindu\", \"Christian\", \"Atheist\"],\n  \"education\": [\"Bachelors\", \"Masters\", \"PhD\"],\n  \"smoking\": [\"NON_SMOKER\"],\n  \"drinking\": [\"NON_DRINKER\", \"SOCIAL_DRINKER\"],\n  \"interests\": [\"travel\", \"music\", \"technology\", \"fitness\"]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/user/preferences/partner",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "user", "preferences", "partner"]
+						},
+						"description": "Update partner preferences for matching."
+					}
+				}
+			],
+			"description": "User profile management endpoints."
+		},
+		{
+			"name": "Availability",
+			"item": [
+				{
+					"name": "Get User Availability",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/availability",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "availability"]
+						},
+						"description": "Get all availability slots for the current user."
+					}
+				},
+				{
+					"name": "Add Availability",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"startTime\": \"2025-11-24T18:00:00Z\",\n  \"endTime\": \"2025-11-24T21:00:00Z\",\n  \"location\": \"Coffee House, Bandra, Mumbai\",\n  \"notes\": \"Prefer evening coffee\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/availability",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "availability"]
+						},
+						"description": "Add a new availability slot."
+					}
+				},
+				{
+					"name": "Update Availability",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"startTime\": \"2025-11-24T19:00:00Z\",\n  \"endTime\": \"2025-11-24T22:00:00Z\",\n  \"location\": \"Updated Location\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/availability/:id",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "availability", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						},
+						"description": "Update an existing availability slot."
+					}
+				},
+				{
+					"name": "Delete Availability",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/availability/:id",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "availability", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						},
+						"description": "Delete an availability slot."
+					}
+				}
+			],
+			"description": "Manage user availability for dates."
+		},
+		{
+			"name": "Admin Operations",
+			"item": [
+				{
+					"name": "Admin Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Save admin token to environment",
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.token) {",
+									"        pm.environment.set(\"admin_token\", jsonData.token);",
+									"    }",
+									"    if (jsonData.adminId) {",
+									"        pm.environment.set(\"admin_id\", jsonData.adminId);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"admin@datifyy.com\",\n  \"password\": \"AdminPass123!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/login",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "admin", "login"]
+						},
+						"description": "Admin login endpoint. Returns admin token."
+					}
+				},
+				{
+					"name": "Get Platform Analytics",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/analytics",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "admin", "analytics"]
+						},
+						"description": "Get platform-wide analytics (total users, active users, dates, etc.)."
+					}
+				},
+				{
+					"name": "Get All Users",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/users?page=1&limit=20&status=ACTIVE",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "admin", "users"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								},
+								{
+									"key": "status",
+									"value": "ACTIVE",
+									"description": "PENDING, ACTIVE, SUSPENDED, BANNED"
+								},
+								{
+									"key": "verified",
+									"value": "true",
+									"disabled": true
+								},
+								{
+									"key": "search",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "List all users with pagination and filtering."
+					}
+				},
+				{
+					"name": "Get User Details",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/users/:userId",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "admin", "users", ":userId"],
+							"variable": [
+								{
+									"key": "userId",
+									"value": "{{user_id}}"
+								}
+							]
+						},
+						"description": "Get detailed information about a specific user."
+					}
+				},
+				{
+					"name": "Update User Status",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"ACTIVE\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/users/:userId/status",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "admin", "users", ":userId", "status"],
+							"variable": [
+								{
+									"key": "userId",
+									"value": "51"
+								}
+							]
+						},
+						"description": "Update user account status (PENDING, ACTIVE, SUSPENDED, BANNED)."
+					}
+				},
+				{
+					"name": "Manually Verify User",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/users/:userId/verify/:verificationType",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "admin", "users", ":userId", "verify", ":verificationType"],
+							"variable": [
+								{
+									"key": "userId",
+									"value": "51"
+								},
+								{
+									"key": "verificationType",
+									"value": "EMAIL",
+									"description": "EMAIL, AADHAR, WORK_EMAIL"
+								}
+							]
+						},
+						"description": "Manually verify a user's email, Aadhar, or work email."
+					}
+				},
+				{
+					"name": "Get User Activity Logs",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/users/:userId/activity",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "admin", "users", ":userId", "activity"],
+							"variable": [
+								{
+									"key": "userId",
+									"value": "{{user_id}}"
+								}
+							]
+						},
+						"description": "Get activity logs for a specific user."
+					}
+				},
+				{
+					"name": "Create Admin",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"newadmin@datifyy.com\",\n  \"password\": \"AdminPass123!\",\n  \"name\": \"New Admin\",\n  \"role\": \"ADMIN_ROLE_SUPPORT\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/admins",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "admin", "admins"]
+						},
+						"description": "Create a new admin account. Requires SUPER admin role."
+					}
+				},
+				{
+					"name": "Get All Admins",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/admins",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "admin", "admins"]
+						},
+						"description": "List all admin accounts. Requires SUPER admin role."
+					}
+				},
+				{
+					"name": "Update Admin Role",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"role\": \"ADMIN_ROLE_MODERATOR\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/admins/:adminId/role",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "admin", "admins", ":adminId", "role"],
+							"variable": [
+								{
+									"key": "adminId",
+									"value": "2"
+								}
+							]
+						},
+						"description": "Update admin role. Requires SUPER admin role."
+					}
+				},
+				{
+					"name": "Delete Admin",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/admins/:adminId",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "admin", "admins", ":adminId"],
+							"variable": [
+								{
+									"key": "adminId",
+									"value": "2"
+								}
+							]
+						},
+						"description": "Delete an admin account. Requires SUPER admin role."
+					}
+				},
+				{
+					"name": "Get Admin Profile",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/profile",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "admin", "profile"]
+						},
+						"description": "Get current admin's profile."
+					}
+				},
+				{
+					"name": "Update Admin Profile",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Updated Admin Name\",\n  \"email\": \"admin@datifyy.com\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/profile",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "admin", "profile"]
+						},
+						"description": "Update current admin's profile."
+					}
+				},
+				{
+					"name": "Get Curation Candidates (AI)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/curation/candidates",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "admin", "curation", "candidates"]
+						},
+						"description": "Get list of users available for AI-powered date curation (users with availability starting tomorrow)."
+					}
+				},
+				{
+					"name": "Curate Dates (AI Analysis)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"userId\": \"51\",\n  \"candidateIds\": [\"52\", \"53\", \"106\"]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/curation/analyze",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "admin", "curation", "analyze"]
+						},
+						"description": "Analyze compatibility between a user and candidates using Google Gemini AI. Returns compatibility scores, reasoning, and match recommendations."
+					}
+				}
+			],
+			"description": "Admin-only endpoints for platform management, user verification, and AI-powered date curation."
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080",
+			"type": "string"
+		}
+	]
+}

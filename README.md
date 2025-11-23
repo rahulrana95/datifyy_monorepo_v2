@@ -1,13 +1,16 @@
 # Datifyy Monorepo
 
-A production-ready containerized monorepo with React frontend, Go backend, PostgreSQL database, Redis cache, and Protocol Buffers for type-safe communication.
+A production-ready AI-powered dating platform with React frontend, Go backend, PostgreSQL database, Redis cache, and Protocol Buffers for type-safe communication.
 
 ## 🚀 Features
 
+- **AI-Powered Matching** - Google Gemini 2.5-flash integration for intelligent compatibility analysis
+- **Comprehensive Admin Dashboard** - User management, analytics, AI-powered date curation
 - **Full-Stack Development Environment** - React + Go + PostgreSQL + Redis
 - **Hot Reload** - Automatic reload for both frontend (React) and backend (Go with Air)
-- **Type Safety** - Protocol Buffers for API contracts
-- **Database Ready** - PostgreSQL with migrations and Redis for caching
+- **Type Safety** - Protocol Buffers for API contracts with 100 endpoints (34 HTTP REST + 66 gRPC)
+- **Dual API Architecture** - Both HTTP/REST (port 8080) and gRPC (port 9090) servers
+- **Database Ready** - PostgreSQL with 8 migrations and Redis for caching
 - **Testing Support** - Separate test environment with isolated databases
 - **DevContainer Support** - VS Code development inside containers
 - **Production Ready** - Separate development and production Docker configurations
@@ -51,6 +54,9 @@ A production-ready containerized monorepo with React frontend, Go backend, Postg
 
 5. **Access the applications:**
    - 🌐 Frontend: http://localhost:3000
+   - 👤 User Pages: http://localhost:3000/profile, /partner-preferences, /availability
+   - 🔐 Admin Dashboard: http://localhost:3000/admin
+   - 💝 AI Date Curation: http://localhost:3000/admin/curate
    - 🔧 Backend HTTP API: http://localhost:8080
    - 🚀 Backend gRPC API: localhost:9090
    - 🗄️ PostgreSQL: localhost:5432 (user: devuser, pass: devpass, db: monorepo_dev)
@@ -81,36 +87,76 @@ A production-ready containerized monorepo with React frontend, Go backend, Postg
 ├── apps/
 │   ├── backend/                    # Go backend application
 │   │   ├── cmd/server/             # Main server entry point
-│   │   │   └── main.go             # HTTP & gRPC server setup
+│   │   │   └── main.go             # HTTP & gRPC server setup (2,500+ lines)
 │   │   ├── internal/               # Private application code
 │   │   │   ├── service/            # Business logic layer
-│   │   │   │   ├── auth_*.go       # Auth service modules (6 files)
-│   │   │   │   ├── user_*.go       # User service modules (6 files)
-│   │   │   │   └── utils_*.go      # Shared utilities (4 files)
-│   │   │   ├── auth/               # Authentication utilities
+│   │   │   │   ├── auth_service.go          # Authentication service
+│   │   │   │   ├── user_service.go          # User profile service
+│   │   │   │   ├── admin_service.go         # Admin operations service
+│   │   │   │   ├── availability_service.go  # User availability management
+│   │   │   │   ├── dates_service.go         # AI-powered date curation
+│   │   │   │   └── ai_*.go                  # AI/Gemini integration
+│   │   │   ├── auth/               # JWT, session management
 │   │   │   ├── email/              # Email service (MailerSend)
-│   │   │   └── repository/         # Data access layer (future)
+│   │   │   └── repository/         # Data access layer (6 repositories)
+│   │   │       ├── user_repository.go
+│   │   │       ├── session_repository.go
+│   │   │       ├── admin_repository.go
+│   │   │       ├── availability_repository.go
+│   │   │       ├── dates_repository.go
+│   │   │       └── curated_matches_repository.go
 │   │   ├── gen/                    # Generated protobuf files
 │   │   │   ├── auth/v1/            # Auth service definitions
 │   │   │   ├── user/v1/            # User service definitions
+│   │   │   ├── admin/v1/           # Admin service definitions
+│   │   │   ├── availability/v1/    # Availability service definitions
+│   │   │   ├── dates/v1/           # Dates service definitions
 │   │   │   └── common/v1/          # Shared types
-│   │   ├── migrations/             # Database migrations (4 files)
-│   │   ├── api/                    # REST endpoint wrappers
+│   │   ├── migrations/             # Database migrations (8 files)
+│   │   │   ├── 001_initial_schema.sql
+│   │   │   ├── 002_add_sessions.sql
+│   │   │   ├── 003_add_admin_tables.sql
+│   │   │   ├── 004_add_availability.sql
+│   │   │   ├── 005_add_preferences.sql
+│   │   │   ├── 006_add_dates_tables.sql
+│   │   │   ├── 007_add_curated_matches.sql
+│   │   │   └── 008_add_user_fields.sql
+│   │   ├── api/                    # REST endpoint wrappers (Vercel)
 │   │   └── tests/                  # Integration tests
 │   └── frontend/                   # React frontend application
 │       ├── src/
-│       │   └── gen/                # Generated protobuf TypeScript files
+│       │   ├── gen/                # Generated protobuf TypeScript files
+│       │   ├── pages/              # Page components
+│       │   │   ├── LandingPage/
+│       │   │   ├── ProfilePage/
+│       │   │   ├── PartnerPreferencesPage/
+│       │   │   ├── AvailabilityPage/
+│       │   │   └── Admin/          # Admin dashboard
+│       │   │       ├── Login/
+│       │   │       ├── Analytics/
+│       │   │       ├── Users/
+│       │   │       ├── UserDetails/
+│       │   │       ├── CurateDates/ # AI-powered date curation UI
+│       │   │       ├── Profile/
+│       │   │       ├── Admins/
+│       │   │       └── Genie/
+│       │   ├── components/         # Reusable components
+│       │   ├── services/           # API client services
+│       │   └── providers/          # Context providers
 │       └── nginx.conf              # Production nginx configuration
 ├── proto/                          # Protocol buffer definitions
 │   ├── auth/v1/                    # Auth service proto files
 │   ├── user/v1/                    # User service proto files
+│   ├── admin/v1/                   # Admin service proto files
+│   ├── availability/v1/            # Availability service proto files
+│   ├── dates/v1/                   # Dates service proto files
 │   └── common/v1/                  # Shared type definitions
 ├── docker/                         # Docker configurations
 │   ├── backend/                    # Backend Dockerfiles (dev & prod)
 │   ├── frontend/                   # Frontend Dockerfiles (dev & prod)
 │   └── proto/                      # Proto generation Dockerfile
 ├── docs/                           # Documentation
-│   ├── BACKEND_ARCHITECTURE.md     # Backend service details
+│   ├── BACKEND_ARCHITECTURE.md     # Comprehensive backend guide (2,043 lines)
 │   ├── DEVELOPMENT.md              # Development guide
 │   ├── TESTING.md                  # Testing guidelines
 │   └── GRPC_TESTING.md             # gRPC testing tools
@@ -139,23 +185,61 @@ The backend runs **two servers simultaneously**:
 
 ### API Endpoints
 
-#### Health Endpoints (HTTP)
+The platform provides **100 endpoints total**:
+- **34 HTTP REST endpoints** (port 8080) - JSON-based API for web/mobile clients
+- **66 gRPC RPCs** (port 9090) - High-performance typed API
+
+#### HTTP REST Endpoints (34 Total)
+
+**Health & Diagnostics (5)**
 - `GET /health` - Basic health check
 - `GET /ready` - Readiness check (validates DB and Redis connections)
 - `GET /` - Service information with connection status
 - `GET /api/test-db` - Test PostgreSQL connection
 - `GET /api/test-redis` - Test Redis connection
 
-#### Authentication (HTTP REST)
-- `POST /api/v1/auth/register/email` - Register with email and password
+**Authentication (4)**
+- `POST /api/v1/auth/register/email` - Register with email
 - `POST /api/v1/auth/login/email` - Login with email
 - `POST /api/v1/auth/token/refresh` - Refresh access token
 - `POST /api/v1/auth/token/revoke` - Logout and revoke token
 
-#### gRPC Services
+**User Profile (6)**
+- `GET /api/v1/user/profile` - Get current user profile
+- `PUT /api/v1/user/profile` - Update profile
+- `POST /api/v1/user/photos/upload` - Upload profile photo
+- `DELETE /api/v1/user/photos/:photoId` - Delete profile photo
+- `GET /api/v1/user/preferences/partner` - Get partner preferences
+- `PUT /api/v1/user/preferences/partner` - Update partner preferences
+
+**Availability (4)**
+- `GET /api/v1/availability` - Get user's availability
+- `POST /api/v1/availability` - Add availability slot
+- `PUT /api/v1/availability/:id` - Update availability slot
+- `DELETE /api/v1/availability/:id` - Delete availability slot
+
+**Admin Operations (15)**
+- `POST /api/v1/admin/login` - Admin login
+- `GET /api/v1/admin/analytics` - Platform analytics
+- `GET /api/v1/admin/users` - List all users with filters
+- `GET /api/v1/admin/users/:userId` - Get user details
+- `PUT /api/v1/admin/users/:userId/status` - Update user account status
+- `PUT /api/v1/admin/users/:userId/verify/:verificationType` - Manually verify user
+- `GET /api/v1/admin/users/:userId/activity` - Get user activity logs
+- `POST /api/v1/admin/admins` - Create new admin
+- `GET /api/v1/admin/admins` - List all admins
+- `PUT /api/v1/admin/admins/:adminId/role` - Update admin role
+- `DELETE /api/v1/admin/admins/:adminId` - Delete admin
+- `GET /api/v1/admin/profile` - Get admin profile
+- `PUT /api/v1/admin/profile` - Update admin profile
+- `GET /api/v1/admin/curation/candidates` - Get users available for dates (AI curation)
+- `POST /api/v1/admin/curation/analyze` - Analyze compatibility with AI (Gemini)
+
+#### gRPC Services (66 RPCs)
+
 All gRPC services available at `localhost:9090`:
 
-**AuthService (26 RPCs - Complete)**
+**AuthService (26 RPCs)**
 - Email Authentication: `RegisterWithEmail`, `LoginWithEmail`, `VerifyEmail`, `ResendVerificationEmail`
 - Phone Authentication: `RegisterWithPhone`, `LoginWithPhone`, `VerifyPhone`, `ResendPhoneVerification`
 - Session Management: `RefreshToken`, `RevokeToken`, `Logout`, `ValidateSession`, `GetActiveSessions`, `RevokeSession`, `RevokeAllSessions`
@@ -163,14 +247,74 @@ All gRPC services available at `localhost:9090`:
 - Device Management: `RegisterDevice`, `UpdateDevice`, `UnregisterDevice`, `GetUserDevices`
 - Profile: `GetProfile`, `UpdateProfile`, `DeleteAccount`
 
-**UserService (15 RPCs - Complete)**
+**UserService (15 RPCs)**
 - Profile: `GetMyProfile`, `GetUserProfile`, `UpdateProfile`, `DeleteAccount`
 - Photos: `UploadProfilePhoto`, `DeleteProfilePhoto`
 - Preferences: `GetPartnerPreferences`, `UpdatePartnerPreferences`, `GetUserPreferences`, `UpdateUserPreferences`
 - Discovery: `SearchUsers`
 - Interactions: `BlockUser`, `UnblockUser`, `ListBlockedUsers`, `ReportUser`
 
-See [GRPC_TESTING.md](./docs/GRPC_TESTING.md) for testing gRPC endpoints and [BACKEND_ARCHITECTURE.md](./docs/BACKEND_ARCHITECTURE.md) for detailed service documentation.
+**AdminService (40 RPCs)**
+- Authentication: `AdminLogin`, `AdminLogout`, `GetAdminProfile`, `UpdateAdminProfile`
+- User Management: `GetAllUsers`, `GetUserById`, `UpdateUserStatus`, `DeleteUser`, `SearchUsers`
+- Verification: `ManuallyVerifyUser`, `GetVerificationRequests`, `ApproveVerification`, `RejectVerification`
+- Analytics: `GetPlatformAnalytics`, `GetUserAnalytics`, `GetDateAnalytics`, `GetRevenueAnalytics`
+- Admin Management: `CreateAdmin`, `UpdateAdmin`, `DeleteAdmin`, `ListAdmins`, `UpdateAdminRole`
+- Activity Logs: `GetUserActivity`, `GetAdminActivity`, `GetSystemLogs`
+- Date Curation: `GetCurationCandidates`, `CurateDates`
+- And more...
+
+**AvailabilityService (8 RPCs)**
+- `GetAvailability` - Get user's availability slots
+- `AddAvailability` - Add new availability slot
+- `UpdateAvailability` - Update existing slot
+- `DeleteAvailability` - Remove availability slot
+- `GetAvailableUsers` - Find users available on specific dates
+- `BulkAddAvailability` - Add multiple slots at once
+- `GetUpcomingAvailability` - Get user's upcoming slots
+- `ClearPastAvailability` - Remove expired slots
+
+**DatesService (2 RPCs)**
+- `GetCurationCandidates` - Get users available for AI-powered matching
+- `CurateDates` - Analyze compatibility using Google Gemini AI
+
+See [GRPC_TESTING.md](./docs/GRPC_TESTING.md) for testing gRPC endpoints and [BACKEND_ARCHITECTURE.md](./docs/BACKEND_ARCHITECTURE.md) for detailed service documentation with all 100 endpoints.
+
+## 🎯 Key Features
+
+### AI-Powered Date Curation
+The platform includes an advanced AI-powered date curation system for admins:
+
+- **Intelligent Matching**: Uses Google Gemini 2.5-flash to analyze user compatibility
+- **Comprehensive Analysis**:
+  - Compatibility scores (0-100)
+  - Matched aspects highlighting
+  - Mismatched aspects identification
+  - Detailed reasoning for recommendations
+- **Smart Filtering**: Automatically finds users available for dates starting tomorrow
+- **Enhanced UX**:
+  - Statistics dashboard (total analyzed, matches, avg score)
+  - Match quality indicators (Excellent 🌟, Good 💙, Fair 🟡, Poor ⚠️)
+  - Color-coded compatibility scores
+  - Filter system (All, Matches, Non-Matches)
+  - Action buttons (Approve, Review Later, Reject)
+
+**Access**: Admin Dashboard → 💝 Curate Dates
+
+### Admin Dashboard
+Comprehensive admin panel with:
+- **User Management**: View, search, filter, and manage all users
+- **Analytics**: Platform-wide analytics and insights
+- **Verification**: Manual user verification (email, Aadhar, work email)
+- **Admin Management**: Create and manage admin accounts with role-based access
+- **AI Genie**: AI-powered administrative assistant
+- **Activity Logs**: Track user and admin activities
+
+### User Features
+- **Profile Management**: Complete profile with photos, preferences, and details
+- **Partner Preferences**: Detailed partner preference settings
+- **Availability Management**: Manage date availability with calendar integration
+- **Account Verification**: Multi-level verification (email, Aadhar, work email)
 
 ## 🗄️ Database & Cache
 
@@ -450,7 +594,7 @@ make prune              # Remove unused Docker resources
 
 ## 🔐 Environment Variables
 
-Environment variables are configured in `.env` file:
+Environment variables are configured in `.env` file and `docker-compose.yml`:
 
 ```bash
 # Database Configuration
@@ -470,6 +614,9 @@ REDIS_PORT=6379
 PORT=8080
 ENV=development
 
+# AI Integration (Required for Date Curation)
+GEMINI_API_KEY=your_google_gemini_api_key_here
+
 # Frontend Configuration
 REACT_APP_API_URL=http://localhost:8080
 
@@ -477,6 +624,19 @@ REACT_APP_API_URL=http://localhost:8080
 TEST_DATABASE_URL=postgres://testuser:testpass@localhost:5433/monorepo_test
 TEST_REDIS_URL=redis://localhost:6380
 ```
+
+### Required Environment Variables
+
+**For Production:**
+- `DATABASE_URL` - PostgreSQL connection string
+- `REDIS_URL` - Redis connection string
+- `GEMINI_API_KEY` - Google Gemini API key for AI-powered matching
+- `PORT` - Server port (default: 8080)
+- `ENV` - Environment name (development/production)
+
+**Optional:**
+- `MAILERSEND_API_KEY` - Email service API key
+- `JWT_SECRET` - Custom JWT signing secret (auto-generated if not provided)
 
 ## 🧪 Testing
 
@@ -803,6 +963,47 @@ docker-compose restart <service-name>
 docker-compose build <service-name> && docker-compose up -d <service-name>
 ```
 
+### AI Curation Not Working
+
+#### Error: "AI provider not initialized"
+```bash
+# Check if GEMINI_API_KEY is set
+docker-compose exec backend printenv | grep GEMINI
+
+# If missing, add to docker-compose.yml under backend environment:
+# - GEMINI_API_KEY=your_api_key_here
+
+# Restart backend
+docker-compose stop backend && docker-compose up -d backend
+```
+
+#### Error: "No users available for dates"
+```bash
+# Check database for users with availability
+docker-compose exec postgres psql -U devuser -d monorepo_dev
+
+# In psql:
+SELECT u.id, u.email, u.name, u.account_status, COUNT(a.id) as availability_count
+FROM users u
+LEFT JOIN availability a ON u.id = a.user_id
+WHERE a.start_time >= NOW()
+GROUP BY u.id;
+
+# Make sure users have:
+# 1. account_status = 'ACTIVE'
+# 2. date_of_birth is set (for age calculation)
+# 3. gender is set correctly
+# 4. At least one availability slot starting tomorrow or later
+```
+
+#### Test Gemini API directly
+```bash
+# Test if your API key works
+curl -H "Content-Type: application/json" \
+  -d '{"contents":[{"parts":[{"text":"Test"}]}]}' \
+  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=YOUR_API_KEY"
+```
+
 ## 📈 Monitoring
 
 ### Check Service Health
@@ -828,13 +1029,23 @@ docker-compose logs -f <service-name>
 
 ## 📚 Documentation
 
-Comprehensive guides for development and testing:
+Comprehensive guides for development, testing, and debugging:
 
-- **[DEVELOPMENT.md](./docs/DEVELOPMENT.md)** - Complete guide for adding new services and RPC methods
-  - Architecture overview
-  - Step-by-step RPC implementation
-  - Code organization patterns
+- **[BACKEND_ARCHITECTURE.md](./docs/BACKEND_ARCHITECTURE.md)** - **⭐ START HERE** - Comprehensive backend guide (2,043 lines)
+  - Complete architecture overview with diagrams
+  - All 100 endpoints documented (34 HTTP + 66 gRPC)
+  - **Step-by-step guide: Adding new gRPC endpoints**
+  - **Step-by-step guide: Adding new services**
+  - **Debugging guide** with common issues and solutions
+  - Database schema (8 migrations explained)
+  - Testing guide with examples
   - Best practices and conventions
+  - File change summary for common tasks
+
+- **[DEVELOPMENT.md](./docs/DEVELOPMENT.md)** - Development guide for adding services and RPC methods
+  - Code organization patterns
+  - Development workflow
+  - Git branching strategy
 
 - **[TESTING.md](./docs/TESTING.md)** - Testing guidelines and examples
   - Unit testing guide with examples
