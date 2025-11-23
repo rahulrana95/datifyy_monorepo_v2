@@ -6,6 +6,7 @@ A production-ready AI-powered dating platform with React frontend, Go backend, P
 
 - **AI-Powered Matching** - Google Gemini 2.5-flash integration for intelligent compatibility analysis
 - **Comprehensive Admin Dashboard** - User management, analytics, AI-powered date curation
+- **Rate Limiting** - Tiered rate limiting with Redis-backed distributed limits (100-400 req/min)
 - **Slack Integration** - Real-time notifications for user events, admin activities, and system alerts
 - **Full-Stack Development Environment** - React + Go + PostgreSQL + Redis
 - **Hot Reload** - Automatic reload for both frontend (React) and backend (Go with Air)
@@ -1104,6 +1105,14 @@ Comprehensive guides for development, testing, deployment, and debugging:
   - Testing guide with examples
   - Best practices and conventions
   - File change summary for common tasks
+
+- **[RATE_LIMITING.md](./docs/RATE_LIMITING.md)** - **🚦 Rate Limiting** - API rate limit documentation
+  - Tiered rate limits (100-400 req/min)
+  - Admin vs user rate limits (4x difference)
+  - Redis-backed distributed limiting
+  - Response headers and monitoring
+  - Configuration and testing guide
+  - Troubleshooting common issues
 
 - **[DEVELOPMENT.md](./docs/DEVELOPMENT.md)** - Development workflow and patterns
   - Code organization patterns

@@ -31,6 +31,7 @@ Datifyy is a production-ready dating/matchmaking platform with AI-powered compat
 
 - **Dual API**: gRPC (primary) + REST HTTP (browser-friendly wrapper)
 - **AI-Powered Matching**: Gemini AI for compatibility analysis (pluggable architecture)
+- **Rate Limiting**: Tiered rate limiting (100-400 req/min) with Redis-backed distributed limits
 - **Slack Integration**: Real-time notifications for user events, admin activities, and system alerts
 - **Multi-Method Auth**: Email/password, phone OTP, OAuth ready
 - **Comprehensive Profiles**: 100+ profile fields with cultural/matrimonial support
@@ -39,6 +40,16 @@ Datifyy is a production-ready dating/matchmaking platform with AI-powered compat
 - **Production Ready**: Connection pooling, graceful shutdown, health checks
 
 ### Recent Major Features
+
+**Rate Limiting** (Added: Nov 23, 2025):
+- Comprehensive tiered rate limiting across all endpoints
+- Admin endpoints: 400 req/min (4x normal users)
+- User endpoints: 100 req/min (default)
+- Auth endpoints: 5-10 req per 15 minutes (security)
+- Redis-backed distributed limiting with local fallback
+- IP-based and user-based limiting
+- Rate limit headers in all responses
+- See [RATE_LIMITING.md](./RATE_LIMITING.md) for complete guide
 
 **Slack Integration** (Added: Nov 23, 2025):
 - Complete Slack webhook integration for notifications
