@@ -54,6 +54,7 @@ services:
       - DB_NAME=monorepo_dev
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - GEMINI_API_KEY=AIzaSyC53mtEboE2xnrL5xd2KZeUYR1cATvmk60
     depends_on:
       postgres:
         condition: service_healthy
