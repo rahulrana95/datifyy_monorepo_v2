@@ -177,3 +177,51 @@ func (r *CuratedMatchesRepository) LinkScheduledDate(ctx context.Context, matchI
 	}
 	return nil
 }
+
+// ListByStatus retrieves curated matches filtered by status
+func (r *CuratedMatchesRepository) ListByStatus(ctx context.Context, status string, limit, offset int) ([]*CuratedMatch, error) {
+	query := `
+		SELECT id, user1_id, user2_id, compatibility_score, is_match,
+			   reasoning, matched_aspects, mismatched_aspects,
+			   ai_provider, ai_model, status, created_by_admin,
+			   scheduled_date_id, created_at, updated_at
+		FROM curated_matches
+		WHERE status = $1
+		ORDER BY created_at DESC
+		LIMIT $2 OFFSET $3
+	`
+
+	rows, err := r.db.QueryContext(ctx, query, status, limit, offset)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list curated matches by status: %w", err)
+	}
+	defer rows.Close()
+
+	var matches []*CuratedMatch
+	for rows.Next() {
+		match := &CuratedMatch{}
+		err := rows.Scan(
+			&match.ID, &match.User1ID, &match.User2ID, &match.CompatibilityScore, &match.IsMatch,
+			&match.Reasoning, pq.Array(&match.MatchedAspects), pq.Array(&match.MismatchedAspects),
+			&match.AIProvider, &match.AIModel, &match.Status, &match.CreatedByAdmin,
+			&match.ScheduledDateID, &match.CreatedAt, &match.UpdatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan curated match: %w", err)
+		}
+		matches = append(matches, match)
+	}
+
+	return matches, nil
+}
+
+// CountByStatus counts curated matches by status
+func (r *CuratedMatchesRepository) CountByStatus(ctx context.Context, status string) (int, error) {
+	var count int
+	query := `SELECT COUNT(*) FROM curated_matches WHERE status = $1`
+	err := r.db.QueryRowContext(ctx, query, status).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count curated matches by status: %w", err)
+	}
+	return count, nil
+}

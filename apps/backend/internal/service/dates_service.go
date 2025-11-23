@@ -574,3 +574,89 @@ func (s *DatesService) UpdateCuratedMatchAction(ctx context.Context, matchID int
 
 	return status, nil
 }
+
+// CuratedMatchWithUsers represents a curated match with full user details
+type CuratedMatchWithUsers struct {
+	ID                  int
+	User1ID             int
+	User1Name           string
+	User1Email          string
+	User1Age            int
+	User1Gender         string
+	User2ID             int
+	User2Name           string
+	User2Email          string
+	User2Age            int
+	User2Gender         string
+	CompatibilityScore  float64
+	IsMatch             bool
+	Reasoning           string
+	MatchedAspects      []string
+	MismatchedAspects   []string
+	Status              string
+	CreatedByAdmin      *int
+	ScheduledDateID     *int
+	CreatedAt           time.Time
+	UpdatedAt           time.Time
+}
+
+// GetCuratedMatchesByStatus retrieves curated matches by status with user details
+func (s *DatesService) GetCuratedMatchesByStatus(ctx context.Context, status string, limit, offset int) ([]*CuratedMatchWithUsers, int, error) {
+	// Get matches from repository
+	matches, err := s.curatedMatchesRepo.ListByStatus(ctx, status, limit, offset)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to list matches by status: %w", err)
+	}
+
+	// Get total count
+	totalCount, err := s.curatedMatchesRepo.CountByStatus(ctx, status)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to count matches: %w", err)
+	}
+
+	// Enrich with user details
+	var enrichedMatches []*CuratedMatchWithUsers
+	for _, match := range matches {
+		// Get user1 details
+		user1, err := s.userRepo.GetByID(ctx, match.User1ID)
+		if err != nil {
+			log.Printf("Failed to get user1 %d: %v", match.User1ID, err)
+			continue
+		}
+
+		// Get user2 details
+		user2, err := s.userRepo.GetByID(ctx, match.User2ID)
+		if err != nil {
+			log.Printf("Failed to get user2 %d: %v", match.User2ID, err)
+			continue
+		}
+
+		enriched := &CuratedMatchWithUsers{
+			ID:                  match.ID,
+			User1ID:             match.User1ID,
+			User1Name:           user1.Name,
+			User1Email:          user1.Email,
+			User1Age:            calculateAge(user1.DateOfBirth.Time),
+			User1Gender:         user1.Gender.String,
+			User2ID:             match.User2ID,
+			User2Name:           user2.Name,
+			User2Email:          user2.Email,
+			User2Age:            calculateAge(user2.DateOfBirth.Time),
+			User2Gender:         user2.Gender.String,
+			CompatibilityScore:  match.CompatibilityScore,
+			IsMatch:             match.IsMatch,
+			Reasoning:           match.Reasoning,
+			MatchedAspects:      match.MatchedAspects,
+			MismatchedAspects:   match.MismatchedAspects,
+			Status:              match.Status,
+			CreatedByAdmin:      match.CreatedByAdmin,
+			ScheduledDateID:     match.ScheduledDateID,
+			CreatedAt:           match.CreatedAt,
+			UpdatedAt:           match.UpdatedAt,
+		}
+
+		enrichedMatches = append(enrichedMatches, enriched)
+	}
+
+	return enrichedMatches, totalCount, nil
+}

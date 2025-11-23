@@ -224,6 +224,7 @@ func startHTTPServer(port string, server *Server, db *sql.DB, redisClient *redis
 	mux.HandleFunc("/api/v1/admin/curation/candidates", createAdminGetCurationCandidatesHandler(adminService))
 	mux.HandleFunc("/api/v1/admin/curation/analyze", createAdminCurateDatesHandler(adminService, db))
 	mux.HandleFunc("/api/v1/admin/curation/action", createAdminUpdateCuratedMatchActionHandler(datesService))
+	mux.HandleFunc("/api/v1/admin/curation/matches", createAdminGetCuratedMatchesByStatusHandler(datesService))
 
 	// Admin Analytics endpoints
 	mux.HandleFunc("/api/v1/admin/analytics/platform", createAdminGetPlatformStatsHandler(adminService))
@@ -1990,6 +1991,89 @@ func createAdminUpdateCuratedMatchActionHandler(datesService *service.DatesServi
 			"success":   true,
 			"message":   fmt.Sprintf("Curated match %s successfully", newStatus),
 			"newStatus": newStatus,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(jsonResp)
+	}
+}
+
+// createAdminGetCuratedMatchesByStatusHandler handles fetching curated matches by status
+func createAdminGetCuratedMatchesByStatusHandler(datesService *service.DatesService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		// Parse query parameters
+		status := r.URL.Query().Get("status")
+		if status == "" {
+			status = "accepted" // Default to accepted matches
+		}
+
+		page := 1
+		pageSize := 20
+		if pageStr := r.URL.Query().Get("page"); pageStr != "" {
+			if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
+				page = p
+			}
+		}
+		if sizeStr := r.URL.Query().Get("pageSize"); sizeStr != "" {
+			if s, err := strconv.Atoi(sizeStr); err == nil && s > 0 && s <= 100 {
+				pageSize = s
+			}
+		}
+
+		offset := (page - 1) * pageSize
+
+		// Fetch matches with user details
+		matches, totalCount, err := datesService.GetCuratedMatchesByStatus(r.Context(), status, pageSize, offset)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Failed to fetch curated matches: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		// Convert to JSON response
+		var matchesJSON []map[string]interface{}
+		for _, match := range matches {
+			matchesJSON = append(matchesJSON, map[string]interface{}{
+				"id": match.ID,
+				"user1": map[string]interface{}{
+					"userId": match.User1ID,
+					"name":   match.User1Name,
+					"email":  match.User1Email,
+					"age":    match.User1Age,
+					"gender": match.User1Gender,
+				},
+				"user2": map[string]interface{}{
+					"userId": match.User2ID,
+					"name":   match.User2Name,
+					"email":  match.User2Email,
+					"age":    match.User2Age,
+					"gender": match.User2Gender,
+				},
+				"compatibilityScore": match.CompatibilityScore,
+				"isMatch":            match.IsMatch,
+				"reasoning":          match.Reasoning,
+				"matchedAspects":     match.MatchedAspects,
+				"mismatchedAspects":  match.MismatchedAspects,
+				"status":             match.Status,
+				"createdByAdmin":     match.CreatedByAdmin,
+				"scheduledDateId":    match.ScheduledDateID,
+				"createdAt":          match.CreatedAt.Unix(),
+				"updatedAt":          match.UpdatedAt.Unix(),
+			})
+		}
+
+		totalPages := (totalCount + pageSize - 1) / pageSize
+
+		jsonResp := map[string]interface{}{
+			"matches":    matchesJSON,
+			"totalCount": totalCount,
+			"page":       page,
+			"pageSize":   pageSize,
+			"totalPages": totalPages,
 		}
 
 		w.Header().Set("Content-Type", "application/json")

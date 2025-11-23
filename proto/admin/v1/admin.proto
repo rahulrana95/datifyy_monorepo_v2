@@ -294,6 +294,37 @@ message UpdateCuratedMatchActionResponse {
   string new_status = 3;              // The new status after action
 }
 
+// Get Curated Matches by Status
+message GetCuratedMatchesByStatusRequest {
+  string status = 1;                  // Status filter (accepted, rejected, pending, review_later, scheduled)
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+message CuratedMatchDetail {
+  int32 id = 1;
+  UserSummary user1 = 2;
+  UserSummary user2 = 3;
+  double compatibility_score = 4;
+  bool is_match = 5;
+  string reasoning = 6;
+  repeated string matched_aspects = 7;
+  repeated string mismatched_aspects = 8;
+  string status = 9;
+  int32 created_by_admin = 10;
+  int32 scheduled_date_id = 11;
+  common.v1.Timestamp created_at = 12;
+  common.v1.Timestamp updated_at = 13;
+}
+
+message GetCuratedMatchesByStatusResponse {
+  repeated CuratedMatchDetail matches = 1;
+  int32 total_count = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+  int32 total_pages = 5;
+}
+
 // Get Genie Dates (Dates assigned to admin)
 message GetGenieDatesRequest {
   string genie_id = 1;
@@ -525,6 +556,7 @@ service AdminService {
   rpc GetCurationCandidates(GetCurationCandidatesRequest) returns (GetCurationCandidatesResponse);
   rpc CurateDates(CurateDatesRequest) returns (CurateDatesResponse);
   rpc UpdateCuratedMatchAction(UpdateCuratedMatchActionRequest) returns (UpdateCuratedMatchActionResponse);
+  rpc GetCuratedMatchesByStatus(GetCuratedMatchesByStatusRequest) returns (GetCuratedMatchesByStatusResponse);
 
   // Genie Operations
   rpc GetGenieDates(GetGenieDatesRequest) returns (GetGenieDatesResponse);
