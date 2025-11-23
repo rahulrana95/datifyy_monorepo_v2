@@ -196,6 +196,10 @@ func startHTTPServer(port string, server *Server, db *sql.DB, redisClient *redis
 	mux.HandleFunc("/api/v1/admin/dates", createAdminDatesHandler(adminService))
 	mux.HandleFunc("/api/v1/admin/dates/", createAdminDateStatusHandler(adminService))
 
+	// Admin Curation endpoints (AI-powered matching)
+	mux.HandleFunc("/api/v1/admin/curation/candidates", createAdminGetCurationCandidatesHandler(adminService))
+	mux.HandleFunc("/api/v1/admin/curation/analyze", createAdminCurateDatesHandler(adminService))
+
 	// Admin Analytics endpoints
 	mux.HandleFunc("/api/v1/admin/analytics/platform", createAdminGetPlatformStatsHandler(adminService))
 	mux.HandleFunc("/api/v1/admin/analytics/user-growth", createAdminGetUserGrowthHandler(adminService))
@@ -1738,6 +1742,107 @@ func convertScheduledDateToJSON(date *adminpb.ScheduledDate) map[string]interfac
 	}
 
 	return result
+}
+
+// =============================================================================
+// Admin Curation HTTP Handlers (AI-Powered Matching)
+// =============================================================================
+
+// createAdminGetCurationCandidatesHandler handles getting users available for curation
+func createAdminGetCurationCandidatesHandler(adminService *service.AdminService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		grpcReq := &adminpb.GetCurationCandidatesRequest{}
+
+		resp, err := adminService.GetCurationCandidates(r.Context(), grpcReq)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Failed to get curation candidates: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		// Convert candidates to JSON (camelCase)
+		var candidates []map[string]interface{}
+		for _, candidate := range resp.Candidates {
+			candidates = append(candidates, map[string]interface{}{
+				"userId":               candidate.UserId,
+				"email":                candidate.Email,
+				"name":                 candidate.Name,
+				"age":                  candidate.Age,
+				"gender":               candidate.Gender,
+				"profileCompletion":    candidate.ProfileCompletion,
+				"emailVerified":        candidate.EmailVerified,
+				"aadharVerified":       candidate.AadharVerified,
+				"workEmailVerified":    candidate.WorkEmailVerified,
+				"availableSlotsCount":  candidate.AvailableSlotsCount,
+				"nextAvailableDate":    candidate.NextAvailableDate,
+			})
+		}
+
+		jsonResp := map[string]interface{}{
+			"candidates": candidates,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(jsonResp)
+	}
+}
+
+// createAdminCurateDatesHandler handles AI-powered compatibility analysis
+func createAdminCurateDatesHandler(adminService *service.AdminService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		var reqBody struct {
+			UserID       string   `json:"userId"`
+			CandidateIDs []string `json:"candidateIds"`
+		}
+
+		if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+			http.Error(w, fmt.Sprintf("Invalid JSON: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		grpcReq := &adminpb.CurateDatesRequest{
+			UserId:       reqBody.UserID,
+			CandidateIds: reqBody.CandidateIDs,
+		}
+
+		resp, err := adminService.CurateDates(r.Context(), grpcReq)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Failed to curate dates: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		// Convert matches to JSON (camelCase)
+		var matches []map[string]interface{}
+		for _, match := range resp.Matches {
+			matches = append(matches, map[string]interface{}{
+				"userId":             match.UserId,
+				"name":               match.Name,
+				"age":                match.Age,
+				"gender":             match.Gender,
+				"compatibilityScore": match.CompatibilityScore,
+				"isMatch":            match.IsMatch,
+				"reasoning":          match.Reasoning,
+				"matchedAspects":     match.MatchedAspects,
+				"mismatchedAspects":  match.MismatchedAspects,
+			})
+		}
+
+		jsonResp := map[string]interface{}{
+			"matches": matches,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(jsonResp)
+	}
 }
 
 // =============================================================================

@@ -86,14 +86,13 @@ type CandidateUser struct {
 	NextAvailableDate *time.Time `json:"next_available_date,omitempty"`
 }
 
-// GetCandidatesForCuration returns users available for dates tomorrow
+// GetCandidatesForCuration returns users available for dates day after tomorrow onwards
 func (s *DatesService) GetCandidatesForCuration(ctx context.Context) ([]*CandidateUser, error) {
-	// Get tomorrow's date range
-	tomorrow := time.Now().AddDate(0, 0, 1)
-	startOfDay := time.Date(tomorrow.Year(), tomorrow.Month(), tomorrow.Day(), 0, 0, 0, 0, tomorrow.Location())
-	endOfDay := startOfDay.AddDate(0, 0, 1)
+	// Get day after tomorrow's date range (starting point)
+	dayAfterTomorrow := time.Now().AddDate(0, 0, 2)
+	startOfDay := time.Date(dayAfterTomorrow.Year(), dayAfterTomorrow.Month(), dayAfterTomorrow.Day(), 0, 0, 0, 0, dayAfterTomorrow.Location())
 
-	// Query for users with availability tomorrow
+	// Query for users with availability from day after tomorrow onwards
 	query := `
 		SELECT
 			u.id,
@@ -110,14 +109,13 @@ func (s *DatesService) GetCandidatesForCuration(ctx context.Context) ([]*Candida
 		LEFT JOIN availability_slots avail ON u.id = avail.user_id
 		WHERE u.account_status = 'ACTIVE'
 			AND avail.start_time >= $1
-			AND avail.start_time < $2
 		GROUP BY u.id, u.email, u.name, u.date_of_birth, u.gender, up.completion_percentage,
 				 u.email_verified
 		HAVING COUNT(avail.id) > 0
 		ORDER BY u.created_at DESC
 	`
 
-	rows, err := s.db.QueryContext(ctx, query, startOfDay.Unix(), endOfDay.Unix())
+	rows, err := s.db.QueryContext(ctx, query, startOfDay.Unix())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get candidates: %w", err)
 	}
