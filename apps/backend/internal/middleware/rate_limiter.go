@@ -60,7 +60,15 @@ func NewRateLimiter(redisClient *redis.Client) *RateLimiter {
 		defaultConfig: defaultConfig,
 	}
 
-	// Pre-configure limits for sensitive endpoints
+	// Admin endpoints config (4x normal user rate)
+	adminConfig := &RateLimitConfig{
+		RequestsPerWindow: 400, // 4x normal users
+		WindowDuration:    1 * time.Minute,
+		EnableUserLimit:   true,
+		EnableIPLimit:     true,
+	}
+
+	// Auth endpoints (restrictive for security)
 	endpointLimits.SetLimit("/api/v1/auth/register/email", &RateLimitConfig{
 		RequestsPerWindow: 5,
 		WindowDuration:    15 * time.Minute,
@@ -75,12 +83,69 @@ func NewRateLimiter(redisClient *redis.Client) *RateLimiter {
 		EnableIPLimit:     true,
 	})
 
-	endpointLimits.SetLimit("/api/v1/admin/curation/analyze", &RateLimitConfig{
-		RequestsPerWindow: 10,
+	endpointLimits.SetLimit("/api/v1/auth/token/refresh", &RateLimitConfig{
+		RequestsPerWindow: 20,
 		WindowDuration:    1 * time.Minute,
 		EnableUserLimit:   true,
 		EnableIPLimit:     true,
 	})
+
+	endpointLimits.SetLimit("/api/v1/auth/token/revoke", &RateLimitConfig{
+		RequestsPerWindow: 20,
+		WindowDuration:    1 * time.Minute,
+		EnableUserLimit:   true,
+		EnableIPLimit:     true,
+	})
+
+	// User endpoints (normal rate)
+	endpointLimits.SetLimit("/api/v1/user/me", defaultConfig)
+	endpointLimits.SetLimit("/api/v1/partner-preferences", defaultConfig)
+	endpointLimits.SetLimit("/api/v1/availability", defaultConfig)
+
+	// Admin authentication
+	endpointLimits.SetLimit("/api/v1/admin/login", &RateLimitConfig{
+		RequestsPerWindow: 10,
+		WindowDuration:    15 * time.Minute,
+		EnableUserLimit:   false,
+		EnableIPLimit:     true,
+	})
+
+	// Admin user management endpoints
+	endpointLimits.SetLimit("/api/v1/admin/users", adminConfig)
+	endpointLimits.SetLimit("/api/v1/admin/users/search", adminConfig)
+	endpointLimits.SetLimit("/api/v1/admin/users/bulk", adminConfig)
+
+	// Admin date management
+	endpointLimits.SetLimit("/api/v1/admin/dates", adminConfig)
+	endpointLimits.SetLimit("/api/v1/admin/suggestions/", adminConfig)
+
+	// Admin curation endpoints (AI-powered, slightly more restrictive)
+	endpointLimits.SetLimit("/api/v1/admin/curation/candidates", adminConfig)
+	endpointLimits.SetLimit("/api/v1/admin/curation/analyze", &RateLimitConfig{
+		RequestsPerWindow: 100, // AI endpoint, more restrictive than general admin
+		WindowDuration:    1 * time.Minute,
+		EnableUserLimit:   true,
+		EnableIPLimit:     true,
+	})
+
+	// Admin analytics endpoints
+	endpointLimits.SetLimit("/api/v1/admin/analytics/platform", adminConfig)
+	endpointLimits.SetLimit("/api/v1/admin/analytics/user-growth", adminConfig)
+	endpointLimits.SetLimit("/api/v1/admin/analytics/active-users", adminConfig)
+	endpointLimits.SetLimit("/api/v1/admin/analytics/signups", adminConfig)
+	endpointLimits.SetLimit("/api/v1/admin/analytics/demographics", adminConfig)
+	endpointLimits.SetLimit("/api/v1/admin/analytics/locations", adminConfig)
+	endpointLimits.SetLimit("/api/v1/admin/analytics/availability", adminConfig)
+
+	// Admin management endpoints
+	endpointLimits.SetLimit("/api/v1/admin/admins", adminConfig)
+	endpointLimits.SetLimit("/api/v1/admin/profile", adminConfig)
+
+	// Slack endpoints
+	endpointLimits.SetLimit("/api/v1/slack/send", adminConfig)
+	endpointLimits.SetLimit("/api/v1/slack/alert", adminConfig)
+	endpointLimits.SetLimit("/api/v1/slack/notification", adminConfig)
+	endpointLimits.SetLimit("/api/v1/slack/test", adminConfig)
 
 	return &RateLimiter{
 		redis:          redisClient,
