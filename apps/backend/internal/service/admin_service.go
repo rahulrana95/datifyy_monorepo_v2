@@ -11,6 +11,7 @@ import (
 	commonpb "github.com/datifyy/backend/gen/common/v1"
 	"github.com/datifyy/backend/internal/auth"
 	"github.com/datifyy/backend/internal/repository"
+	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -18,18 +19,25 @@ import (
 // AdminService implements the admin gRPC service
 type AdminService struct {
 	adminpb.UnimplementedAdminServiceServer
-	adminRepo *repository.AdminRepository
-	userRepo  *repository.UserRepository
-	db        *sql.DB
+	adminRepo    *repository.AdminRepository
+	userRepo     *repository.UserRepository
+	datesService *DatesService
+	db           *sql.DB
 }
 
 // NewAdminService creates a new admin service
-func NewAdminService(db *sql.DB) *AdminService {
-	return &AdminService{
-		adminRepo: repository.NewAdminRepository(db),
-		userRepo:  repository.NewUserRepository(db),
-		db:        db,
+func NewAdminService(db *sql.DB, redisClient *redis.Client) (*AdminService, error) {
+	datesService, err := NewDatesService(db, redisClient)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create dates service: %w", err)
 	}
+
+	return &AdminService{
+		adminRepo:    repository.NewAdminRepository(db),
+		userRepo:     repository.NewUserRepository(db),
+		datesService: datesService,
+		db:           db,
+	}, nil
 }
 
 // =============================================================================
@@ -326,6 +334,97 @@ func (s *AdminService) ScheduleDate(ctx context.Context, req *adminpb.ScheduleDa
 
 	return &adminpb.ScheduleDateResponse{
 		Date: convertScheduledDate(createdDate),
+	}, nil
+}
+
+// =============================================================================
+// AI-Powered Date Curation
+// =============================================================================
+
+// GetCurationCandidates returns users available for dates tomorrow
+func (s *AdminService) GetCurationCandidates(ctx context.Context, req *adminpb.GetCurationCandidatesRequest) (*adminpb.GetCurationCandidatesResponse, error) {
+	candidates, err := s.datesService.GetCandidatesForCuration(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to get curation candidates: %v", err)
+	}
+
+	var pbCandidates []*adminpb.CurationCandidate
+	for _, c := range candidates {
+		candidate := &adminpb.CurationCandidate{
+			UserId:              strconv.Itoa(c.UserID),
+			Email:               c.Email,
+			Name:                c.Name,
+			Age:                 int32(c.Age),
+			Gender:              c.Gender,
+			ProfileCompletion:   int32(c.ProfileCompletion),
+			EmailVerified:       c.EmailVerified,
+			AadharVerified:      c.AadharVerified,
+			WorkEmailVerified:   c.WorkEmailVerified,
+			AvailableSlotsCount: int32(c.AvailableSlotsCount),
+		}
+
+		if c.NextAvailableDate != nil {
+			candidate.NextAvailableDate = timestampFromTime(*c.NextAvailableDate)
+		}
+
+		pbCandidates = append(pbCandidates, candidate)
+	}
+
+	return &adminpb.GetCurationCandidatesResponse{
+		Candidates: pbCandidates,
+	}, nil
+}
+
+// CurateDates analyzes compatibility between a user and candidates using AI
+func (s *AdminService) CurateDates(ctx context.Context, req *adminpb.CurateDatesRequest) (*adminpb.CurateDatesResponse, error) {
+	// Validate input
+	userID, err := strconv.Atoi(req.UserId)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid user ID")
+	}
+
+	if len(req.CandidateIds) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "at least one candidate ID is required")
+	}
+
+	// Convert candidate IDs to ints
+	candidateIDs := make([]int, len(req.CandidateIds))
+	for i, idStr := range req.CandidateIds {
+		id, err := strconv.Atoi(idStr)
+		if err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "invalid candidate ID: %s", idStr)
+		}
+		candidateIDs[i] = id
+	}
+
+	// Get admin ID from context (TODO: implement auth context extraction)
+	adminID := 1 // Placeholder - should get from auth context
+
+	// Analyze compatibility using AI
+	matches, err := s.datesService.AnalyzeCompatibility(ctx, userID, candidateIDs, adminID)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to analyze compatibility: %v", err)
+	}
+
+	// Convert to protobuf format
+	var pbMatches []*adminpb.MatchResult
+	for _, m := range matches {
+		match := &adminpb.MatchResult{
+			UserId:             strconv.Itoa(m.UserID),
+			Name:               m.Name,
+			Age:                int32(m.Age),
+			Gender:             m.Gender,
+			CompatibilityScore: m.CompatibilityScore,
+			IsMatch:            m.IsMatch,
+			Reasoning:          m.Reasoning,
+			MatchedAspects:     m.MatchedAspects,
+			MismatchedAspects:  m.MismatchedAspects,
+		}
+		pbMatches = append(pbMatches, match)
+	}
+
+	return &adminpb.CurateDatesResponse{
+		Matches: pbMatches,
 	}, nil
 }
 

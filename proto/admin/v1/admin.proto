@@ -229,6 +229,51 @@ message ScheduleDateResponse {
   ScheduledDate date = 1;
 }
 
+// Get Curation Candidates (Users available for dates tomorrow)
+message GetCurationCandidatesRequest {
+  // Empty - returns all users available tomorrow
+}
+
+message CurationCandidate {
+  string user_id = 1;
+  string email = 2;
+  string name = 3;
+  int32 age = 4;
+  string gender = 5;
+  int32 profile_completion = 6;
+  bool email_verified = 7;
+  bool aadhar_verified = 8;
+  bool work_email_verified = 9;
+  int32 available_slots_count = 10;
+  common.v1.Timestamp next_available_date = 11;
+}
+
+message GetCurationCandidatesResponse {
+  repeated CurationCandidate candidates = 1;
+}
+
+// Curate Dates (AI-powered compatibility matching)
+message CurateDatesRequest {
+  string user_id = 1;              // User to find matches for
+  repeated string candidate_ids = 2; // Candidate user IDs to analyze
+}
+
+message MatchResult {
+  string user_id = 1;
+  string name = 2;
+  int32 age = 3;
+  string gender = 4;
+  double compatibility_score = 5;    // 0-100
+  bool is_match = 6;                 // true if score >= 60
+  string reasoning = 7;
+  repeated string matched_aspects = 8;
+  repeated string mismatched_aspects = 9;
+}
+
+message CurateDatesResponse {
+  repeated MatchResult matches = 1;
+}
+
 // Get Genie Dates (Dates assigned to admin)
 message GetGenieDatesRequest {
   string genie_id = 1;
@@ -455,6 +500,10 @@ service AdminService {
   // Date Matching
   rpc GetDateSuggestions(GetDateSuggestionsRequest) returns (GetDateSuggestionsResponse);
   rpc ScheduleDate(ScheduleDateRequest) returns (ScheduleDateResponse);
+
+  // AI-Powered Date Curation
+  rpc GetCurationCandidates(GetCurationCandidatesRequest) returns (GetCurationCandidatesResponse);
+  rpc CurateDates(CurateDatesRequest) returns (CurateDatesResponse);
 
   // Genie Operations
   rpc GetGenieDates(GetGenieDatesRequest) returns (GetGenieDatesResponse);

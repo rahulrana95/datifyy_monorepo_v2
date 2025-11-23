@@ -127,7 +127,10 @@ func startGRPCServer(port string, db *sql.DB, redisClient *redis.Client) {
 	availabilityService := service.NewAvailabilityService(db)
 	availabilitypb.RegisterAvailabilityServiceServer(grpcServer, availabilityService)
 
-	adminService := service.NewAdminService(db)
+	adminService, err := service.NewAdminService(db, redisClient)
+	if err != nil {
+		log.Fatalf("Failed to create admin service: %v", err)
+	}
 	adminpb.RegisterAdminServiceServer(grpcServer, adminService)
 
 	// Register reflection service (for grpcurl)
@@ -180,7 +183,10 @@ func startHTTPServer(port string, server *Server, db *sql.DB, redisClient *redis
 	mux.HandleFunc("/api/v1/availability", createAvailabilityHandler(availabilityService))
 
 	// Admin REST endpoints
-	adminService := service.NewAdminService(db)
+	adminService, err := service.NewAdminService(db, redisClient)
+	if err != nil {
+		log.Fatalf("Failed to create admin service: %v", err)
+	}
 	mux.HandleFunc("/api/v1/admin/login", createAdminLoginHandler(adminService))
 	mux.HandleFunc("/api/v1/admin/users", createAdminGetAllUsersHandler(adminService))
 	mux.HandleFunc("/api/v1/admin/users/search", createAdminSearchUsersHandler(adminService))
