@@ -15,11 +15,6 @@ import {
   Grid,
   Flex,
   Heading,
-  Tabs,
-  TabList,
-  TabPanels,
-  Tab,
-  TabPanel,
 } from '@chakra-ui/react';
 import { AdminLayout } from '../../../components/admin';
 import {
@@ -30,8 +25,10 @@ import {
 } from '../../../services/admin/adminService';
 
 type FilterType = 'all' | 'matches' | 'non-matches';
+type TabType = 'ai-curation' | 'curated-dates';
 
 export const CurateDates = () => {
+  const [activeTab, setActiveTab] = useState<TabType>('ai-curation');
   const [candidates, setCandidates] = useState<CurationCandidate[]>([]);
   const [selectedCandidate, setSelectedCandidate] = useState<CurationCandidate | null>(null);
   const [matches, setMatches] = useState<MatchResult[]>([]);
@@ -123,19 +120,34 @@ export const CurateDates = () => {
         <Text color="gray.600">AI-powered date matching and compatibility analysis</Text>
       </VStack>
 
-      <Tabs colorScheme="pink" size="md">
-        <TabList mb={4}>
-          <Tab _selected={{ color: 'pink.600', borderColor: 'pink.600' }}>
-            🤖 AI Dates Curation
-          </Tab>
-          <Tab _selected={{ color: 'pink.600', borderColor: 'pink.600' }}>
-            💝 Curated Dates
-          </Tab>
-        </TabList>
+      {/* Custom Tab Interface */}
+      <HStack gap={2} mb={4} borderBottom="2px solid" borderColor="gray.200" pb={2}>
+        <Button
+          size="md"
+          variant={activeTab === 'ai-curation' ? 'solid' : 'ghost'}
+          colorScheme="pink"
+          onClick={() => setActiveTab('ai-curation')}
+          borderBottom={activeTab === 'ai-curation' ? '3px solid' : 'none'}
+          borderColor="pink.500"
+          borderRadius={0}
+        >
+          🤖 AI Dates Curation
+        </Button>
+        <Button
+          size="md"
+          variant={activeTab === 'curated-dates' ? 'solid' : 'ghost'}
+          colorScheme="pink"
+          onClick={() => setActiveTab('curated-dates')}
+          borderBottom={activeTab === 'curated-dates' ? '3px solid' : 'none'}
+          borderColor="pink.500"
+          borderRadius={0}
+        >
+          💝 Curated Dates
+        </Button>
+      </HStack>
 
-        <TabPanels>
-          {/* AI Dates Curation Tab */}
-          <TabPanel px={0}>
+      {/* AI Curation Tab Content */}
+      {activeTab === 'ai-curation' && (
             <Grid templateColumns="380px 1fr" gap={6} h="calc(100vh - 280px)">
         {/* Left Panel - Candidate List */}
         <Box
@@ -356,34 +368,32 @@ export const CurateDates = () => {
           )}
         </Box>
       </Grid>
-          </TabPanel>
+      )}
 
-          {/* Curated Dates Tab */}
-          <TabPanel>
-            <Flex
-              direction="column"
-              align="center"
-              justify="center"
-              h="calc(100vh - 280px)"
-              gap={4}
-            >
-              <Text fontSize="6xl">💝</Text>
-              <Heading size="lg" color="gray.600">
-                Curated Dates
-              </Heading>
-              <Text color="gray.500" textAlign="center" maxW="500px">
-                View and manage dates that have been approved for users.
-                This feature is coming soon!
-              </Text>
-              <Box mt={4}>
-                <Badge colorScheme="purple" fontSize="md" px={4} py={2}>
-                  Coming Soon
-                </Badge>
-              </Box>
-            </Flex>
-          </TabPanel>
-        </TabPanels>
-      </Tabs>
+      {/* Curated Dates Tab Content */}
+      {activeTab === 'curated-dates' && (
+        <Flex
+          direction="column"
+          align="center"
+          justify="center"
+          h="calc(100vh - 280px)"
+          gap={4}
+        >
+          <Text fontSize="6xl">💝</Text>
+          <Heading size="lg" color="gray.600">
+            Curated Dates
+          </Heading>
+          <Text color="gray.500" textAlign="center" maxW="500px">
+            View and manage dates that have been approved for users.
+            This feature is coming soon!
+          </Text>
+          <Box mt={4}>
+            <Badge colorScheme="purple" fontSize="md" px={4} py={2}>
+              Coming Soon
+            </Badge>
+          </Box>
+        </Flex>
+      )}
     </AdminLayout>
   );
 };
