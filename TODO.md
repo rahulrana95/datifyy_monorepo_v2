@@ -4,16 +4,7 @@ Last Updated: 2025-11-23
 
 ## 🚀 In Progress
 
-### Task 1: Central API Rate Limiting
-- [x] Create rate limiter middleware
-- [x] Implement user-based rate limiting
-- [x] Implement IP-based rate limiting
-- [x] Make limits configurable per endpoint
-- [x] Add configuration deployment support
-- [x] Test rate limiting functionality
-- [ ] Update documentation
-
-**Files to modify**: middleware/, config/, main.go
+_No tasks currently in progress_
 
 ---
 
@@ -98,6 +89,22 @@ Last Updated: 2025-11-23
 
 ## ✅ Completed Tasks
 
+### Central API Rate Limiting (Completed: 2025-11-23)
+- ✅ Created rate limiter middleware (`internal/middleware/rate_limiter.go`)
+- ✅ Implemented user-based rate limiting
+- ✅ Implemented IP-based rate limiting
+- ✅ Made limits configurable per endpoint
+- ✅ Added configuration deployment support (UpdateLimits method)
+- ✅ Tested rate limiting functionality (9 passing tests)
+- ✅ Integrated into HTTP server (main.go)
+- ✅ Configured all endpoints with tiered limits
+- ✅ Admin endpoints: 400 req/min (4x normal users)
+- ✅ User endpoints: 100 req/min (default)
+- ✅ Auth endpoints: 5-20 req per window (security)
+- ✅ Created comprehensive documentation (RATE_LIMITING.md)
+- ✅ Updated README and BACKEND_ARCHITECTURE
+- ✅ Redis-backed distributed limiting with local fallback
+
 ### Slack Integration (Completed: 2025-11-23)
 - ✅ Created Slack service (`internal/slack/`)
 - ✅ Added 4 HTTP endpoints
@@ -127,5 +134,5 @@ Last Updated: 2025-11-23
 
 ## 🎯 Current Focus
 
-**Working on**: Task 1 - Central API Rate Limiting
+**Working on**: Nothing (awaiting next task)
 **Next up**: Task 2 - AI Curation Analyze Backend Route
