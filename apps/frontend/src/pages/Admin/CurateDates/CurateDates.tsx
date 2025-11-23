@@ -15,6 +15,11 @@ import {
   Grid,
   Flex,
   Heading,
+  Tabs,
+  TabList,
+  TabPanels,
+  Tab,
+  TabPanel,
 } from '@chakra-ui/react';
 import { AdminLayout } from '../../../components/admin';
 import {
@@ -118,7 +123,20 @@ export const CurateDates = () => {
         <Text color="gray.600">AI-powered date matching and compatibility analysis</Text>
       </VStack>
 
-      <Grid templateColumns="380px 1fr" gap={6} h="calc(100vh - 200px)">
+      <Tabs colorScheme="pink" size="md">
+        <TabList mb={4}>
+          <Tab _selected={{ color: 'pink.600', borderColor: 'pink.600' }}>
+            🤖 AI Dates Curation
+          </Tab>
+          <Tab _selected={{ color: 'pink.600', borderColor: 'pink.600' }}>
+            💝 Curated Dates
+          </Tab>
+        </TabList>
+
+        <TabPanels>
+          {/* AI Dates Curation Tab */}
+          <TabPanel px={0}>
+            <Grid templateColumns="380px 1fr" gap={6} h="calc(100vh - 280px)">
         {/* Left Panel - Candidate List */}
         <Box
           borderRight="1px solid"
@@ -338,6 +356,34 @@ export const CurateDates = () => {
           )}
         </Box>
       </Grid>
+          </TabPanel>
+
+          {/* Curated Dates Tab */}
+          <TabPanel>
+            <Flex
+              direction="column"
+              align="center"
+              justify="center"
+              h="calc(100vh - 280px)"
+              gap={4}
+            >
+              <Text fontSize="6xl">💝</Text>
+              <Heading size="lg" color="gray.600">
+                Curated Dates
+              </Heading>
+              <Text color="gray.500" textAlign="center" maxW="500px">
+                View and manage dates that have been approved for users.
+                This feature is coming soon!
+              </Text>
+              <Box mt={4}>
+                <Badge colorScheme="purple" fontSize="md" px={4} py={2}>
+                  Coming Soon
+                </Badge>
+              </Box>
+            </Flex>
+          </TabPanel>
+        </TabPanels>
+      </Tabs>
     </AdminLayout>
   );
 };
