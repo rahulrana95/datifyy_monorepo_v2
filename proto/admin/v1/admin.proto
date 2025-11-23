@@ -254,8 +254,10 @@ message GetCurationCandidatesResponse {
 
 // Curate Dates (AI-powered compatibility matching)
 message CurateDatesRequest {
-  string user_id = 1;              // User to find matches for
-  repeated string candidate_ids = 2; // Candidate user IDs to analyze
+  string user_id = 1;                       // User to find matches for
+  repeated string candidate_ids = 2;         // Candidate user IDs to analyze
+  user.v1.UserProfile user_profile = 3;      // Full profile of the user
+  repeated user.v1.UserProfile candidate_profiles = 4; // Full profiles of candidates
 }
 
 message MatchResult {
