@@ -1031,7 +1031,9 @@ docker-compose logs -f <service-name>
 
 Comprehensive guides for development, testing, and debugging:
 
-- **[BACKEND_ARCHITECTURE.md](./docs/BACKEND_ARCHITECTURE.md)** - **⭐ START HERE** - Comprehensive backend guide (2,043 lines)
+### Backend Documentation
+
+- **[BACKEND_ARCHITECTURE.md](./docs/BACKEND_ARCHITECTURE.md)** - **⭐ Backend Guide** - Comprehensive backend architecture (2,043 lines)
   - Complete architecture overview with diagrams
   - All 100 endpoints documented (34 HTTP + 66 gRPC)
   - **Step-by-step guide: Adding new gRPC endpoints**
@@ -1042,10 +1044,26 @@ Comprehensive guides for development, testing, and debugging:
   - Best practices and conventions
   - File change summary for common tasks
 
-- **[DEVELOPMENT.md](./docs/DEVELOPMENT.md)** - Development guide for adding services and RPC methods
+- **[DEVELOPMENT.md](./docs/DEVELOPMENT.md)** - Development workflow and patterns
   - Code organization patterns
-  - Development workflow
-  - Git branching strategy
+  - Proto-first development
+  - Repository pattern implementation
+
+### Frontend Documentation
+
+- **[FRONTEND_ARCHITECTURE.md](./docs/FRONTEND_ARCHITECTURE.md)** - **⭐ Frontend Guide** - Comprehensive frontend architecture
+  - Complete project structure (17 pages, 30+ components)
+  - All 5 services documented (auth, user, admin, availability, base)
+  - State management with Zustand (4 stores)
+  - **Step-by-step guide: Adding new pages**
+  - **Step-by-step guide: Creating reusable components**
+  - **Step-by-step guide: Adding admin features**
+  - Theme system (Chakra UI v3)
+  - Common patterns and best practices
+  - Debugging guide for frontend issues
+  - Performance optimization tips
+
+### Testing & API Documentation
 
 - **[TESTING.md](./docs/TESTING.md)** - Testing guidelines and examples
   - Unit testing guide with examples
@@ -1054,10 +1072,18 @@ Comprehensive guides for development, testing, and debugging:
   - Test-driven development practices
 
 - **[GRPC_TESTING.md](./docs/GRPC_TESTING.md)** - gRPC testing tools and usage
+  - Buf Studio (official web UI)
   - grpcui web interface
   - grpcurl command-line testing
-  - Buf CLI usage
   - Postman integration
+
+- **[POSTMAN_GUIDE.md](./docs/POSTMAN_GUIDE.md)** - Complete Postman testing guide
+  - Setup and configuration
+  - All 34 HTTP REST endpoints
+  - Authentication workflows
+  - AI curation testing
+  - Environment variables
+  - Common issues and solutions
 
 ## 🤝 Contributing
 
