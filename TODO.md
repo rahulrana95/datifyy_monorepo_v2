@@ -10,19 +10,6 @@ _No tasks currently in progress_
 
 ## 📋 Pending Tasks
 
-### Task 5: Curated Dates Backend
-- [ ] Proto changes for curated dates status
-- [ ] HTTP endpoints for fetching by status
-- [ ] Admin service CRUD operations
-- [ ] Admin repo methods
-- [ ] User endpoints for accept/reject
-- [ ] Add 'genie' (admin) assignment
-- [ ] Implement Google Meet link generation
-- [ ] Generate Google Calendar invites
-- [ ] Test complete flow
-
-**Files**: proto/, main.go, admin service, admin repo, user service
-
 ### Task 6: Love Zone Tab
 **Backend**:
 - [ ] Proto changes for user date views
@@ -58,6 +45,35 @@ _No tasks currently in progress_
 ---
 
 ## ✅ Completed Tasks
+
+### Task 5: Curated Dates Backend (Completed: 2025-11-23)
+- ✅ Added proto messages for fetching curated matches by status
+- ✅ Created HTTP endpoint GET /api/v1/admin/curation/matches?status={status}
+- ✅ Implemented repository methods: ListByStatus(), CountByStatus()
+- ✅ Implemented service method with user enrichment
+- ✅ Created user suggestion flow (admin creates, users respond)
+- ✅ HTTP endpoints for user suggestions (view/accept/reject)
+- ✅ Implemented date scheduling with genie assignment
+- ✅ Generated Google Meet links (placeholder format)
+- ✅ Generated calendar invite text with full details
+- ✅ Linked scheduled dates to curated matches
+- ✅ Tested complete end-to-end flow
+- **Implementation**: Full dating flow from AI match to scheduled date:
+  1. Admin analyzes compatibility → curated_match (85% score)
+  2. Admin accepts match → status: "accepted"
+  3. Admin creates suggestions → date_suggestions for both users
+  4. Users view and accept suggestions → status: "accepted"
+  5. Admin schedules date → scheduled_date with genie_id
+  6. System generates Google Meet link and calendar info
+  7. Curated match linked → scheduled_date_id, status: "scheduled"
+- **Endpoints**:
+  - GET /api/v1/admin/curation/matches?status={status} - Fetch by status
+  - POST /api/v1/admin/curation/matches/{id}/suggest - Create suggestions
+  - GET /api/v1/user/suggestions?userId=X - View suggestions
+  - POST /api/v1/user/suggestions/{id}/respond - Accept/reject
+  - POST /api/v1/admin/dates/schedule - Schedule date
+- **Files**: proto/admin/v1/admin.proto, curated_matches_repository.go, scheduled_dates_repository.go (new), dates_service.go, main.go
+- **Production Notes**: Google Meet links are placeholders, integrate Google Calendar API for production
 
 ### Task 4: Date Suggestion Actions (Completed: 2025-11-23)
 - ✅ Added proto enum CuratedMatchAction (accept/reject/review_later)
@@ -148,4 +164,4 @@ _No tasks currently in progress_
 ## 🎯 Current Focus
 
 **Working on**: Nothing (awaiting next task)
-**Next up**: Task 5 - Curated Dates Backend
+**Next up**: Task 6 - Love Zone Tab (Backend + Frontend)
