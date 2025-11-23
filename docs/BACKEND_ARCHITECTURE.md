@@ -31,6 +31,7 @@ Datifyy is a production-ready dating/matchmaking platform with AI-powered compat
 
 - **Dual API**: gRPC (primary) + REST HTTP (browser-friendly wrapper)
 - **AI-Powered Matching**: Gemini AI for compatibility analysis (pluggable architecture)
+- **Slack Integration**: Real-time notifications for user events, admin activities, and system alerts
 - **Multi-Method Auth**: Email/password, phone OTP, OAuth ready
 - **Comprehensive Profiles**: 100+ profile fields with cultural/matrimonial support
 - **Admin Dashboard**: User management, analytics, AI date curation
@@ -38,6 +39,14 @@ Datifyy is a production-ready dating/matchmaking platform with AI-powered compat
 - **Production Ready**: Connection pooling, graceful shutdown, health checks
 
 ### Recent Major Features
+
+**Slack Integration** (Added: Nov 23, 2025):
+- Complete Slack webhook integration for notifications
+- 4 HTTP endpoints for different message types
+- Pre-built templates for user events, admin activities, system alerts
+- AI match event notifications
+- Graceful degradation when webhook not configured
+- See [SLACK_INTEGRATION.md](./SLACK_INTEGRATION.md) for complete guide
 
 **AI Date Curation** (Added: Nov 23, 2025):
 - AI-powered compatibility analysis using Gemini API
@@ -414,6 +423,36 @@ Repositories handle direct database operations. They abstract SQL queries from s
 **Files**:
 - `mailersend.go` - MailerSend API integration
 
+#### Slack Module (`internal/slack/`)
+
+**Files**:
+- `slack_service.go` (400+ lines) - Complete Slack webhook integration
+- `slack_service_test.go` (100+ lines) - Unit tests
+
+**Key Functions**:
+- `SendMessage()` - Simple text messages
+- `SendAlert()`, `SendSuccess()`, `SendWarning()`, `SendInfo()` - Color-coded alerts
+- `SendUserEvent()` - User registration, verification, deletion events
+- `SendAdminActivity()` - Admin action tracking
+- `SendSystemAlert()` - System errors with severity levels
+- `SendAIMatchEvent()` - AI compatibility analysis notifications
+- `SendCustomMessage()` - Full control over Slack message format
+
+**HTTP Endpoints** (in `cmd/server/main.go`):
+- `POST /api/v1/slack/send` - Send simple message
+- `POST /api/v1/slack/alert` - Send formatted alert
+- `POST /api/v1/slack/notification` - Send specialized notification
+- `GET/POST /api/v1/slack/test` - Test integration
+
+**Features**:
+- Graceful degradation (disabled if no webhook URL)
+- Context-aware error handling
+- Pre-built templates for common events
+- Rich formatting with attachments and fields
+- 10-second HTTP timeout
+
+**Documentation**: See [SLACK_INTEGRATION.md](./SLACK_INTEGRATION.md)
+
 ---
 
 ## Database Schema
@@ -568,11 +607,11 @@ date_suggestions (1) ─→ (*) date_rejections ✨
 
 ### Complete API Surface
 
-**Total Endpoints**: 100
-- **HTTP REST**: 34 endpoints
+**Total Endpoints**: 104
+- **HTTP REST**: 38 endpoints
 - **gRPC RPCs**: 66 methods across 4 services
 
-### HTTP REST Endpoints (34)
+### HTTP REST Endpoints (38)
 
 All HTTP endpoints are defined in `apps/backend/cmd/server/main.go`.
 
@@ -695,6 +734,50 @@ PUT    /api/v1/admin/profile            // Update admin profile
 ```
 
 **Service**: `AdminService`
+
+#### Slack Integration (4 endpoints) ✨ NEW
+
+```go
+POST     /api/v1/slack/send           // Send simple text message
+POST     /api/v1/slack/alert          // Send formatted alert (success/warning/danger/info)
+POST     /api/v1/slack/notification   // Send specialized notification
+GET/POST /api/v1/slack/test           // Test Slack integration
+```
+
+**Handler Functions** (in `main.go`, lines ~3020-3263):
+- `createSlackSendMessageHandler()` - Simple text messages
+- `createSlackAlertHandler()` - Color-coded alerts with details
+- `createSlackNotificationHandler()` - Specialized notifications:
+  - `user_event`: Registration, verification, deletion, suspension
+  - `admin_activity`: Admin actions tracking
+  - `system_alert`: System errors with severity levels
+  - `ai_match`: AI compatibility analysis results
+- `createSlackTestHandler()` - Test webhook and send test message
+
+**Service**: `SlackService` (`internal/slack/slack_service.go`)
+
+**Configuration**:
+- Environment variable: `SLACK_WEBHOOK_URL`
+- Gracefully disabled if webhook URL not set
+
+**Features**:
+- Pre-built templates for common events
+- Rich formatting with colors, attachments, and fields
+- Context-aware error handling
+- 10-second HTTP timeout
+
+**Example Usage**:
+```go
+// Send user registration notification
+slackService.SendUserEvent(ctx, "registration", email, name, map[string]string{
+    "Source": "Mobile App",
+})
+
+// Send system alert
+slackService.SendSystemAlert(ctx, "Database", "Connection failed", "critical")
+```
+
+**Complete Documentation**: [SLACK_INTEGRATION.md](./SLACK_INTEGRATION.md)
 
 ### gRPC Services (66 RPCs)
 

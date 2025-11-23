@@ -6,9 +6,10 @@ A production-ready AI-powered dating platform with React frontend, Go backend, P
 
 - **AI-Powered Matching** - Google Gemini 2.5-flash integration for intelligent compatibility analysis
 - **Comprehensive Admin Dashboard** - User management, analytics, AI-powered date curation
+- **Slack Integration** - Real-time notifications for user events, admin activities, and system alerts
 - **Full-Stack Development Environment** - React + Go + PostgreSQL + Redis
 - **Hot Reload** - Automatic reload for both frontend (React) and backend (Go with Air)
-- **Type Safety** - Protocol Buffers for API contracts with 100 endpoints (34 HTTP REST + 66 gRPC)
+- **Type Safety** - Protocol Buffers for API contracts with 100+ endpoints (38 HTTP REST + 66 gRPC)
 - **Dual API Architecture** - Both HTTP/REST (port 8080) and gRPC (port 9090) servers
 - **Database Ready** - PostgreSQL with 8 migrations and Redis for caching
 - **Testing Support** - Separate test environment with isolated databases
@@ -185,11 +186,11 @@ The backend runs **two servers simultaneously**:
 
 ### API Endpoints
 
-The platform provides **100 endpoints total**:
-- **34 HTTP REST endpoints** (port 8080) - JSON-based API for web/mobile clients
+The platform provides **104 endpoints total**:
+- **38 HTTP REST endpoints** (port 8080) - JSON-based API for web/mobile clients
 - **66 gRPC RPCs** (port 9090) - High-performance typed API
 
-#### HTTP REST Endpoints (34 Total)
+#### HTTP REST Endpoints (38 Total)
 
 **Health & Diagnostics (5)**
 - `GET /health` - Basic health check
@@ -234,6 +235,12 @@ The platform provides **100 endpoints total**:
 - `PUT /api/v1/admin/profile` - Update admin profile
 - `GET /api/v1/admin/curation/candidates` - Get users available for dates (AI curation)
 - `POST /api/v1/admin/curation/analyze` - Analyze compatibility with AI (Gemini)
+
+**Slack Integration (4)**
+- `POST /api/v1/slack/send` - Send simple text message to Slack
+- `POST /api/v1/slack/alert` - Send formatted alert (success/warning/danger/info)
+- `POST /api/v1/slack/notification` - Send specialized notification (user_event/admin_activity/system_alert/ai_match)
+- `GET/POST /api/v1/slack/test` - Test Slack integration status
 
 #### gRPC Services (66 RPCs)
 
@@ -617,6 +624,9 @@ ENV=development
 # AI Integration (Required for Date Curation)
 GEMINI_API_KEY=your_google_gemini_api_key_here
 
+# Slack Integration (Optional)
+SLACK_WEBHOOK_URL=https://hooks.slack.com/services/YOUR/WEBHOOK/URL
+
 # Frontend Configuration
 REACT_APP_API_URL=http://localhost:8080
 
@@ -637,6 +647,7 @@ TEST_REDIS_URL=redis://localhost:6380
 **Optional:**
 - `MAILERSEND_API_KEY` - Email service API key
 - `JWT_SECRET` - Custom JWT signing secret (auto-generated if not provided)
+- `SLACK_WEBHOOK_URL` - Slack webhook URL for notifications and alerts
 
 ## 🧪 Testing
 
@@ -1129,11 +1140,19 @@ Comprehensive guides for development, testing, deployment, and debugging:
 
 - **[POSTMAN_GUIDE.md](./docs/POSTMAN_GUIDE.md)** - Complete Postman testing guide
   - Setup and configuration
-  - All 34 HTTP REST endpoints
+  - All 38 HTTP REST endpoints
   - Authentication workflows
   - AI curation testing
   - Environment variables
   - Common issues and solutions
+
+- **[SLACK_INTEGRATION.md](./docs/SLACK_INTEGRATION.md)** - Slack integration guide
+  - Setup Slack webhook URL
+  - Send notifications and alerts
+  - User events, admin activities, system alerts
+  - API endpoints with curl examples
+  - Testing and troubleshooting
+  - Best practices for production
 
 ## 🤝 Contributing
 

@@ -55,6 +55,7 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - GEMINI_API_KEY=AIzaSyC53mtEboE2xnrL5xd2KZeUYR1cATvmk60
+      - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL:-}
     depends_on:
       postgres:
         condition: service_healthy

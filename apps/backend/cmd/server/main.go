@@ -22,6 +22,7 @@ import (
 	userpb "github.com/datifyy/backend/gen/user/v1"
 	"github.com/datifyy/backend/internal/email"
 	"github.com/datifyy/backend/internal/service"
+	"github.com/datifyy/backend/internal/slack"
 	"github.com/lib/pq"
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc"
@@ -167,6 +168,15 @@ func startHTTPServer(port string, server *Server, db *sql.DB, redisClient *redis
 	}
 	emailClient := email.NewMailerSendClient(emailAPIKey, emailFrom, emailFromName)
 
+	// Initialize Slack client
+	slackWebhookURL := os.Getenv("SLACK_WEBHOOK_URL")
+	slackService := slack.NewSlackService(slackWebhookURL)
+	if slackService.IsEnabled() {
+		log.Println("✓ Slack integration enabled")
+	} else {
+		log.Println("⚠ Slack integration disabled (SLACK_WEBHOOK_URL not set)")
+	}
+
 	// Auth REST endpoints (wrapper around gRPC)
 	authService := service.NewAuthService(db, redisClient, emailClient)
 	mux.HandleFunc("/api/v1/auth/register/email", createRegisterHandler(authService))
@@ -214,6 +224,12 @@ func startHTTPServer(port string, server *Server, db *sql.DB, redisClient *redis
 	mux.HandleFunc("/api/v1/admin/admins", createAdminManageAdminsHandler(adminService))
 	mux.HandleFunc("/api/v1/admin/admins/", createAdminManageAdminByIdHandler(adminService))
 	mux.HandleFunc("/api/v1/admin/profile", createAdminUpdateProfileHandler(adminService))
+
+	// Slack Integration endpoints
+	mux.HandleFunc("/api/v1/slack/send", createSlackSendMessageHandler(slackService))
+	mux.HandleFunc("/api/v1/slack/alert", createSlackAlertHandler(slackService))
+	mux.HandleFunc("/api/v1/slack/notification", createSlackNotificationHandler(slackService))
+	mux.HandleFunc("/api/v1/slack/test", createSlackTestHandler(slackService))
 
 	// Add CORS middleware
 	handler := enableCORS(mux)
@@ -2994,4 +3010,254 @@ func (s *Server) testRedisHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
+}
+
+// ==============================================================================
+// Slack Integration Handlers
+// ==============================================================================
+
+// createSlackSendMessageHandler creates HTTP handler for sending simple Slack messages
+func createSlackSendMessageHandler(slackService *slack.SlackService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		if !slackService.IsEnabled() {
+			http.Error(w, "Slack integration is not enabled", http.StatusServiceUnavailable)
+			return
+		}
+
+		var reqBody struct {
+			Message string `json:"message"`
+		}
+
+		if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+			http.Error(w, fmt.Sprintf("Invalid JSON: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		if reqBody.Message == "" {
+			http.Error(w, "Message is required", http.StatusBadRequest)
+			return
+		}
+
+		ctx := r.Context()
+		if err := slackService.SendMessage(ctx, reqBody.Message); err != nil {
+			http.Error(w, fmt.Sprintf("Failed to send message: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"success": true,
+			"message": "Message sent to Slack",
+		})
+	}
+}
+
+// createSlackAlertHandler creates HTTP handler for sending Slack alerts
+func createSlackAlertHandler(slackService *slack.SlackService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		if !slackService.IsEnabled() {
+			http.Error(w, "Slack integration is not enabled", http.StatusServiceUnavailable)
+			return
+		}
+
+		var reqBody struct {
+			Title   string            `json:"title"`
+			Message string            `json:"message"`
+			Details map[string]string `json:"details,omitempty"`
+			Type    string            `json:"type,omitempty"` // alert, success, warning, info
+		}
+
+		if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+			http.Error(w, fmt.Sprintf("Invalid JSON: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		if reqBody.Title == "" || reqBody.Message == "" {
+			http.Error(w, "Title and message are required", http.StatusBadRequest)
+			return
+		}
+
+		ctx := r.Context()
+		var err error
+
+		switch reqBody.Type {
+		case "success":
+			err = slackService.SendSuccess(ctx, reqBody.Title, reqBody.Message, reqBody.Details)
+		case "warning":
+			err = slackService.SendWarning(ctx, reqBody.Title, reqBody.Message, reqBody.Details)
+		case "info":
+			err = slackService.SendInfo(ctx, reqBody.Title, reqBody.Message, reqBody.Details)
+		default: // "alert" or empty
+			err = slackService.SendAlert(ctx, reqBody.Title, reqBody.Message, reqBody.Details)
+		}
+
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Failed to send alert: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"success": true,
+			"message": fmt.Sprintf("Alert sent to Slack (type: %s)", reqBody.Type),
+		})
+	}
+}
+
+// createSlackNotificationHandler creates HTTP handler for sending various Slack notifications
+func createSlackNotificationHandler(slackService *slack.SlackService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		if !slackService.IsEnabled() {
+			http.Error(w, "Slack integration is not enabled", http.StatusServiceUnavailable)
+			return
+		}
+
+		var reqBody struct {
+			NotificationType string            `json:"notification_type"` // user_event, admin_activity, system_alert, ai_match
+			Title            string            `json:"title,omitempty"`
+			Message          string            `json:"message,omitempty"`
+			Details          map[string]string `json:"details,omitempty"`
+
+			// User event fields
+			EventType string `json:"event_type,omitempty"` // registration, verification, deletion, suspension
+			UserEmail string `json:"user_email,omitempty"`
+			UserName  string `json:"user_name,omitempty"`
+
+			// Admin activity fields
+			AdminEmail string `json:"admin_email,omitempty"`
+			Action     string `json:"action,omitempty"`
+			Target     string `json:"target,omitempty"`
+
+			// System alert fields
+			Component string `json:"component,omitempty"`
+			ErrorMsg  string `json:"error_msg,omitempty"`
+			Severity  string `json:"severity,omitempty"` // critical, high, medium, low
+
+			// AI match fields
+			UserID   string  `json:"user_id,omitempty"`
+			Matches  int     `json:"matches,omitempty"`
+			AvgScore float64 `json:"avg_score,omitempty"`
+		}
+
+		if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+			http.Error(w, fmt.Sprintf("Invalid JSON: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		ctx := r.Context()
+		var err error
+
+		switch reqBody.NotificationType {
+		case "user_event":
+			if reqBody.EventType == "" || reqBody.UserEmail == "" {
+				http.Error(w, "event_type and user_email are required for user_event", http.StatusBadRequest)
+				return
+			}
+			err = slackService.SendUserEvent(ctx, reqBody.EventType, reqBody.UserEmail, reqBody.UserName, reqBody.Details)
+
+		case "admin_activity":
+			if reqBody.AdminEmail == "" || reqBody.Action == "" {
+				http.Error(w, "admin_email and action are required for admin_activity", http.StatusBadRequest)
+				return
+			}
+			err = slackService.SendAdminActivity(ctx, reqBody.AdminEmail, reqBody.Action, reqBody.Target, reqBody.Details)
+
+		case "system_alert":
+			if reqBody.Component == "" || reqBody.ErrorMsg == "" {
+				http.Error(w, "component and error_msg are required for system_alert", http.StatusBadRequest)
+				return
+			}
+			severity := reqBody.Severity
+			if severity == "" {
+				severity = "medium"
+			}
+			err = slackService.SendSystemAlert(ctx, reqBody.Component, reqBody.ErrorMsg, severity)
+
+		case "ai_match":
+			if reqBody.UserID == "" {
+				http.Error(w, "user_id is required for ai_match", http.StatusBadRequest)
+				return
+			}
+			err = slackService.SendAIMatchEvent(ctx, reqBody.UserID, reqBody.Matches, reqBody.AvgScore)
+
+		default:
+			http.Error(w, "Invalid notification_type. Must be: user_event, admin_activity, system_alert, or ai_match", http.StatusBadRequest)
+			return
+		}
+
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Failed to send notification: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"success": true,
+			"message": fmt.Sprintf("Notification sent to Slack (type: %s)", reqBody.NotificationType),
+		})
+	}
+}
+
+// createSlackTestHandler creates HTTP handler for testing Slack integration
+func createSlackTestHandler(slackService *slack.SlackService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet && r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		if !slackService.IsEnabled() {
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"enabled": false,
+				"message": "Slack integration is not enabled. Set SLACK_WEBHOOK_URL environment variable.",
+			})
+			return
+		}
+
+		ctx := r.Context()
+
+		// Send test message
+		testMessage := fmt.Sprintf("🧪 Slack Integration Test - %s", time.Now().Format("2006-01-02 15:04:05"))
+		err := slackService.SendInfo(ctx, "Test Notification", testMessage, map[string]string{
+			"Environment": os.Getenv("ENV"),
+			"Server":      "Datifyy Backend",
+			"Status":      "✅ Working",
+		})
+
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"enabled": true,
+				"success": false,
+				"error":   err.Error(),
+				"message": "Failed to send test message to Slack",
+			})
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"enabled": true,
+			"success": true,
+			"message": "Test message sent successfully to Slack!",
+			"sent_at": time.Now().Format("2006-01-02 15:04:05"),
+		})
+	}
 }
