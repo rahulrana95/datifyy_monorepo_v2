@@ -676,7 +676,49 @@ npm test -- --coverage
 
 ## 🚢 Production Deployment
 
-### Docker Deployment
+### 🚀 Quick Deploy to Production
+
+Complete deployment guides for production environments:
+
+- **[QUICK_DEPLOY.md](./docs/QUICK_DEPLOY.md)** - **⚡ Deploy in 15 minutes** - Fast reference guide
+  - Step-by-step quick start
+  - Vercel (frontend) + Render (backend)
+  - Database and Redis setup
+  - Common issues and fixes
+
+- **[DEPLOYMENT.md](./docs/DEPLOYMENT.md)** - **📖 Complete Guide** - Comprehensive deployment overview
+  - Production checklist
+  - Security best practices
+  - Monitoring and logging
+  - Performance optimization
+  - Troubleshooting guide
+  - Cost estimation ($0-24/month)
+
+- **[FRONTEND_DEPLOYMENT.md](./docs/FRONTEND_DEPLOYMENT.md)** - **⚛️ React Frontend** - Deploy to Vercel or Render
+  - Vercel deployment (recommended)
+  - Render static site deployment
+  - Environment configuration
+  - Custom domain setup
+  - Performance optimization
+  - Debugging production issues
+
+- **[BACKEND_DEPLOYMENT.md](./docs/BACKEND_DEPLOYMENT.md)** - **🔧 Go Backend** - Deploy to Render
+  - Render web service setup
+  - PostgreSQL configuration
+  - Redis setup (Upstash)
+  - Environment variables
+  - Health checks
+  - Scaling and monitoring
+
+- **[DATABASE_MIGRATIONS.md](./docs/DATABASE_MIGRATIONS.md)** - **🗄️ Database Management** - Schema changes
+  - Running migrations
+  - Creating new migrations
+  - Migration best practices
+  - Production migration workflow
+  - Rollback procedures
+  - Troubleshooting
+
+### Docker Deployment (Alternative)
 
 #### Build Production Images
 ```bash
@@ -694,7 +736,7 @@ docker build -f docker/frontend/Dockerfile.prod -t datifyy-frontend:prod .
 - Health checks configured
 - Security headers in nginx
 
-### Vercel Deployment
+### Vercel Deployment (Development/Testing)
 
 Both frontend and backend can be deployed to Vercel for serverless hosting.
 
@@ -1029,7 +1071,15 @@ docker-compose logs -f <service-name>
 
 ## 📚 Documentation
 
-Comprehensive guides for development, testing, and debugging:
+Comprehensive guides for development, testing, deployment, and debugging:
+
+### 🚀 Deployment Guides
+
+- **[QUICK_DEPLOY.md](./docs/QUICK_DEPLOY.md)** - **⚡ Quick Start** - Deploy to production in 15 minutes
+- **[DEPLOYMENT.md](./docs/DEPLOYMENT.md)** - **📖 Complete Guide** - Production deployment overview
+- **[FRONTEND_DEPLOYMENT.md](./docs/FRONTEND_DEPLOYMENT.md)** - **⚛️ Frontend** - Vercel & Render deployment
+- **[BACKEND_DEPLOYMENT.md](./docs/BACKEND_DEPLOYMENT.md)** - **🔧 Backend** - Render deployment guide
+- **[DATABASE_MIGRATIONS.md](./docs/DATABASE_MIGRATIONS.md)** - **🗄️ Migrations** - Database schema management
 
 ### Backend Documentation
 
