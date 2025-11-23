@@ -1849,14 +1849,14 @@ func createAdminCurateDatesHandler(adminService *service.AdminService, db *sql.D
 			return
 		}
 
-		// Parse preferred genders from JSONB (stored as integers)
-		var preferredGendersInt []int
-		if err := json.Unmarshal(preferredGendersJSON, &preferredGendersInt); err != nil {
+		// Parse preferred genders from JSONB (stored as strings like "MALE", "FEMALE", "NON_BINARY")
+		var preferredGenders []string
+		if err := json.Unmarshal(preferredGendersJSON, &preferredGenders); err != nil {
 			http.Error(w, fmt.Sprintf("Failed to parse preferred genders: %v", err), http.StatusBadRequest)
 			return
 		}
 
-		if len(preferredGendersInt) == 0 {
+		if len(preferredGenders) == 0 {
 			http.Error(w, "User has no gender preferences set", http.StatusBadRequest)
 			return
 		}
@@ -1878,7 +1878,7 @@ func createAdminCurateDatesHandler(adminService *service.AdminService, db *sql.D
 			ORDER BY u.id
 		`
 
-		rows, err := db.QueryContext(r.Context(), query, userID, pq.Array(preferredGendersInt), startOfDay.Unix())
+		rows, err := db.QueryContext(r.Context(), query, userID, pq.Array(preferredGenders), startOfDay.Unix())
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Failed to fetch candidate users: %v", err), http.StatusInternalServerError)
 			return
