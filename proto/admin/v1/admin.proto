@@ -29,6 +29,13 @@ enum DateStatus {
   DATE_STATUS_NO_SHOW = 6;
 }
 
+enum CuratedMatchAction {
+  CURATED_MATCH_ACTION_UNSPECIFIED = 0;
+  CURATED_MATCH_ACTION_ACCEPT = 1;      // Admin accepts the match
+  CURATED_MATCH_ACTION_REJECT = 2;      // Admin rejects the match
+  CURATED_MATCH_ACTION_REVIEW_LATER = 3; // Admin will review later
+}
+
 enum SortOrder {
   SORT_ORDER_UNSPECIFIED = 0;
   SORT_ORDER_ASC = 1;
@@ -274,6 +281,19 @@ message CurateDatesResponse {
   repeated MatchResult matches = 1;
 }
 
+// Update Curated Match Action (Admin accept/reject/review-later)
+message UpdateCuratedMatchActionRequest {
+  int32 curated_match_id = 1;        // ID of the curated match
+  CuratedMatchAction action = 2;     // Action to take
+  string notes = 3;                   // Optional notes
+}
+
+message UpdateCuratedMatchActionResponse {
+  bool success = 1;
+  string message = 2;
+  string new_status = 3;              // The new status after action
+}
+
 // Get Genie Dates (Dates assigned to admin)
 message GetGenieDatesRequest {
   string genie_id = 1;
@@ -504,6 +524,7 @@ service AdminService {
   // AI-Powered Date Curation
   rpc GetCurationCandidates(GetCurationCandidatesRequest) returns (GetCurationCandidatesResponse);
   rpc CurateDates(CurateDatesRequest) returns (CurateDatesResponse);
+  rpc UpdateCuratedMatchAction(UpdateCuratedMatchActionRequest) returns (UpdateCuratedMatchActionResponse);
 
   // Genie Operations
   rpc GetGenieDates(GetGenieDatesRequest) returns (GetGenieDatesResponse);

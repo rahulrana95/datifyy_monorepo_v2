@@ -203,6 +203,14 @@ func startHTTPServer(port string, server *Server, db *sql.DB, redisClient *redis
 	if err != nil {
 		log.Fatalf("Failed to create admin service: %v", err)
 	}
+
+	// Dates service for curation functionality
+	datesService, err := service.NewDatesService(db, redisClient)
+	if err != nil {
+		log.Fatalf("Failed to create dates service: %v", err)
+	}
+	defer datesService.Close()
+
 	mux.HandleFunc("/api/v1/admin/login", createAdminLoginHandler(adminService))
 	mux.HandleFunc("/api/v1/admin/users", createAdminGetAllUsersHandler(adminService))
 	mux.HandleFunc("/api/v1/admin/users/search", createAdminSearchUsersHandler(adminService))
@@ -215,6 +223,7 @@ func startHTTPServer(port string, server *Server, db *sql.DB, redisClient *redis
 	// Admin Curation endpoints (AI-powered matching)
 	mux.HandleFunc("/api/v1/admin/curation/candidates", createAdminGetCurationCandidatesHandler(adminService))
 	mux.HandleFunc("/api/v1/admin/curation/analyze", createAdminCurateDatesHandler(adminService, db))
+	mux.HandleFunc("/api/v1/admin/curation/action", createAdminUpdateCuratedMatchActionHandler(datesService))
 
 	// Admin Analytics endpoints
 	mux.HandleFunc("/api/v1/admin/analytics/platform", createAdminGetPlatformStatsHandler(adminService))
@@ -1934,6 +1943,53 @@ func createAdminCurateDatesHandler(adminService *service.AdminService, db *sql.D
 
 		jsonResp := map[string]interface{}{
 			"matches": matches,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(jsonResp)
+	}
+}
+
+// createAdminUpdateCuratedMatchActionHandler handles admin actions on curated matches
+func createAdminUpdateCuratedMatchActionHandler(datesService *service.DatesService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		var reqBody struct {
+			CuratedMatchID int    `json:"curatedMatchId"`
+			Action         string `json:"action"`
+			Notes          string `json:"notes,omitempty"`
+		}
+
+		if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+			http.Error(w, fmt.Sprintf("Invalid JSON: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		if reqBody.CuratedMatchID <= 0 {
+			http.Error(w, "Invalid curated match ID", http.StatusBadRequest)
+			return
+		}
+
+		if reqBody.Action == "" {
+			http.Error(w, "Action is required", http.StatusBadRequest)
+			return
+		}
+
+		// Update the curated match status
+		newStatus, err := datesService.UpdateCuratedMatchAction(r.Context(), reqBody.CuratedMatchID, reqBody.Action)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Failed to update curated match: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		jsonResp := map[string]interface{}{
+			"success":   true,
+			"message":   fmt.Sprintf("Curated match %s successfully", newStatus),
+			"newStatus": newStatus,
 		}
 
 		w.Header().Set("Content-Type", "application/json")

@@ -550,3 +550,27 @@ func buildLifestylePreferences(prefs *repository.PartnerPreferences) string {
 
 	return ""
 }
+
+// UpdateCuratedMatchAction updates the status of a curated match based on admin action
+func (s *DatesService) UpdateCuratedMatchAction(ctx context.Context, matchID int, action string) (string, error) {
+	// Map action to status
+	var status string
+	switch action {
+	case "accept", "CURATED_MATCH_ACTION_ACCEPT":
+		status = "accepted"
+	case "reject", "CURATED_MATCH_ACTION_REJECT":
+		status = "rejected"
+	case "review_later", "CURATED_MATCH_ACTION_REVIEW_LATER":
+		status = "review_later"
+	default:
+		return "", fmt.Errorf("invalid action: %s", action)
+	}
+
+	// Update status in repository
+	err := s.curatedMatchesRepo.UpdateStatus(ctx, matchID, status)
+	if err != nil {
+		return "", fmt.Errorf("failed to update curated match status: %w", err)
+	}
+
+	return status, nil
+}
