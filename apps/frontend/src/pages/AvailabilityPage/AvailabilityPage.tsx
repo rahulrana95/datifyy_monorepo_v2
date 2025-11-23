@@ -512,31 +512,40 @@ export const AvailabilityPage = (): JSX.Element => {
         </Box>
       )}
 
-      <Container maxW="600px" py={6} px={4} mx="auto">
-        <VStack align="stretch" gap={5}>
+      {/* Page Header - More Compact */}
+      <Box textAlign="center" py={4} px={4} bg="bg">
+        <Heading
+          size={{ base: 'lg', md: 'xl' }}
+          color="fg"
+          fontWeight="bold"
+          mb={1}
+        >
+          Your Availability
+        </Heading>
+        <Text color="fg.muted" fontSize={{ base: 'xs', md: 'sm' }}>
+          Let potential dates know when you're free
+        </Text>
+      </Box>
 
-          {/* Page Header */}
-          <Box textAlign="center" mb={2}>
-            <Heading
-              size={{ base: 'xl', md: '2xl' }}
-              color="fg"
-              fontWeight="bold"
-              mb={2}
-            >
-              Your Availability
-            </Heading>
-            <Text color="fg.muted" fontSize={{ base: 'sm', md: 'md' }}>
-              Let potential dates know when you're free
-            </Text>
-          </Box>
-
-          {/* View Toggle */}
+      {/* Sticky View Toggle */}
+      <Box
+        position="sticky"
+        top={0}
+        zIndex={10}
+        bg="bg"
+        borderBottomWidth="1px"
+        borderColor="border"
+        py={3}
+        px={4}
+      >
+        <Container maxW="600px" mx="auto" px={0}>
           <Box
             bg="white"
             borderRadius="2xl"
             p={1.5}
             borderWidth="1px"
             borderColor="border"
+            boxShadow="sm"
           >
             <HStack gap={1}>
               <Button
@@ -548,7 +557,7 @@ export const AvailabilityPage = (): JSX.Element => {
                 borderRadius="xl"
                 fontWeight="semibold"
                 fontSize="sm"
-                h="44px"
+                h="40px"
                 _hover={{
                   bg: viewMode === 'schedule' ? 'brand.600' : 'gray.100'
                 }}
@@ -564,7 +573,7 @@ export const AvailabilityPage = (): JSX.Element => {
                 borderRadius="xl"
                 fontWeight="semibold"
                 fontSize="sm"
-                h="44px"
+                h="40px"
                 _hover={{
                   bg: viewMode === 'add' ? 'brand.600' : 'gray.100'
                 }}
@@ -573,6 +582,11 @@ export const AvailabilityPage = (): JSX.Element => {
               </Button>
             </HStack>
           </Box>
+        </Container>
+      </Box>
+
+      <Container maxW="600px" py={4} px={4} mx="auto">
+        <VStack align="stretch" gap={4}>
 
           {/* ============ SCHEDULE VIEW ============ */}
           {viewMode === 'schedule' && (
@@ -606,16 +620,16 @@ export const AvailabilityPage = (): JSX.Element => {
                 </Box>
               ) : (
                 <>
-                  {/* Select All / Delete Actions */}
-                  <HStack justify="space-between" px={1}>
+                  {/* Select All / Delete Actions - Compact */}
+                  <HStack justify="space-between" px={1} py={2}>
                     <HStack
                       gap={2}
                       cursor="pointer"
                       onClick={handleSelectAllForDelete}
                     >
                       <Box
-                        w={5}
-                        h={5}
+                        w={4}
+                        h={4}
                         borderRadius="md"
                         borderWidth="2px"
                         borderColor={selectedForDelete.size === slots.length ? 'brand.500' : 'gray.300'}
@@ -626,10 +640,10 @@ export const AvailabilityPage = (): JSX.Element => {
                         transition="all 0.15s"
                       >
                         {selectedForDelete.size === slots.length && (
-                          <Text color="white" fontSize="xs" fontWeight="bold">✓</Text>
+                          <Text color="white" fontSize="2xs" fontWeight="bold">✓</Text>
                         )}
                       </Box>
-                      <Text fontSize="sm" color="fg.muted">
+                      <Text fontSize="xs" color="fg.muted" fontWeight="medium">
                         {selectedForDelete.size > 0
                           ? `${selectedForDelete.size} selected`
                           : 'Select all'
@@ -638,52 +652,57 @@ export const AvailabilityPage = (): JSX.Element => {
                     </HStack>
                     {selectedForDelete.size > 0 && (
                       <Button
-                        size="sm"
+                        size="xs"
                         bg="nope.500"
                         color="white"
                         onClick={handleDeleteSelected}
                         loading={isDeleting}
                         borderRadius="lg"
                         fontWeight="medium"
+                        h="28px"
+                        px={3}
+                        fontSize="xs"
                         _hover={{ bg: 'nope.600' }}
                       >
-                        Delete Selected
+                        Delete
                       </Button>
                     )}
                   </HStack>
 
-                  {/* Scheduled Slots by Date */}
-                  <VStack align="stretch" gap={4}>
+                  {/* Scheduled Slots by Date - Compact Grid Layout */}
+                  <VStack align="stretch" gap={3}>
                     {Object.entries(scheduledByDate).map(([date, daySlots]) => (
                       <Box
                         key={date}
                         bg="white"
-                        borderRadius="2xl"
-                        p={4}
+                        borderRadius="xl"
+                        p={3}
                         borderWidth="1px"
                         borderColor="border"
                       >
-                        <Text fontWeight="semibold" color="fg" mb={3} fontSize="sm">
+                        <Text fontWeight="semibold" color="fg" mb={2} fontSize="xs">
                           {date}
                         </Text>
-                        <VStack align="stretch" gap={2}>
+                        <VStack align="stretch" gap={1.5}>
                           {daySlots.map(slot => (
                             <HStack
                               key={slot.slotId}
-                              p={3}
+                              px={2.5}
+                              py={2}
                               bg={selectedForDelete.has(slot.slotId) ? 'brand.50' : 'gray.50'}
-                              borderRadius="xl"
+                              borderRadius="lg"
                               borderWidth="1px"
                               borderColor={selectedForDelete.has(slot.slotId) ? 'brand.200' : 'transparent'}
                               cursor="pointer"
                               onClick={() => handleDeleteToggle(slot.slotId)}
                               transition="all 0.15s"
                               _hover={{ bg: selectedForDelete.has(slot.slotId) ? 'brand.100' : 'gray.100' }}
+                              gap={2}
                             >
                               <Box
-                                w={5}
-                                h={5}
-                                borderRadius="md"
+                                w={4}
+                                h={4}
+                                borderRadius="sm"
                                 borderWidth="2px"
                                 borderColor={selectedForDelete.has(slot.slotId) ? 'brand.500' : 'gray.300'}
                                 bg={selectedForDelete.has(slot.slotId) ? 'brand.500' : 'white'}
@@ -694,31 +713,38 @@ export const AvailabilityPage = (): JSX.Element => {
                                 transition="all 0.15s"
                               >
                                 {selectedForDelete.has(slot.slotId) && (
-                                  <Text color="white" fontSize="xs" fontWeight="bold">✓</Text>
+                                  <Text color="white" fontSize="2xs" fontWeight="bold">✓</Text>
                                 )}
                               </Box>
-                              <Box flex={1}>
-                                <Text fontWeight="medium" color="fg" fontSize="sm">
-                                  {formatTimeOnly(slot.startTime)}
-                                </Text>
-                                <HStack gap={2} mt={1}>
+                              <VStack align="start" flex={1} gap={0.5}>
+                                <HStack gap={2} align="center">
+                                  <Text fontWeight="semibold" color="fg" fontSize="sm">
+                                    {formatTimeOnly(slot.startTime)}
+                                  </Text>
                                   <Badge
                                     bg="brand.100"
                                     color="brand.700"
-                                    fontSize="xs"
+                                    fontSize="2xs"
                                     borderRadius="md"
-                                    px={2}
+                                    px={1.5}
                                     py={0.5}
+                                    fontWeight="medium"
                                   >
                                     {dateTypeLabels[slot.dateType as DateType]}
                                   </Badge>
-                                  {slot.offlineLocation && (
-                                    <Text fontSize="xs" color="fg.muted">
-                                      {slot.offlineLocation.placeName}
-                                    </Text>
-                                  )}
                                 </HStack>
-                              </Box>
+                                {slot.offlineLocation && (
+                                  <Text
+                                    fontSize="2xs"
+                                    color="fg.muted"
+                                    overflow="hidden"
+                                    textOverflow="ellipsis"
+                                    whiteSpace="nowrap"
+                                  >
+                                    📍 {slot.offlineLocation.placeName}
+                                  </Text>
+                                )}
+                              </VStack>
                             </HStack>
                           ))}
                         </VStack>
@@ -733,23 +759,24 @@ export const AvailabilityPage = (): JSX.Element => {
           {/* ============ ADD VIEW ============ */}
           {viewMode === 'add' && (
             <>
-              {/* Date Type Selection */}
+              {/* Date Type Selection - Compact */}
               <Box
                 bg="white"
-                borderRadius="2xl"
-                p={5}
+                borderRadius="xl"
+                p={3}
                 borderWidth="1px"
                 borderColor="border"
               >
-                <Text fontWeight="semibold" mb={3} color="fg" fontSize="md">
+                <Text fontWeight="semibold" mb={2} color="fg" fontSize="sm">
                   Date Type
                 </Text>
-                <VStack align="stretch" gap={2}>
+                <VStack align="stretch" gap={1.5}>
                   {(['DATE_TYPE_ONLINE', 'DATE_TYPE_OFFLINE', 'DATE_TYPE_OFFLINE_EVENT'] as DateType[]).map(type => (
                     <Box
                       key={type}
-                      p={4}
-                      borderRadius="xl"
+                      px={3}
+                      py={2.5}
+                      borderRadius="lg"
                       borderWidth="2px"
                       borderColor={dateType === type ? 'brand.500' : 'gray.100'}
                       bg={dateType === type ? 'brand.50' : 'white'}
@@ -758,16 +785,16 @@ export const AvailabilityPage = (): JSX.Element => {
                       onClick={() => setDateType(type)}
                     >
                       <HStack justify="space-between">
-                        <Box>
+                        <VStack align="start" gap={0}>
                           <Text fontWeight="semibold" color={dateType === type ? 'brand.700' : 'fg'} fontSize="sm">
                             {dateTypeLabels[type]}
                           </Text>
-                          <Text fontSize="xs" color="fg.muted">
+                          <Text fontSize="2xs" color="fg.muted">
                             {dateTypeDescriptions[type]}
                           </Text>
-                        </Box>
+                        </VStack>
                         {dateType === type && (
-                          <Box w={5} h={5} borderRadius="full" bg="brand.500" display="flex" alignItems="center" justifyContent="center">
+                          <Box w={4} h={4} borderRadius="full" bg="brand.500" display="flex" alignItems="center" justifyContent="center" flexShrink={0}>
                             <Text color="white" fontSize="xs">✓</Text>
                           </Box>
                         )}
@@ -777,16 +804,16 @@ export const AvailabilityPage = (): JSX.Element => {
                 </VStack>
               </Box>
 
-              {/* Offline Location Fields */}
+              {/* Offline Location Fields - Compact */}
               {(dateType === 'DATE_TYPE_OFFLINE' || dateType === 'DATE_TYPE_OFFLINE_EVENT') && (
                 <Box
                   bg="white"
-                  borderRadius="2xl"
-                  p={5}
+                  borderRadius="xl"
+                  p={3}
                   borderWidth="1px"
                   borderColor="border"
                 >
-                  <Text fontWeight="semibold" mb={3} color="fg" fontSize="md">
+                  <Text fontWeight="semibold" mb={2} color="fg" fontSize="sm">
                     Meeting Location
                   </Text>
                   <VStack align="stretch" gap={3}>
@@ -943,58 +970,60 @@ export const AvailabilityPage = (): JSX.Element => {
                 </Box>
               )}
 
-              {/* Notes */}
+              {/* Notes - Compact */}
               <Box
                 bg="white"
-                borderRadius="2xl"
-                p={5}
+                borderRadius="xl"
+                p={3}
                 borderWidth="1px"
                 borderColor="border"
               >
-                <Text fontWeight="semibold" mb={3} color="fg" fontSize="md">
-                  Notes <Text as="span" color="fg.muted" fontWeight="normal" fontSize="xs">(Optional)</Text>
+                <Text fontWeight="semibold" mb={2} color="fg" fontSize="sm">
+                  Notes <Text as="span" color="fg.muted" fontWeight="normal" fontSize="2xs">(Optional)</Text>
                 </Text>
                 <Textarea
                   value={notes}
                   onChange={e => setNotes(e.target.value)}
                   placeholder="Any preferences for your date..."
                   rows={2}
+                  fontSize="sm"
                   borderRadius="lg"
                   borderColor="gray.200"
                   _focus={{ borderColor: 'brand.500', boxShadow: '0 0 0 1px var(--chakra-colors-brand-500)' }}
                 />
               </Box>
 
-              {/* Time Slots Selection */}
+              {/* Time Slots Selection - Compact */}
               <Box
                 bg="white"
-                borderRadius="2xl"
-                p={5}
+                borderRadius="xl"
+                p={3}
                 borderWidth="1px"
                 borderColor="border"
               >
-                <Flex justify="space-between" align="center" mb={4}>
-                  <Text fontWeight="semibold" color="fg" fontSize="md">
+                <Flex justify="space-between" align="center" mb={3}>
+                  <Text fontWeight="semibold" color="fg" fontSize="sm">
                     Select Times
                   </Text>
                   {selectedSlots.size > 0 && (
                     <Badge
                       bg="brand.500"
                       color="white"
-                      fontSize="xs"
-                      px={2.5}
-                      py={1}
+                      fontSize="2xs"
+                      px={2}
+                      py={0.5}
                       borderRadius="full"
+                      fontWeight="semibold"
                     >
                       {selectedSlots.size}
                     </Badge>
                   )}
                 </Flex>
 
-                <VStack align="stretch" gap={4}>
+                <VStack align="stretch" gap={3}>
                   {Object.entries(slotsByDate).map(([date, daySlots]) => (
                     <Box key={date}>
-                      <Text fontWeight="medium" color="fg" mb={2} fontSize="xs">
+                      <Text fontWeight="medium" color="fg" mb={1.5} fontSize="2xs" textTransform="uppercase" letterSpacing="wide">
                         {date}
                       </Text>
                       <Flex gap={1.5} flexWrap="wrap">
@@ -1013,10 +1042,10 @@ export const AvailabilityPage = (): JSX.Element => {
                               onClick={() => !isExisting && handleSlotToggle(slot.startTime)}
                               disabled={isExisting}
                               borderRadius="lg"
-                              fontSize="xs"
+                              fontSize="2xs"
                               fontWeight="medium"
-                              minW="70px"
-                              h="34px"
+                              minW="65px"
+                              h="32px"
                               px={2}
                               transition="all 0.15s"
                               _hover={isExisting ? {} : {
