@@ -657,9 +657,9 @@ export const getCurationCandidates = async (): Promise<{ candidates: CurationCan
 };
 
 // Curate Dates (AI compatibility analysis)
+// Automatically finds candidates based on user's partner preferences (gender)
 export const curateDates = async (
-  userId: string,
-  candidateIds: string[]
+  userId: string
 ): Promise<{ matches: MatchResult[] }> => {
   const response = await fetch(`${API_BASE}/api/v1/admin/curation/analyze`, {
     method: 'POST',
@@ -669,7 +669,6 @@ export const curateDates = async (
     },
     body: JSON.stringify({
       userId,
-      candidateIds,
     }),
   });
 

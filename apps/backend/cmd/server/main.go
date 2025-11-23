@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -21,7 +22,7 @@ import (
 	userpb "github.com/datifyy/backend/gen/user/v1"
 	"github.com/datifyy/backend/internal/email"
 	"github.com/datifyy/backend/internal/service"
-	_ "github.com/lib/pq"
+	"github.com/lib/pq"
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
@@ -198,7 +199,7 @@ func startHTTPServer(port string, server *Server, db *sql.DB, redisClient *redis
 
 	// Admin Curation endpoints (AI-powered matching)
 	mux.HandleFunc("/api/v1/admin/curation/candidates", createAdminGetCurationCandidatesHandler(adminService))
-	mux.HandleFunc("/api/v1/admin/curation/analyze", createAdminCurateDatesHandler(adminService))
+	mux.HandleFunc("/api/v1/admin/curation/analyze", createAdminCurateDatesHandler(adminService, db))
 
 	// Admin Analytics endpoints
 	mux.HandleFunc("/api/v1/admin/analytics/platform", createAdminGetPlatformStatsHandler(adminService))
@@ -234,9 +235,9 @@ func createRegisterHandler(authService *service.AuthService) http.HandlerFunc {
 
 		// Parse JSON request
 		var reqBody struct {
-			Email    string `json:"email"`
-			Password string `json:"password"`
-			Name     string `json:"name"`
+			Email      string `json:"email"`
+			Password   string `json:"password"`
+			Name       string `json:"name"`
 			DeviceInfo *struct {
 				Platform   int32  `json:"platform"`
 				DeviceName string `json:"device_name"`
@@ -328,8 +329,8 @@ func createLoginHandler(authService *service.AuthService) http.HandlerFunc {
 
 		// Parse JSON request
 		var reqBody struct {
-			Email    string `json:"email"`
-			Password string `json:"password"`
+			Email      string `json:"email"`
+			Password   string `json:"password"`
 			DeviceInfo *struct {
 				Platform   int32  `json:"platform"`
 				DeviceName string `json:"device_name"`
@@ -1177,12 +1178,12 @@ func createAdminLoginHandler(adminService *service.AdminService) http.HandlerFun
 
 		jsonResp := map[string]interface{}{
 			"admin": map[string]interface{}{
-				"adminId":  resp.Admin.AdminId,
-				"userId":   resp.Admin.UserId,
-				"email":    resp.Admin.Email,
-				"name":     resp.Admin.Name,
-				"role":     resp.Admin.Role.String(),
-				"isGenie":  resp.Admin.IsGenie,
+				"adminId": resp.Admin.AdminId,
+				"userId":  resp.Admin.UserId,
+				"email":   resp.Admin.Email,
+				"name":    resp.Admin.Name,
+				"role":    resp.Admin.Role.String(),
+				"isGenie": resp.Admin.IsGenie,
 			},
 			"tokens": map[string]interface{}{
 				"accessToken":  resp.Tokens.AccessToken,
@@ -1235,12 +1236,12 @@ func createAdminGetAllUsersHandler(adminService *service.AdminService) http.Hand
 		}
 
 		grpcReq := &adminpb.GetAllUsersRequest{
-			Page:               int32(page),
-			PageSize:           int32(pageSize),
-			SortBy:             sortBy,
-			SortOrder:          sortOrder,
+			Page:                int32(page),
+			PageSize:            int32(pageSize),
+			SortBy:              sortBy,
+			SortOrder:           sortOrder,
 			AccountStatusFilter: r.URL.Query().Get("account_status"),
-			GenderFilter:       r.URL.Query().Get("gender"),
+			GenderFilter:        r.URL.Query().Get("gender"),
 		}
 
 		resp, err := adminService.GetAllUsers(r.Context(), grpcReq)
@@ -1768,17 +1769,17 @@ func createAdminGetCurationCandidatesHandler(adminService *service.AdminService)
 		var candidates []map[string]interface{}
 		for _, candidate := range resp.Candidates {
 			candidates = append(candidates, map[string]interface{}{
-				"userId":               candidate.UserId,
-				"email":                candidate.Email,
-				"name":                 candidate.Name,
-				"age":                  candidate.Age,
-				"gender":               candidate.Gender,
-				"profileCompletion":    candidate.ProfileCompletion,
-				"emailVerified":        candidate.EmailVerified,
-				"aadharVerified":       candidate.AadharVerified,
-				"workEmailVerified":    candidate.WorkEmailVerified,
-				"availableSlotsCount":  candidate.AvailableSlotsCount,
-				"nextAvailableDate":    candidate.NextAvailableDate,
+				"userId":              candidate.UserId,
+				"email":               candidate.Email,
+				"name":                candidate.Name,
+				"age":                 candidate.Age,
+				"gender":              candidate.Gender,
+				"profileCompletion":   candidate.ProfileCompletion,
+				"emailVerified":       candidate.EmailVerified,
+				"aadharVerified":      candidate.AadharVerified,
+				"workEmailVerified":   candidate.WorkEmailVerified,
+				"availableSlotsCount": candidate.AvailableSlotsCount,
+				"nextAvailableDate":   candidate.NextAvailableDate,
 			})
 		}
 
@@ -1792,7 +1793,7 @@ func createAdminGetCurationCandidatesHandler(adminService *service.AdminService)
 }
 
 // createAdminCurateDatesHandler handles AI-powered compatibility analysis
-func createAdminCurateDatesHandler(adminService *service.AdminService) http.HandlerFunc {
+func createAdminCurateDatesHandler(adminService *service.AdminService, db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -1800,8 +1801,7 @@ func createAdminCurateDatesHandler(adminService *service.AdminService) http.Hand
 		}
 
 		var reqBody struct {
-			UserID       string   `json:"userId"`
-			CandidateIDs []string `json:"candidateIds"`
+			UserID string `json:"userId"`
 		}
 
 		if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
@@ -1809,9 +1809,83 @@ func createAdminCurateDatesHandler(adminService *service.AdminService) http.Hand
 			return
 		}
 
+		// Get user's partner preferences (preferred genders)
+		userID, err := strconv.Atoi(reqBody.UserID)
+		if err != nil {
+			http.Error(w, "Invalid user ID", http.StatusBadRequest)
+			return
+		}
+
+		var preferredGendersJSON []byte
+		err = db.QueryRowContext(r.Context(),
+			`SELECT looking_for_gender FROM partner_preferences WHERE user_id = $1`,
+			userID,
+		).Scan(&preferredGendersJSON)
+
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Failed to get partner preferences: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		// Parse preferred genders from JSONB
+		var preferredGenders []string
+		if err := json.Unmarshal(preferredGendersJSON, &preferredGenders); err != nil {
+			http.Error(w, fmt.Sprintf("Failed to parse preferred genders: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		if len(preferredGenders) == 0 {
+			http.Error(w, "User has no gender preferences set", http.StatusBadRequest)
+			return
+		}
+
+		// Find users matching the preferred genders who have availability starting tomorrow
+		tomorrow := time.Now().AddDate(0, 0, 1)
+		startOfDay := time.Date(tomorrow.Year(), tomorrow.Month(), tomorrow.Day(), 0, 0, 0, 0, tomorrow.Location())
+
+		// Build query to find matching users with availability
+		query := `
+			SELECT DISTINCT u.id
+			FROM users u
+			INNER JOIN availability_slots a ON u.id = a.user_id
+			WHERE u.id != $1
+			  AND u.account_status = 'ACTIVE'
+			  AND u.date_of_birth IS NOT NULL
+			  AND u.gender = ANY($2)
+			  AND a.start_time >= $3
+			ORDER BY u.id
+		`
+
+		rows, err := db.QueryContext(r.Context(), query, userID, pq.Array(preferredGenders), startOfDay.Unix())
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Failed to fetch candidate users: %v", err), http.StatusInternalServerError)
+			return
+		}
+		defer rows.Close()
+
+		var candidateIDs []string
+		for rows.Next() {
+			var id int
+			if err := rows.Scan(&id); err != nil {
+				http.Error(w, fmt.Sprintf("Failed to scan candidate ID: %v", err), http.StatusInternalServerError)
+				return
+			}
+			candidateIDs = append(candidateIDs, strconv.Itoa(id))
+		}
+
+		if len(candidateIDs) == 0 {
+			jsonResp := map[string]interface{}{
+				"matches": []map[string]interface{}{},
+			}
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(jsonResp)
+			return
+		}
+
+		// Call AI curation service with matched candidates
 		grpcReq := &adminpb.CurateDatesRequest{
 			UserId:       reqBody.UserID,
-			CandidateIds: reqBody.CandidateIDs,
+			CandidateIds: candidateIDs,
 		}
 
 		resp, err := adminService.CurateDates(r.Context(), grpcReq)
@@ -1865,15 +1939,15 @@ func createAdminGetPlatformStatsHandler(adminService *service.AdminService) http
 		}
 
 		jsonResp := map[string]interface{}{
-			"totalUsers":         resp.TotalUsers,
-			"activeUsers":        resp.ActiveUsers,
-			"verifiedUsers":      resp.VerifiedUsers,
-			"availableForDating": resp.AvailableForDating,
+			"totalUsers":          resp.TotalUsers,
+			"activeUsers":         resp.ActiveUsers,
+			"verifiedUsers":       resp.VerifiedUsers,
+			"availableForDating":  resp.AvailableForDating,
 			"totalDatesScheduled": resp.TotalDatesScheduled,
 			"totalDatesCompleted": resp.TotalDatesCompleted,
-			"todaySignups":       resp.TodaySignups,
-			"thisWeekSignups":    resp.ThisWeekSignups,
-			"thisMonthSignups":   resp.ThisMonthSignups,
+			"todaySignups":        resp.TodaySignups,
+			"thisWeekSignups":     resp.ThisWeekSignups,
+			"thisMonthSignups":    resp.ThisMonthSignups,
 		}
 
 		w.Header().Set("Content-Type", "application/json")
@@ -1939,9 +2013,9 @@ func createAdminGetUserGrowthHandler(adminService *service.AdminService) http.Ha
 		}
 
 		jsonResp := map[string]interface{}{
-			"dataPoints":  dataPoints,
-			"totalUsers":  resp.TotalUsers,
-			"growthRate":  resp.GrowthRate,
+			"dataPoints": dataPoints,
+			"totalUsers": resp.TotalUsers,
+			"growthRate": resp.GrowthRate,
 		}
 
 		w.Header().Set("Content-Type", "application/json")
@@ -2251,10 +2325,10 @@ func createAdminBulkUserActionHandler(adminService *service.AdminService) http.H
 		}
 
 		jsonResp := map[string]interface{}{
-			"successCount":   resp.SuccessCount,
-			"failedCount":    resp.FailedCount,
-			"failedUserIds":  resp.FailedUserIds,
-			"errorMessages":  resp.ErrorMessages,
+			"successCount":  resp.SuccessCount,
+			"failedCount":   resp.FailedCount,
+			"failedUserIds": resp.FailedUserIds,
+			"errorMessages": resp.ErrorMessages,
 		}
 
 		w.Header().Set("Content-Type", "application/json")
@@ -2295,12 +2369,12 @@ func createAdminManageAdminsHandler(adminService *service.AdminService) http.Han
 			admins := make([]map[string]interface{}, len(resp.Admins))
 			for i, admin := range resp.Admins {
 				admins[i] = map[string]interface{}{
-					"adminId":  admin.AdminId,
-					"userId":   admin.UserId,
-					"email":    admin.Email,
-					"name":     admin.Name,
-					"role":     admin.Role.String(),
-					"isGenie":  admin.IsGenie,
+					"adminId": admin.AdminId,
+					"userId":  admin.UserId,
+					"email":   admin.Email,
+					"name":    admin.Name,
+					"role":    admin.Role.String(),
+					"isGenie": admin.IsGenie,
 				}
 			}
 
@@ -2360,12 +2434,12 @@ func createAdminManageAdminsHandler(adminService *service.AdminService) http.Han
 
 			jsonResp := map[string]interface{}{
 				"admin": map[string]interface{}{
-					"adminId":  resp.Admin.AdminId,
-					"userId":   resp.Admin.UserId,
-					"email":    resp.Admin.Email,
-					"name":     resp.Admin.Name,
-					"role":     resp.Admin.Role.String(),
-					"isGenie":  resp.Admin.IsGenie,
+					"adminId": resp.Admin.AdminId,
+					"userId":  resp.Admin.UserId,
+					"email":   resp.Admin.Email,
+					"name":    resp.Admin.Name,
+					"role":    resp.Admin.Role.String(),
+					"isGenie": resp.Admin.IsGenie,
 				},
 			}
 
@@ -2431,12 +2505,12 @@ func createAdminManageAdminByIdHandler(adminService *service.AdminService) http.
 
 			jsonResp := map[string]interface{}{
 				"admin": map[string]interface{}{
-					"adminId":  resp.Admin.AdminId,
-					"userId":   resp.Admin.UserId,
-					"email":    resp.Admin.Email,
-					"name":     resp.Admin.Name,
-					"role":     resp.Admin.Role.String(),
-					"isGenie":  resp.Admin.IsGenie,
+					"adminId": resp.Admin.AdminId,
+					"userId":  resp.Admin.UserId,
+					"email":   resp.Admin.Email,
+					"name":    resp.Admin.Name,
+					"role":    resp.Admin.Role.String(),
+					"isGenie": resp.Admin.IsGenie,
 				},
 			}
 
@@ -2503,12 +2577,12 @@ func createAdminGetAllAdminsHandler(adminService *service.AdminService) http.Han
 		admins := make([]map[string]interface{}, len(resp.Admins))
 		for i, admin := range resp.Admins {
 			admins[i] = map[string]interface{}{
-				"adminId":  admin.AdminId,
-				"userId":   admin.UserId,
-				"email":    admin.Email,
-				"name":     admin.Name,
-				"role":     admin.Role.String(),
-				"isGenie":  admin.IsGenie,
+				"adminId": admin.AdminId,
+				"userId":  admin.UserId,
+				"email":   admin.Email,
+				"name":    admin.Name,
+				"role":    admin.Role.String(),
+				"isGenie": admin.IsGenie,
 			}
 		}
 
@@ -2574,12 +2648,12 @@ func createAdminCreateAdminUserHandler(adminService *service.AdminService) http.
 
 		jsonResp := map[string]interface{}{
 			"admin": map[string]interface{}{
-				"adminId":  resp.Admin.AdminId,
-				"userId":   resp.Admin.UserId,
-				"email":    resp.Admin.Email,
-				"name":     resp.Admin.Name,
-				"role":     resp.Admin.Role.String(),
-				"isGenie":  resp.Admin.IsGenie,
+				"adminId": resp.Admin.AdminId,
+				"userId":  resp.Admin.UserId,
+				"email":   resp.Admin.Email,
+				"name":    resp.Admin.Name,
+				"role":    resp.Admin.Role.String(),
+				"isGenie": resp.Admin.IsGenie,
 			},
 		}
 
@@ -2644,12 +2718,12 @@ func createAdminUpdateAdminHandler(adminService *service.AdminService) http.Hand
 
 		jsonResp := map[string]interface{}{
 			"admin": map[string]interface{}{
-				"adminId":  resp.Admin.AdminId,
-				"userId":   resp.Admin.UserId,
-				"email":    resp.Admin.Email,
-				"name":     resp.Admin.Name,
-				"role":     resp.Admin.Role.String(),
-				"isGenie":  resp.Admin.IsGenie,
+				"adminId": resp.Admin.AdminId,
+				"userId":  resp.Admin.UserId,
+				"email":   resp.Admin.Email,
+				"name":    resp.Admin.Name,
+				"role":    resp.Admin.Role.String(),
+				"isGenie": resp.Admin.IsGenie,
 			},
 		}
 
@@ -2727,12 +2801,12 @@ func createAdminUpdateProfileHandler(adminService *service.AdminService) http.Ha
 
 		jsonResp := map[string]interface{}{
 			"admin": map[string]interface{}{
-				"adminId":  resp.Admin.AdminId,
-				"userId":   resp.Admin.UserId,
-				"email":    resp.Admin.Email,
-				"name":     resp.Admin.Name,
-				"role":     resp.Admin.Role.String(),
-				"isGenie":  resp.Admin.IsGenie,
+				"adminId": resp.Admin.AdminId,
+				"userId":  resp.Admin.UserId,
+				"email":   resp.Admin.Email,
+				"name":    resp.Admin.Name,
+				"role":    resp.Admin.Role.String(),
+				"isGenie": resp.Admin.IsGenie,
 			},
 		}
 
@@ -2912,10 +2986,10 @@ func (s *Server) testRedisHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := map[string]interface{}{
-		"redis":  "connected",
-		"key":    key,
-		"value":  result,
-		"ttl":    "10 seconds",
+		"redis": "connected",
+		"key":   key,
+		"value": result,
+		"ttl":   "10 seconds",
 	}
 
 	w.Header().Set("Content-Type", "application/json")

@@ -57,18 +57,10 @@ export const CurateDates = () => {
     setMatches([]);
 
     // Get all other candidate IDs except the selected one
-    const otherCandidateIds = candidates
-      .filter(c => c.userId !== candidate.userId)
-      .map(c => c.userId);
-
-    if (otherCandidateIds.length === 0) {
-      alert('No other candidates available for comparison');
-      return;
-    }
-
+    // Backend will automatically find candidates based on user's partner preferences
     setIsLoadingMatches(true);
     try {
-      const response = await curateDates(candidate.userId, otherCandidateIds);
+      const response = await curateDates(candidate.userId);
       setMatches(response.matches || []);
     } catch (error: any) {
       const errorMsg = error.message || 'Failed to analyze compatibility';
