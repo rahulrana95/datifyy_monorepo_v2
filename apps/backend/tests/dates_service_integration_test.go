@@ -117,7 +117,7 @@ func createTestUserWithAvailability(t *testing.T, db *sql.DB, email, name, gende
 		_, err = db.ExecContext(ctx, `
 			INSERT INTO availability_slots (user_id, start_time, end_time)
 			VALUES ($1, $2, $3)
-		`, userID, startOfDay.Unix(), startOfDay.Add(2*time.Hour).Unix())
+		`, userID, startOfDay.Unix(), startOfDay.Add(1*time.Hour).Unix())
 		require.NoError(t, err)
 	}
 

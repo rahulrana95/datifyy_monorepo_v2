@@ -29,17 +29,25 @@ type DatesService struct {
 
 // NewDatesService creates a new DatesService
 func NewDatesService(db *sql.DB, redisClient *redis.Client) (*DatesService, error) {
-	// Initialize AI provider
-	ctx := context.Background()
-	aiConfig := ai.Config{
-		Provider: "gemini",
-		APIKey:   os.Getenv("GEMINI_API_KEY"),
-		Model:    "gemini-1.5-flash",
-	}
+	// Initialize AI provider (optional - only if API key is set)
+	var aiProvider ai.AIProvider
+	apiKey := os.Getenv("GEMINI_API_KEY")
+	if apiKey != "" {
+		ctx := context.Background()
+		aiConfig := ai.Config{
+			Provider: "gemini",
+			APIKey:   apiKey,
+			Model:    "gemini-1.5-flash",
+		}
 
-	aiProvider, err := ai.NewAIProvider(ctx, aiConfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to initialize AI provider: %w", err)
+		var err error
+		aiProvider, err = ai.NewAIProvider(ctx, aiConfig)
+		if err != nil {
+			return nil, fmt.Errorf("failed to initialize AI provider: %w", err)
+		}
+		log.Printf("AI provider initialized: %s", aiProvider.GetProviderName())
+	} else {
+		log.Printf("GEMINI_API_KEY not set - AI compatibility analysis will not be available")
 	}
 
 	return &DatesService{
@@ -87,16 +95,14 @@ func (s *DatesService) GetCandidatesForCuration(ctx context.Context) ([]*Candida
 
 	// Query for users with availability tomorrow
 	query := `
-		SELECT DISTINCT
+		SELECT
 			u.id,
 			u.email,
 			u.name,
-			COALESCE(up.age, 0) as age,
-			COALESCE(up.gender, '') as gender,
-			COALESCE(up.profile_completion, 0) as profile_completion,
+			EXTRACT(YEAR FROM AGE(CURRENT_DATE, u.date_of_birth))::INTEGER as age,
+			COALESCE(u.gender, '') as gender,
+			COALESCE(up.completion_percentage, 0) as profile_completion,
 			u.email_verified,
-			COALESCE(up.aadhar_verified, false) as aadhar_verified,
-			COALESCE(up.work_email_verified, false) as work_email_verified,
 			COUNT(avail.id) as available_slots_count,
 			MIN(avail.start_time) as next_available_date
 		FROM users u
@@ -105,8 +111,8 @@ func (s *DatesService) GetCandidatesForCuration(ctx context.Context) ([]*Candida
 		WHERE u.account_status = 'ACTIVE'
 			AND avail.start_time >= $1
 			AND avail.start_time < $2
-		GROUP BY u.id, u.email, u.name, up.age, up.gender, up.profile_completion,
-				 u.email_verified, up.aadhar_verified, up.work_email_verified
+		GROUP BY u.id, u.email, u.name, u.date_of_birth, u.gender, up.completion_percentage,
+				 u.email_verified
 		HAVING COUNT(avail.id) > 0
 		ORDER BY u.created_at DESC
 	`
@@ -130,14 +136,16 @@ func (s *DatesService) GetCandidatesForCuration(ctx context.Context) ([]*Candida
 			&candidate.Gender,
 			&candidate.ProfileCompletion,
 			&candidate.EmailVerified,
-			&candidate.AadharVerified,
-			&candidate.WorkEmailVerified,
 			&candidate.AvailableSlotsCount,
 			&nextAvailUnix,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan candidate: %w", err)
 		}
+
+		// Set verification fields (to be implemented in schema later)
+		candidate.AadharVerified = false
+		candidate.WorkEmailVerified = false
 
 		if nextAvailUnix.Valid {
 			t := time.Unix(nextAvailUnix.Int64, 0)
@@ -165,6 +173,11 @@ type MatchCandidate struct {
 
 // AnalyzeCompatibility analyzes compatibility between a user and potential matches
 func (s *DatesService) AnalyzeCompatibility(ctx context.Context, userID int, candidateIDs []int, adminID int) ([]*MatchCandidate, error) {
+	// Check if AI provider is available
+	if s.aiProvider == nil {
+		return nil, fmt.Errorf("AI provider not initialized - GEMINI_API_KEY must be set")
+	}
+
 	// Get user basic info, profile and preferences
 	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {

@@ -144,7 +144,7 @@ func TestAdminService_GetUserGrowth_Integration(t *testing.T) {
 }
 
 func TestAdminService_GetUserGrowth_Weekly_Integration(t *testing.T) {
-	db, adminService, cleanup := setupAdminServiceTest(t)
+	_, adminService, cleanup := setupAdminServiceTest(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -267,7 +267,7 @@ func TestAdminService_GetAllAdmins_Integration(t *testing.T) {
 }
 
 func TestAdminService_CreateAdminUser_Integration(t *testing.T) {
-	db, adminService, cleanup := setupAdminServiceTest(t)
+	_, adminService, cleanup := setupAdminServiceTest(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -481,7 +481,7 @@ func createTestUserForCuration(t *testing.T, db *sql.DB, email, name, gender str
 		_, err = db.ExecContext(ctx, `
 			INSERT INTO availability_slots (user_id, start_time, end_time)
 			VALUES ($1, $2, $3)
-		`, userID, startOfDay.Unix(), startOfDay.Add(2*time.Hour).Unix())
+		`, userID, startOfDay.Unix(), startOfDay.Add(1*time.Hour).Unix())
 		require.NoError(t, err)
 	}
 
@@ -493,6 +493,12 @@ func TestAdminService_GetCurationCandidates(t *testing.T) {
 	defer cleanup()
 
 	ctx := context.Background()
+
+	// Cleanup any existing test data first
+	db.Exec("DELETE FROM availability_slots WHERE user_id IN (SELECT id FROM users WHERE email LIKE 'test_admin_curation_%@test.com')")
+	db.Exec("DELETE FROM partner_preferences WHERE user_id IN (SELECT id FROM users WHERE email LIKE 'test_admin_curation_%@test.com')")
+	db.Exec("DELETE FROM user_profiles WHERE user_id IN (SELECT id FROM users WHERE email LIKE 'test_admin_curation_%@test.com')")
+	db.Exec("DELETE FROM users WHERE email LIKE 'test_admin_curation_%@test.com'")
 
 	// Create test users with availability tomorrow
 	user1ID := createTestUserForCuration(t, db, "test_admin_curation_1@test.com", "Alice", "FEMALE", 28, true)
