@@ -87,6 +87,18 @@ export const Header = ({ onOpenLogin, onOpenSignup }: HeaderProps) => {
                 Home
               </Button>
             </Link>
+            <Link to="/love-zone">
+              <Button
+                variant="ghost"
+                size="sm"
+                fontWeight="medium"
+                color={isActive('/love-zone') ? 'brand.600' : 'fg.muted'}
+                bg={isActive('/love-zone') ? 'brand.50' : 'transparent'}
+                _hover={{ bg: 'bg.subtle', color: 'fg' }}
+              >
+                Love Zone
+              </Button>
+            </Link>
             <Link to="/partner-preferences">
               <Button
                 variant="ghost"
@@ -195,6 +207,18 @@ export const Header = ({ onOpenLogin, onOpenSignup }: HeaderProps) => {
                       justifyContent="flex-start"
                       _hover={{ bg: 'brand.50', color: 'brand.600' }}
                       onClick={() => {
+                        navigate('/love-zone');
+                        setIsUserMenuOpen(false);
+                      }}
+                    >
+                      Love Zone
+                    </Button>
+                    <Button
+                      bg="transparent"
+                      color="fg"
+                      justifyContent="flex-start"
+                      _hover={{ bg: 'brand.50', color: 'brand.600' }}
+                      onClick={() => {
                         navigate('/partner-preferences');
                         setIsUserMenuOpen(false);
                       }}
@@ -279,6 +303,19 @@ export const Header = ({ onOpenLogin, onOpenSignup }: HeaderProps) => {
               }}
             >
               Home
+            </Button>
+            <Button
+              bg={isActive('/love-zone') ? 'brand.50' : 'transparent'}
+              color={isActive('/love-zone') ? 'brand.600' : 'fg'}
+              w="full"
+              justifyContent="flex-start"
+              _hover={{ bg: 'brand.50', color: 'brand.600' }}
+              onClick={() => {
+                navigate('/love-zone');
+                setIsMobileMenuOpen(false);
+              }}
+            >
+              Love Zone
             </Button>
             <Button
               bg={isActive('/partner-preferences') ? 'brand.50' : 'transparent'}

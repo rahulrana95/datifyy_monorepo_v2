@@ -18,6 +18,7 @@ import { AdminManagement } from './pages/Admin/Admins/AdminManagement';
 import { AdminGenie } from './pages/Admin/Genie/AdminGenie';
 import { UserDetails } from './pages/Admin/UserDetails/UserDetails';
 import { CurateDates } from './pages/Admin/CurateDates';
+import { LoveZonePage } from './pages/LoveZonePage';
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/partner-preferences" element={<PartnerPreferencesPage />} />
           <Route path="/availability" element={<AvailabilityPage />} />
+          <Route path="/love-zone" element={<LoveZonePage />} />
           <Route path="/theme-components" element={<ThemePreview />} />
 
           {/* Admin Routes */}
