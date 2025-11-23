@@ -209,9 +209,31 @@ func (s *DatesService) AnalyzeCompatibility(ctx context.Context, userID int, can
 			log.Printf("Error checking existing match: %v", err)
 		}
 		if existingMatch != nil {
-			// Return existing match
+			// Get candidate info for existing match
+			candidate, err := s.userRepo.GetByID(ctx, candidateID)
+			if err != nil {
+				log.Printf("Failed to get candidate %d for existing match: %v", candidateID, err)
+				continue
+			}
+
+			// Calculate age from date of birth
+			age := 0
+			if candidate.DateOfBirth.Valid {
+				age = calculateAge(candidate.DateOfBirth.Time)
+			}
+
+			// Get gender from candidate
+			gender := ""
+			if candidate.Gender.Valid {
+				gender = candidate.Gender.String
+			}
+
+			// Return existing match with user info
 			matches = append(matches, &MatchCandidate{
 				UserID:             candidateID,
+				Name:               candidate.Name,
+				Age:                age,
+				Gender:             gender,
 				CompatibilityScore: existingMatch.CompatibilityScore,
 				IsMatch:            existingMatch.IsMatch,
 				Reasoning:          existingMatch.Reasoning,
