@@ -86,13 +86,13 @@ type CandidateUser struct {
 	NextAvailableDate *time.Time `json:"next_available_date,omitempty"`
 }
 
-// GetCandidatesForCuration returns users available for dates day after tomorrow onwards
+// GetCandidatesForCuration returns users available for dates from tomorrow onwards
 func (s *DatesService) GetCandidatesForCuration(ctx context.Context) ([]*CandidateUser, error) {
-	// Get day after tomorrow's date range (starting point)
-	dayAfterTomorrow := time.Now().AddDate(0, 0, 2)
-	startOfDay := time.Date(dayAfterTomorrow.Year(), dayAfterTomorrow.Month(), dayAfterTomorrow.Day(), 0, 0, 0, 0, dayAfterTomorrow.Location())
+	// Get tomorrow's date range (starting point)
+	tomorrow := time.Now().AddDate(0, 0, 1)
+	startOfDay := time.Date(tomorrow.Year(), tomorrow.Month(), tomorrow.Day(), 0, 0, 0, 0, tomorrow.Location())
 
-	// Query for users with availability from day after tomorrow onwards
+	// Query for users with availability from tomorrow onwards
 	query := `
 		SELECT
 			u.id,
