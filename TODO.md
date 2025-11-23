@@ -1,60 +1,131 @@
-claude code task --task "Implement central API endpoint rate limiting with both user-based and IP-based limits. Requirements:
-- Create configurable rate limiter that can be updated via config deployment
-- Support both user ID and IP address based limiting
-- Make limits configurable per endpoint
-- Ensure rate limit changes take effect on deployment without restart
-Files to modify: likely middleware/, config/, and main.go"
+# Datifyy TODO List
 
-claude code task --task "Create backend route for /api/v1/admin/curation/analyze
-Requirements:
-- Send full user profile of main user to AI
-- Send complete partner preferences data when matching with potential dates
-- Update proto definitions in root/proto/
-- Implement service in admin service layer
-- Add repository methods in admin repo"
+Last Updated: 2025-11-23
 
-claude code task --task "Add tabbed interface to http://localhost:3000/admin/curate page:
-- Create two tabs: 'AI Dates Curation' (existing content) and 'Curated Dates' (new, empty)
-- Move existing curation content under 'AI Dates Curation' tab
-- Prepare empty state for 'Curated Dates' tab
-- Maintain existing styling and responsiveness"
+## 🚀 In Progress
 
-claude code task --task "Implement date suggestion actions in AI Dates Curation tab:
-- Add proto changes for accept/reject/review-later actions
-- Create HTTP endpoint in main.go for date suggestion actions
-- Implement admin service methods for these actions
-- Add admin repo methods to persist action states
-- Apply rate limiting using existing logic"
+### Task 1: Central API Rate Limiting
+- [ ] Create rate limiter middleware
+- [ ] Implement user-based rate limiting
+- [ ] Implement IP-based rate limiting
+- [ ] Make limits configurable per endpoint
+- [ ] Add configuration deployment support
+- [ ] Test rate limiting functionality
+- [ ] Update documentation
 
-claude code task --task "Implement Curated Dates backend functionality:
-- Proto changes to support curated dates with status (past/ongoing/future)
-- HTTP endpoints in main.go for fetching curated dates by status
-- Admin service and repo methods for CRUD operations
-- User-level endpoints for accept/reject with reason (multiple choice options)
-- Add 'genie' (admin) assignment to each curated date
-- Implement Google Meet link generation (1 hour default duration)
-- Generate and send Google Calendar invites to both users
-Files: proto/, main.go, admin service, admin repo, user service"
+**Files to modify**: middleware/, config/, main.go
 
-claude code task --task "Create 'Love Zone' tab in UI header with comprehensive date management:
+---
 
-Backend:
-- Proto changes for user date views and statistics
-- HTTP endpoints in main.go for date suggestions, upcoming, past, rejected dates
-- Implement RPC methods for date statistics (completed, suggested, accepted, rejected counts)
-- Service and repo layer implementation
+## 📋 Pending Tasks
 
-Frontend:
-- Add 'Love Zone' to header navigation
-- Create responsive UI with sections: date suggestions, upcoming dates, past dates, rejected dates
-- Display statistics dashboard (dates completed, suggested, accepted, rejected)
-- Follow existing theme and ensure excellent UX
-- Make fully responsive across devices"
+### Task 2: AI Curation Analyze Backend Route
+- [ ] Update proto definitions in proto/
+- [ ] Create /api/v1/admin/curation/analyze endpoint
+- [ ] Send full user profile to AI
+- [ ] Send complete partner preferences data
+- [ ] Implement admin service layer methods
+- [ ] Add admin repository methods
+- [ ] Test endpoint functionality
 
-claude code task --task "Update user landing page after login:
-- Create carousel showing ongoing and upcoming dates
-- Add availability check - if not submitted, show prompt with link to availability page
-- Implement backend RPC for fetching user's ongoing/upcoming dates
-- Implement backend RPC for checking availability submission status
-- Design responsive carousel component matching app theme
-- Add smooth navigation to availability page"
+**Files**: proto/, main.go, admin service, admin repo
+
+### Task 3: Admin Curate Page - Tabbed Interface
+- [ ] Create tab component structure
+- [ ] Add "AI Dates Curation" tab (move existing content)
+- [ ] Add "Curated Dates" tab (empty state)
+- [ ] Maintain styling and responsiveness
+- [ ] Test on multiple screen sizes
+
+**Files**: apps/frontend/src/pages/Admin/CurateDates/
+
+### Task 4: Date Suggestion Actions
+- [ ] Add proto changes for accept/reject/review-later
+- [ ] Create HTTP endpoint for date actions
+- [ ] Implement admin service methods
+- [ ] Add admin repo methods for persistence
+- [ ] Apply rate limiting
+- [ ] Test all action flows
+
+**Files**: proto/, main.go, admin service, admin repo
+
+### Task 5: Curated Dates Backend
+- [ ] Proto changes for curated dates status
+- [ ] HTTP endpoints for fetching by status
+- [ ] Admin service CRUD operations
+- [ ] Admin repo methods
+- [ ] User endpoints for accept/reject
+- [ ] Add 'genie' (admin) assignment
+- [ ] Implement Google Meet link generation
+- [ ] Generate Google Calendar invites
+- [ ] Test complete flow
+
+**Files**: proto/, main.go, admin service, admin repo, user service
+
+### Task 6: Love Zone Tab
+**Backend**:
+- [ ] Proto changes for user date views
+- [ ] HTTP endpoints for dates (suggestions, upcoming, past, rejected)
+- [ ] RPC methods for statistics
+- [ ] Service layer implementation
+- [ ] Repo layer implementation
+
+**Frontend**:
+- [ ] Add "Love Zone" to header navigation
+- [ ] Create date suggestions section
+- [ ] Create upcoming dates section
+- [ ] Create past dates section
+- [ ] Create rejected dates section
+- [ ] Add statistics dashboard
+- [ ] Ensure responsive design
+- [ ] Test on all devices
+
+**Files**: proto/, main.go, services, repos, frontend components
+
+### Task 7: User Landing Page Updates
+- [ ] Create carousel for ongoing/upcoming dates
+- [ ] Add availability check logic
+- [ ] Show prompt if availability not submitted
+- [ ] Backend RPC for ongoing/upcoming dates
+- [ ] Backend RPC for availability status
+- [ ] Design responsive carousel
+- [ ] Add navigation to availability page
+- [ ] Test complete flow
+
+**Files**: Backend services, frontend landing page
+
+---
+
+## ✅ Completed Tasks
+
+### Slack Integration (Completed: 2025-11-23)
+- ✅ Created Slack service (`internal/slack/`)
+- ✅ Added 4 HTTP endpoints
+- ✅ Implemented message templates
+- ✅ Added unit tests
+- ✅ Created comprehensive documentation
+- ✅ Updated README and BACKEND_ARCHITECTURE
+- ✅ Added environment variable configuration
+
+### AI Date Curation Feature (Completed: 2025-11-23)
+- ✅ Implemented AI compatibility analysis
+- ✅ Created admin curation interface
+- ✅ Added automatic candidate matching
+- ✅ Integrated Google Gemini API
+
+---
+
+## 📝 Notes
+
+- Commit after each small test/completion
+- Update this file to mark tasks as done
+- Follow existing code patterns and architecture
+- Ensure all tests pass before committing
+- Update documentation as needed
+
+---
+
+## 🎯 Current Focus
+
+**Working on**: Task 1 - Central API Rate Limiting
+**Next up**: Task 2 - AI Curation Analyze Backend Route
