@@ -28,122 +28,11 @@ interface ProfileEditFormProps {
   onCancel: () => void;
 }
 
-// Enum to integer mapping (protobuf enum values)
-const enumToInt = (value: string, enumMap: Record<string, number>): number => {
-  return enumMap[value] ?? 0;
-};
-
-const GENDER_MAP: Record<string, number> = {
-  'GENDER_UNSPECIFIED': 0,
-  'GENDER_MALE': 1,
-  'GENDER_FEMALE': 2,
-  'GENDER_NON_BINARY': 3,
-};
-
-const DRINKING_MAP: Record<string, number> = {
-  'DRINKING_UNSPECIFIED': 0,
-  'DRINKING_NEVER': 1,
-  'DRINKING_RARELY': 2,
-  'DRINKING_SOCIALLY': 3,
-  'DRINKING_OFTEN': 4,
-};
-
-const SMOKING_MAP: Record<string, number> = {
-  'SMOKING_UNSPECIFIED': 0,
-  'SMOKING_NEVER': 1,
-  'SMOKING_RARELY': 2,
-  'SMOKING_SOCIALLY': 3,
-  'SMOKING_OFTEN': 4,
-};
-
-const WORKOUT_MAP: Record<string, number> = {
-  'WORKOUT_UNSPECIFIED': 0,
-  'WORKOUT_NEVER': 1,
-  'WORKOUT_RARELY': 2,
-  'WORKOUT_SOMETIMES': 3,
-  'WORKOUT_OFTEN': 4,
-  'WORKOUT_DAILY': 5,
-};
-
-const DIETARY_MAP: Record<string, number> = {
-  'DIETARY_UNSPECIFIED': 0,
-  'DIETARY_OMNIVORE': 1,
-  'DIETARY_VEGETARIAN': 2,
-  'DIETARY_VEGAN': 3,
-  'DIETARY_PESCATARIAN': 4,
-  'DIETARY_HALAL': 5,
-  'DIETARY_KOSHER': 6,
-};
-
-const RELIGION_MAP: Record<string, number> = {
-  'RELIGION_UNSPECIFIED': 0,
-  'RELIGION_CHRISTIAN': 1,
-  'RELIGION_MUSLIM': 2,
-  'RELIGION_JEWISH': 3,
-  'RELIGION_HINDU': 4,
-  'RELIGION_BUDDHIST': 5,
-  'RELIGION_ATHEIST': 6,
-  'RELIGION_AGNOSTIC': 7,
-  'RELIGION_OTHER': 8,
-};
-
-const IMPORTANCE_MAP: Record<string, number> = {
-  'IMPORTANCE_UNSPECIFIED': 0,
-  'IMPORTANCE_NOT_IMPORTANT': 1,
-  'IMPORTANCE_SOMEWHAT': 2,
-  'IMPORTANCE_IMPORTANT': 3,
-  'IMPORTANCE_VERY_IMPORTANT': 4,
-};
-
-const POLITICAL_MAP: Record<string, number> = {
-  'POLITICAL_UNSPECIFIED': 0,
-  'POLITICAL_LIBERAL': 1,
-  'POLITICAL_MODERATE': 2,
-  'POLITICAL_CONSERVATIVE': 3,
-  'POLITICAL_APOLITICAL': 4,
-};
-
-const PET_MAP: Record<string, number> = {
-  'PET_UNSPECIFIED': 0,
-  'PET_NONE': 1,
-  'PET_DOG': 2,
-  'PET_CAT': 3,
-  'PET_BOTH': 4,
-  'PET_OTHER': 5,
-};
-
-const CHILDREN_MAP: Record<string, number> = {
-  'CHILDREN_UNSPECIFIED': 0,
-  'CHILDREN_WANT': 1,
-  'CHILDREN_DONT_WANT': 2,
-  'CHILDREN_HAVE_AND_WANT_MORE': 3,
-  'CHILDREN_HAVE_DONT_WANT_MORE': 4,
-  'CHILDREN_NOT_SURE': 5,
-};
-
-const COMMUNICATION_MAP: Record<string, number> = {
-  'COMMUNICATION_UNSPECIFIED': 0,
-  'COMMUNICATION_BIG_TIME_TEXTER': 1,
-  'COMMUNICATION_PHONE_CALLER': 2,
-  'COMMUNICATION_VIDEO_CHATTER': 3,
-  'COMMUNICATION_IN_PERSON': 4,
-};
-
-const LOVE_LANGUAGE_MAP: Record<string, number> = {
-  'LOVE_LANGUAGE_UNSPECIFIED': 0,
-  'LOVE_LANGUAGE_WORDS_OF_AFFIRMATION': 1,
-  'LOVE_LANGUAGE_QUALITY_TIME': 2,
-  'LOVE_LANGUAGE_RECEIVING_GIFTS': 3,
-  'LOVE_LANGUAGE_ACTS_OF_SERVICE': 4,
-  'LOVE_LANGUAGE_PHYSICAL_TOUCH': 5,
-};
-
-const SLEEP_SCHEDULE_MAP: Record<string, number> = {
-  'SLEEP_SCHEDULE_UNSPECIFIED': 0,
-  'SLEEP_SCHEDULE_EARLY_BIRD': 1,
-  'SLEEP_SCHEDULE_NIGHT_OWL': 2,
-  'SLEEP_SCHEDULE_IN_A_SPECTRUM': 3,
-};
+/**
+ * Note: We send enum values as strings (e.g., "GENDER_MALE", "DRINKING_SOCIALLY")
+ * to the backend. The backend uses protojson.Unmarshal to parse these string enums.
+ * This follows API best practices for readability and compatibility.
+ */
 
 // Chevron icon component
 const ChevronIcon = ({ isExpanded }: { isExpanded: boolean }): JSX.Element => (
@@ -301,19 +190,27 @@ export const ProfileEditForm = ({ profile, onSave, onCancel }: ProfileEditFormPr
   const basicInfo = (profile as any)?.basic_info || profile.basicInfo;
   const profileDetails = (profile as any)?.profile_details || profile.profileDetails;
   const lifestyleInfo = (profile as any)?.lifestyle_info || profile.lifestyleInfo;
+  const culturalInfo = (profile as any)?.cultural_info || profile.culturalInfo;
+  const appearanceInfo = (profile as any)?.appearance_info || profile.appearanceInfo;
+  const professionalInfo = (profile as any)?.professional_info || profile.professionalInfo;
+  const familyInfo = (profile as any)?.family_info || profile.familyInfo;
 
   // Collapsible sections state
   const [expandedSections, setExpandedSections] = useState({
     basic: true,
     profile: true,
     lifestyle: false,
+    cultural: false,
+    appearance: false,
+    professional: false,
+    family: false,
   });
 
   // Field errors state
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   // Toggle section expansion
-  const toggleSection = useCallback((section: 'basic' | 'profile' | 'lifestyle') => {
+  const toggleSection = useCallback((section: 'basic' | 'profile' | 'lifestyle' | 'cultural' | 'appearance' | 'professional' | 'family') => {
     setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
   }, []);
 
@@ -376,6 +273,38 @@ export const ProfileEditForm = ({ profile, onSave, onCancel }: ProfileEditFormPr
       communicationStyle: lifestyleInfo?.communicationStyle || lifestyleInfo?.communication_style || 'COMMUNICATION_UNSPECIFIED',
       loveLanguage: lifestyleInfo?.loveLanguage || lifestyleInfo?.love_language || 'LOVE_LANGUAGE_UNSPECIFIED',
       sleepSchedule: lifestyleInfo?.sleepSchedule || lifestyleInfo?.sleep_schedule || 'SLEEP_SCHEDULE_UNSPECIFIED',
+
+      // Cultural Info
+      motherTongue: culturalInfo?.motherTongue || culturalInfo?.mother_tongue || '',
+      nationality: culturalInfo?.nationality || '',
+      caste: culturalInfo?.caste || '',
+      subCaste: culturalInfo?.subCaste || culturalInfo?.sub_caste || '',
+      willingToRelocate: culturalInfo?.willingToRelocate ?? culturalInfo?.willing_to_relocate ?? false,
+
+      // Appearance Info
+      bodyType: appearanceInfo?.bodyType || appearanceInfo?.body_type || 'BODY_TYPE_UNSPECIFIED',
+      complexion: appearanceInfo?.complexion || 'COMPLEXION_UNSPECIFIED',
+      hairColor: appearanceInfo?.hairColor || appearanceInfo?.hair_color || 'HAIR_COLOR_UNSPECIFIED',
+      eyeColor: appearanceInfo?.eyeColor || appearanceInfo?.eye_color || 'EYE_COLOR_UNSPECIFIED',
+      hasTattoos: appearanceInfo?.hasTattoos ?? appearanceInfo?.has_tattoos ?? false,
+      hasPiercings: appearanceInfo?.hasPiercings ?? appearanceInfo?.has_piercings ?? false,
+
+      // Professional Info
+      employmentType: professionalInfo?.employmentType || professionalInfo?.employment_type || 'EMPLOYMENT_TYPE_UNSPECIFIED',
+      industry: professionalInfo?.industry || '',
+      yearsOfExperience: professionalInfo?.yearsOfExperience ?? professionalInfo?.years_of_experience ?? 0,
+      highestEducation: professionalInfo?.highestEducation || professionalInfo?.highest_education || 'EDUCATION_LEVEL_UNSPECIFIED',
+      ownsProperty: professionalInfo?.ownsProperty ?? professionalInfo?.owns_property ?? false,
+      ownsVehicle: professionalInfo?.ownsVehicle ?? professionalInfo?.owns_vehicle ?? false,
+
+      // Family Info
+      familyType: familyInfo?.familyType || familyInfo?.family_type || 'FAMILY_TYPE_UNSPECIFIED',
+      numSiblings: familyInfo?.numSiblings ?? familyInfo?.num_siblings ?? 0,
+      fatherOccupation: familyInfo?.fatherOccupation || familyInfo?.father_occupation || '',
+      motherOccupation: familyInfo?.motherOccupation || familyInfo?.mother_occupation || '',
+      livingSituation: familyInfo?.livingSituation || familyInfo?.living_situation || 'LIVING_SITUATION_UNSPECIFIED',
+      familyLocation: familyInfo?.familyLocation || familyInfo?.family_location || '',
+      aboutFamily: familyInfo?.aboutFamily || familyInfo?.about_family || '',
     },
     onSubmit: async ({ value }) => {
       // Validate form before submission
@@ -418,6 +347,38 @@ export const ProfileEditForm = ({ profile, onSave, onCancel }: ProfileEditFormPr
           loveLanguage: value.loveLanguage,
           sleepSchedule: value.sleepSchedule,
         },
+        culturalInfo: {
+          motherTongue: value.motherTongue,
+          nationality: value.nationality,
+          caste: value.caste,
+          subCaste: value.subCaste,
+          willingToRelocate: value.willingToRelocate,
+        },
+        appearanceInfo: {
+          bodyType: value.bodyType,
+          complexion: value.complexion,
+          hairColor: value.hairColor,
+          eyeColor: value.eyeColor,
+          hasTattoos: value.hasTattoos,
+          hasPiercings: value.hasPiercings,
+        },
+        professionalInfo: {
+          employmentType: value.employmentType,
+          industry: value.industry,
+          yearsOfExperience: value.yearsOfExperience,
+          highestEducation: value.highestEducation,
+          ownsProperty: value.ownsProperty,
+          ownsVehicle: value.ownsVehicle,
+        },
+        familyInfo: {
+          familyType: value.familyType,
+          numSiblings: value.numSiblings,
+          fatherOccupation: value.fatherOccupation,
+          motherOccupation: value.motherOccupation,
+          livingSituation: value.livingSituation,
+          familyLocation: value.familyLocation,
+          aboutFamily: value.aboutFamily,
+        },
         // Add updateFields to specify which fields to update
         // Backend expects flat snake_case field names (not nested paths)
         updateFields: [
@@ -445,6 +406,30 @@ export const ProfileEditForm = ({ profile, onSave, onCancel }: ProfileEditFormPr
           'communication_style',
           'love_language',
           'sleep_schedule',
+          'mother_tongue',
+          'nationality',
+          'caste',
+          'sub_caste',
+          'willing_to_relocate',
+          'body_type',
+          'complexion',
+          'hair_color',
+          'eye_color',
+          'has_tattoos',
+          'has_piercings',
+          'employment_type',
+          'industry',
+          'years_of_experience',
+          'highest_education',
+          'owns_property',
+          'owns_vehicle',
+          'family_type',
+          'num_siblings',
+          'father_occupation',
+          'mother_occupation',
+          'living_situation',
+          'family_location',
+          'about_family',
         ],
       };
 
@@ -825,6 +810,503 @@ export const ProfileEditForm = ({ profile, onSave, onCancel }: ProfileEditFormPr
               )}
             </form.Field>
           </SimpleGrid>
+          </VStack>
+        </CollapsibleSection>
+
+        {/* Cultural Info Section */}
+        <CollapsibleSection
+          title="Cultural & Matrimonial Information"
+          subtitle="Mother tongue, nationality, community"
+          icon="🌏"
+          isExpanded={expandedSections.cultural}
+          onToggle={() => toggleSection('cultural')}
+        >
+          <VStack align="stretch" gap={4}>
+            <SimpleGrid columns={{ base: 1, md: 2 }} gap={6}>
+              <form.Field name="motherTongue">
+                {(field: any) => (
+                  <FormField label="Mother Tongue">
+                    <Input
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      placeholder="e.g., Hindi, Tamil, English"
+                      px={4}
+                      size="sm"
+                    />
+                  </FormField>
+                )}
+              </form.Field>
+
+              <form.Field name="nationality">
+                {(field: any) => (
+                  <FormField label="Nationality">
+                    <Input
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      placeholder="e.g., Indian, American"
+                      px={4}
+                      size="sm"
+                    />
+                  </FormField>
+                )}
+              </form.Field>
+
+              <form.Field name="caste">
+                {(field: any) => (
+                  <FormField label="Caste/Community">
+                    <Input
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      placeholder="Enter caste or community"
+                      px={4}
+                      size="sm"
+                    />
+                  </FormField>
+                )}
+              </form.Field>
+
+              <form.Field name="subCaste">
+                {(field: any) => (
+                  <FormField label="Sub-Caste">
+                    <Input
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      placeholder="Enter sub-caste (optional)"
+                      px={4}
+                      size="sm"
+                    />
+                  </FormField>
+                )}
+              </form.Field>
+
+              <form.Field name="willingToRelocate">
+                {(field: any) => (
+                  <FormField label="Willing to Relocate">
+                    <HStack gap={4}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                        <input
+                          type="checkbox"
+                          checked={field.state.value}
+                          onChange={(e) => field.handleChange(e.target.checked)}
+                          style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                        />
+                        <Text fontSize="sm">Yes, willing to relocate</Text>
+                      </label>
+                    </HStack>
+                  </FormField>
+                )}
+              </form.Field>
+            </SimpleGrid>
+          </VStack>
+        </CollapsibleSection>
+
+        {/* Appearance Section */}
+        <CollapsibleSection
+          title="Appearance"
+          subtitle="Physical attributes and features"
+          icon="👁️"
+          isExpanded={expandedSections.appearance}
+          onToggle={() => toggleSection('appearance')}
+        >
+          <VStack align="stretch" gap={4}>
+            <SimpleGrid columns={{ base: 1, md: 2 }} gap={6}>
+              <form.Field name="bodyType">
+                {(field: any) => (
+                  <FormField label="Body Type">
+                    <select
+                      value={field.state.value as string}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '8px 12px',
+                        borderRadius: '6px',
+                        border: '1px solid #e2e8f0',
+                        fontSize: '16px',
+                      }}
+                    >
+                      <option value="BODY_TYPE_UNSPECIFIED">Not specified</option>
+                      <option value="BODY_TYPE_SLIM">Slim</option>
+                      <option value="BODY_TYPE_ATHLETIC">Athletic</option>
+                      <option value="BODY_TYPE_AVERAGE">Average</option>
+                      <option value="BODY_TYPE_FEW_EXTRA_POUNDS">Few extra pounds</option>
+                      <option value="BODY_TYPE_HEAVYSET">Heavyset</option>
+                    </select>
+                  </FormField>
+                )}
+              </form.Field>
+
+              <form.Field name="complexion">
+                {(field: any) => (
+                  <FormField label="Complexion">
+                    <select
+                      value={field.state.value as string}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '8px 12px',
+                        borderRadius: '6px',
+                        border: '1px solid #e2e8f0',
+                        fontSize: '16px',
+                      }}
+                    >
+                      <option value="COMPLEXION_UNSPECIFIED">Not specified</option>
+                      <option value="COMPLEXION_FAIR">Fair</option>
+                      <option value="COMPLEXION_WHEATISH">Wheatish</option>
+                      <option value="COMPLEXION_MEDIUM">Medium</option>
+                      <option value="COMPLEXION_DARK">Dark</option>
+                    </select>
+                  </FormField>
+                )}
+              </form.Field>
+
+              <form.Field name="hairColor">
+                {(field: any) => (
+                  <FormField label="Hair Color">
+                    <select
+                      value={field.state.value as string}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '8px 12px',
+                        borderRadius: '6px',
+                        border: '1px solid #e2e8f0',
+                        fontSize: '16px',
+                      }}
+                    >
+                      <option value="HAIR_COLOR_UNSPECIFIED">Not specified</option>
+                      <option value="HAIR_COLOR_BLACK">Black</option>
+                      <option value="HAIR_COLOR_BROWN">Brown</option>
+                      <option value="HAIR_COLOR_BLONDE">Blonde</option>
+                      <option value="HAIR_COLOR_RED">Red</option>
+                      <option value="HAIR_COLOR_GRAY">Gray</option>
+                      <option value="HAIR_COLOR_OTHER">Other</option>
+                    </select>
+                  </FormField>
+                )}
+              </form.Field>
+
+              <form.Field name="eyeColor">
+                {(field: any) => (
+                  <FormField label="Eye Color">
+                    <select
+                      value={field.state.value as string}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '8px 12px',
+                        borderRadius: '6px',
+                        border: '1px solid #e2e8f0',
+                        fontSize: '16px',
+                      }}
+                    >
+                      <option value="EYE_COLOR_UNSPECIFIED">Not specified</option>
+                      <option value="EYE_COLOR_BROWN">Brown</option>
+                      <option value="EYE_COLOR_BLUE">Blue</option>
+                      <option value="EYE_COLOR_GREEN">Green</option>
+                      <option value="EYE_COLOR_HAZEL">Hazel</option>
+                      <option value="EYE_COLOR_GRAY">Gray</option>
+                      <option value="EYE_COLOR_OTHER">Other</option>
+                    </select>
+                  </FormField>
+                )}
+              </form.Field>
+
+              <form.Field name="hasTattoos">
+                {(field: any) => (
+                  <FormField label="Tattoos">
+                    <HStack gap={4}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                        <input
+                          type="checkbox"
+                          checked={field.state.value}
+                          onChange={(e) => field.handleChange(e.target.checked)}
+                          style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                        />
+                        <Text fontSize="sm">Has tattoos</Text>
+                      </label>
+                    </HStack>
+                  </FormField>
+                )}
+              </form.Field>
+
+              <form.Field name="hasPiercings">
+                {(field: any) => (
+                  <FormField label="Piercings">
+                    <HStack gap={4}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                        <input
+                          type="checkbox"
+                          checked={field.state.value}
+                          onChange={(e) => field.handleChange(e.target.checked)}
+                          style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                        />
+                        <Text fontSize="sm">Has piercings</Text>
+                      </label>
+                    </HStack>
+                  </FormField>
+                )}
+              </form.Field>
+            </SimpleGrid>
+          </VStack>
+        </CollapsibleSection>
+
+        {/* Professional Section */}
+        <CollapsibleSection
+          title="Professional & Financial"
+          subtitle="Career, education, assets"
+          icon="💼"
+          isExpanded={expandedSections.professional}
+          onToggle={() => toggleSection('professional')}
+        >
+          <VStack align="stretch" gap={4}>
+            <SimpleGrid columns={{ base: 1, md: 2 }} gap={6}>
+              <form.Field name="employmentType">
+                {(field: any) => (
+                  <FormField label="Employment Type">
+                    <select
+                      value={field.state.value as string}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '8px 12px',
+                        borderRadius: '6px',
+                        border: '1px solid #e2e8f0',
+                        fontSize: '16px',
+                      }}
+                    >
+                      <option value="EMPLOYMENT_TYPE_UNSPECIFIED">Not specified</option>
+                      <option value="EMPLOYMENT_TYPE_EMPLOYED">Employed</option>
+                      <option value="EMPLOYMENT_TYPE_SELF_EMPLOYED">Self-employed</option>
+                      <option value="EMPLOYMENT_TYPE_BUSINESS">Business</option>
+                      <option value="EMPLOYMENT_TYPE_STUDENT">Student</option>
+                      <option value="EMPLOYMENT_TYPE_UNEMPLOYED">Unemployed</option>
+                      <option value="EMPLOYMENT_TYPE_RETIRED">Retired</option>
+                    </select>
+                  </FormField>
+                )}
+              </form.Field>
+
+              <form.Field name="industry">
+                {(field: any) => (
+                  <FormField label="Industry">
+                    <Input
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      placeholder="e.g., Technology, Healthcare"
+                      px={4}
+                      size="sm"
+                    />
+                  </FormField>
+                )}
+              </form.Field>
+
+              <form.Field name="yearsOfExperience">
+                {(field: any) => (
+                  <FormField label="Years of Experience">
+                    <NumberInput
+                      value={field.state.value}
+                      onChange={(v) => field.handleChange(v)}
+                      min={0}
+                      max={60}
+                      placeholder="0"
+                    />
+                  </FormField>
+                )}
+              </form.Field>
+
+              <form.Field name="highestEducation">
+                {(field: any) => (
+                  <FormField label="Highest Education">
+                    <select
+                      value={field.state.value as string}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '8px 12px',
+                        borderRadius: '6px',
+                        border: '1px solid #e2e8f0',
+                        fontSize: '16px',
+                      }}
+                    >
+                      <option value="EDUCATION_LEVEL_UNSPECIFIED">Not specified</option>
+                      <option value="EDUCATION_LEVEL_HIGH_SCHOOL">High School</option>
+                      <option value="EDUCATION_LEVEL_BACHELORS">Bachelors</option>
+                      <option value="EDUCATION_LEVEL_MASTERS">Masters</option>
+                      <option value="EDUCATION_LEVEL_DOCTORATE">Doctorate</option>
+                      <option value="EDUCATION_LEVEL_DIPLOMA">Diploma</option>
+                      <option value="EDUCATION_LEVEL_PROFESSIONAL">Professional</option>
+                    </select>
+                  </FormField>
+                )}
+              </form.Field>
+
+              <form.Field name="ownsProperty">
+                {(field: any) => (
+                  <FormField label="Property Ownership">
+                    <HStack gap={4}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                        <input
+                          type="checkbox"
+                          checked={field.state.value}
+                          onChange={(e) => field.handleChange(e.target.checked)}
+                          style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                        />
+                        <Text fontSize="sm">Owns property</Text>
+                      </label>
+                    </HStack>
+                  </FormField>
+                )}
+              </form.Field>
+
+              <form.Field name="ownsVehicle">
+                {(field: any) => (
+                  <FormField label="Vehicle Ownership">
+                    <HStack gap={4}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                        <input
+                          type="checkbox"
+                          checked={field.state.value}
+                          onChange={(e) => field.handleChange(e.target.checked)}
+                          style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                        />
+                        <Text fontSize="sm">Owns vehicle</Text>
+                      </label>
+                    </HStack>
+                  </FormField>
+                )}
+              </form.Field>
+            </SimpleGrid>
+          </VStack>
+        </CollapsibleSection>
+
+        {/* Family Info Section */}
+        <CollapsibleSection
+          title="Family Background"
+          subtitle="Family details and background"
+          icon="👨‍👩‍👧‍👦"
+          isExpanded={expandedSections.family}
+          onToggle={() => toggleSection('family')}
+        >
+          <VStack align="stretch" gap={4}>
+            <SimpleGrid columns={{ base: 1, md: 2 }} gap={6}>
+              <form.Field name="familyType">
+                {(field: any) => (
+                  <FormField label="Family Type">
+                    <select
+                      value={field.state.value as string}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '8px 12px',
+                        borderRadius: '6px',
+                        border: '1px solid #e2e8f0',
+                        fontSize: '16px',
+                      }}
+                    >
+                      <option value="FAMILY_TYPE_UNSPECIFIED">Not specified</option>
+                      <option value="FAMILY_TYPE_NUCLEAR">Nuclear</option>
+                      <option value="FAMILY_TYPE_JOINT">Joint</option>
+                      <option value="FAMILY_TYPE_EXTENDED">Extended</option>
+                    </select>
+                  </FormField>
+                )}
+              </form.Field>
+
+              <form.Field name="numSiblings">
+                {(field: any) => (
+                  <FormField label="Number of Siblings">
+                    <NumberInput
+                      value={field.state.value}
+                      onChange={(v) => field.handleChange(v)}
+                      min={0}
+                      max={20}
+                      placeholder="0"
+                    />
+                  </FormField>
+                )}
+              </form.Field>
+
+              <form.Field name="fatherOccupation">
+                {(field: any) => (
+                  <FormField label="Father's Occupation">
+                    <Input
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      placeholder="e.g., Engineer, Teacher"
+                      px={4}
+                      size="sm"
+                    />
+                  </FormField>
+                )}
+              </form.Field>
+
+              <form.Field name="motherOccupation">
+                {(field: any) => (
+                  <FormField label="Mother's Occupation">
+                    <Input
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      placeholder="e.g., Doctor, Homemaker"
+                      px={4}
+                      size="sm"
+                    />
+                  </FormField>
+                )}
+              </form.Field>
+
+              <form.Field name="livingSituation">
+                {(field: any) => (
+                  <FormField label="Living Situation">
+                    <select
+                      value={field.state.value as string}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '8px 12px',
+                        borderRadius: '6px',
+                        border: '1px solid #e2e8f0',
+                        fontSize: '16px',
+                      }}
+                    >
+                      <option value="LIVING_SITUATION_UNSPECIFIED">Not specified</option>
+                      <option value="LIVING_SITUATION_WITH_FAMILY">With family</option>
+                      <option value="LIVING_SITUATION_ALONE">Alone</option>
+                      <option value="LIVING_SITUATION_WITH_ROOMMATES">With roommates</option>
+                      <option value="LIVING_SITUATION_WITH_PARTNER">With partner</option>
+                    </select>
+                  </FormField>
+                )}
+              </form.Field>
+
+              <form.Field name="familyLocation">
+                {(field: any) => (
+                  <FormField label="Family Location">
+                    <Input
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      placeholder="City, State/Country"
+                      px={4}
+                      size="sm"
+                    />
+                  </FormField>
+                )}
+              </form.Field>
+
+              <Box gridColumn={{ base: '1', md: '1 / -1' }}>
+                <form.Field name="aboutFamily">
+                  {(field: any) => (
+                    <FormField label="About Family">
+                      <Textarea
+                        value={field.state.value}
+                        onChange={(e) => field.handleChange(e.target.value)}
+                        placeholder="Tell us about your family..."
+                        rows={4}
+                      />
+                    </FormField>
+                  )}
+                </form.Field>
+              </Box>
+            </SimpleGrid>
           </VStack>
         </CollapsibleSection>
 
