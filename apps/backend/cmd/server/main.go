@@ -21,6 +21,7 @@ import (
 	commonpb "github.com/datifyy/backend/gen/common/v1"
 	userpb "github.com/datifyy/backend/gen/user/v1"
 	"github.com/datifyy/backend/internal/email"
+	"github.com/datifyy/backend/internal/middleware"
 	"github.com/datifyy/backend/internal/service"
 	"github.com/datifyy/backend/internal/slack"
 	"github.com/lib/pq"
@@ -177,6 +178,10 @@ func startHTTPServer(port string, server *Server, db *sql.DB, redisClient *redis
 		log.Println("⚠ Slack integration disabled (SLACK_WEBHOOK_URL not set)")
 	}
 
+	// Initialize rate limiter
+	rateLimiter := middleware.NewRateLimiter(redisClient)
+	log.Println("✓ Rate limiter initialized")
+
 	// Auth REST endpoints (wrapper around gRPC)
 	authService := service.NewAuthService(db, redisClient, emailClient)
 	mux.HandleFunc("/api/v1/auth/register/email", createRegisterHandler(authService))
@@ -231,8 +236,9 @@ func startHTTPServer(port string, server *Server, db *sql.DB, redisClient *redis
 	mux.HandleFunc("/api/v1/slack/notification", createSlackNotificationHandler(slackService))
 	mux.HandleFunc("/api/v1/slack/test", createSlackTestHandler(slackService))
 
-	// Add CORS middleware
-	handler := enableCORS(mux)
+	// Apply middleware chain: Rate Limiter -> CORS -> Handlers
+	handler := rateLimiter.Middleware(mux)
+	handler = enableCORS(handler)
 
 	// Start server
 	log.Printf("🌐 HTTP server listening on port %s", port)
