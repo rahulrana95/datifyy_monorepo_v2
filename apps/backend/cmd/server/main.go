@@ -227,6 +227,7 @@ func startHTTPServer(port string, server *Server, db *sql.DB, redisClient *redis
 	mux.HandleFunc("/api/v1/admin/curation/action", createAdminUpdateCuratedMatchActionHandler(datesService))
 	mux.HandleFunc("/api/v1/admin/curation/matches", createAdminGetCuratedMatchesByStatusHandler(datesService))
 	mux.HandleFunc("/api/v1/admin/curation/matches/", createAdminCreateSuggestionsHandler(datesService))
+	mux.HandleFunc("/api/v1/admin/dates/schedule", createAdminScheduleDateHandler(datesService))
 
 	// User Date Suggestions endpoints
 	mux.HandleFunc("/api/v1/user/suggestions", createUserGetSuggestionsHandler(datesService))
@@ -2243,6 +2244,83 @@ func createUserRespondToSuggestionHandler(datesService *service.DatesService) ht
 			"success": true,
 			"message": fmt.Sprintf("Suggestion %s successfully", action),
 			"action":  action,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(jsonResp)
+	}
+}
+
+// createAdminScheduleDateHandler schedules a date from accepted match
+func createAdminScheduleDateHandler(datesService *service.DatesService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		var reqBody struct {
+			MatchID         int    `json:"matchId"`
+			GenieID         int    `json:"genieId"`
+			ScheduledTime   string `json:"scheduledTime"` // RFC3339 format
+			DurationMinutes int    `json:"durationMinutes"`
+			DateType        string `json:"dateType"` // "online" or "offline"
+		}
+
+		if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+			http.Error(w, fmt.Sprintf("Invalid JSON: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		if reqBody.MatchID <= 0 {
+			http.Error(w, "Match ID is required", http.StatusBadRequest)
+			return
+		}
+
+		if reqBody.GenieID <= 0 {
+			http.Error(w, "Genie ID is required", http.StatusBadRequest)
+			return
+		}
+
+		if reqBody.DurationMinutes <= 0 {
+			reqBody.DurationMinutes = 60 // Default 1 hour
+		}
+
+		if reqBody.DateType == "" {
+			reqBody.DateType = "online" // Default to online
+		}
+
+		// Parse scheduled time
+		scheduledTime, err := time.Parse(time.RFC3339, reqBody.ScheduledTime)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Invalid scheduled time format (use RFC3339): %v", err), http.StatusBadRequest)
+			return
+		}
+
+		// Schedule the date
+		scheduledDate, err := datesService.ScheduleDateFromMatch(
+			r.Context(), reqBody.MatchID, reqBody.GenieID,
+			scheduledTime, reqBody.DurationMinutes, reqBody.DateType,
+		)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Failed to schedule date: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		jsonResp := map[string]interface{}{
+			"success": true,
+			"message": "Date scheduled successfully",
+			"scheduledDate": map[string]interface{}{
+				"id":              scheduledDate.ID,
+				"user1Id":         scheduledDate.User1ID,
+				"user2Id":         scheduledDate.User2ID,
+				"genieId":         scheduledDate.GenieID.Int64,
+				"scheduledTime":   scheduledDate.ScheduledTime.Format(time.RFC3339),
+				"durationMinutes": scheduledDate.DurationMinutes,
+				"status":          scheduledDate.Status,
+				"dateType":        scheduledDate.DateType,
+				"notes":           scheduledDate.Notes.String, // Contains Google Meet link and calendar info
+			},
 		}
 
 		w.Header().Set("Content-Type", "application/json")

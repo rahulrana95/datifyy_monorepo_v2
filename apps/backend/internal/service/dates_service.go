@@ -21,6 +21,7 @@ type DatesService struct {
 	aiProvider           ai.AIProvider
 	curatedMatchesRepo   *repository.CuratedMatchesRepository
 	suggestionsRepo      *repository.DateSuggestionsRepository
+	scheduledDatesRepo   *repository.ScheduledDatesRepository
 	adminRepo            *repository.AdminRepository
 	userRepo             *repository.UserRepository
 	profileRepo          *repository.UserProfileRepository
@@ -56,6 +57,7 @@ func NewDatesService(db *sql.DB, redisClient *redis.Client) (*DatesService, erro
 		aiProvider:           aiProvider,
 		curatedMatchesRepo:   repository.NewCuratedMatchesRepository(db),
 		suggestionsRepo:      repository.NewDateSuggestionsRepository(db),
+		scheduledDatesRepo:   repository.NewScheduledDatesRepository(db),
 		adminRepo:            repository.NewAdminRepository(db),
 		userRepo:             repository.NewUserRepository(db),
 		profileRepo:          repository.NewUserProfileRepository(db),
@@ -794,4 +796,138 @@ func (s *DatesService) RespondToSuggestion(ctx context.Context, suggestionID int
 
 	log.Printf("User %d %s suggestion %d", userID, map[bool]string{true: "accepted", false: "rejected"}[accept], suggestionID)
 	return nil
+}
+
+// ScheduleDateFromMatch schedules a date from a curated match with genie assignment
+func (s *DatesService) ScheduleDateFromMatch(ctx context.Context, matchID int, genieID int, scheduledTime time.Time, durationMinutes int, dateType string) (*repository.ScheduledDate, error) {
+	// Get the curated match
+	match, err := s.curatedMatchesRepo.GetByID(ctx, matchID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get curated match: %w", err)
+	}
+
+	// Verify both users have accepted their suggestions
+	user1Suggestions, err := s.suggestionsRepo.ListByUser(ctx, match.User1ID, "accepted", 100, 0)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user1 suggestions: %w", err)
+	}
+
+	user2Suggestions, err := s.suggestionsRepo.ListByUser(ctx, match.User2ID, "accepted", 100, 0)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user2 suggestions: %w", err)
+	}
+
+	// Check if both users have accepted this match
+	user1Accepted := false
+	user2Accepted := false
+	for _, sugg := range user1Suggestions {
+		if sugg.CuratedMatchID != nil && *sugg.CuratedMatchID == matchID {
+			user1Accepted = true
+			break
+		}
+	}
+	for _, sugg := range user2Suggestions {
+		if sugg.CuratedMatchID != nil && *sugg.CuratedMatchID == matchID {
+			user2Accepted = true
+			break
+		}
+	}
+
+	if !user1Accepted || !user2Accepted {
+		return nil, fmt.Errorf("both users must accept the suggestion before scheduling")
+	}
+
+	// Get user details for generating meet link and calendar info
+	user1, err := s.userRepo.GetByID(ctx, match.User1ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user1: %w", err)
+	}
+	user2, err := s.userRepo.GetByID(ctx, match.User2ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user2: %w", err)
+	}
+
+	// Generate Google Meet link
+	meetLink := generateGoogleMeetLink(user1.Name, user2.Name, scheduledTime)
+
+	// Generate calendar invite text
+	calendarInfo := generateCalendarInviteText(user1.Name, user2.Name, scheduledTime, durationMinutes, meetLink)
+
+	// Create scheduled date
+	genieIDNullable := sql.NullInt64{Int64: int64(genieID), Valid: true}
+	notesText := sql.NullString{String: fmt.Sprintf("Google Meet: %s\n\nCalendar Info:\n%s", meetLink, calendarInfo), Valid: true}
+
+	scheduledDate := &repository.ScheduledDate{
+		User1ID:         match.User1ID,
+		User2ID:         match.User2ID,
+		GenieID:         genieIDNullable,
+		ScheduledTime:   scheduledTime,
+		DurationMinutes: durationMinutes,
+		Status:          "scheduled",
+		DateType:        dateType,
+		Notes:           notesText,
+		AdminNotes:      sql.NullString{String: fmt.Sprintf("Scheduled by genie %d from curated match %d", genieID, matchID), Valid: true},
+	}
+
+	err = s.scheduledDatesRepo.Create(ctx, scheduledDate)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create scheduled date: %w", err)
+	}
+
+	// Link the scheduled date to the curated match
+	err = s.curatedMatchesRepo.LinkScheduledDate(ctx, matchID, scheduledDate.ID)
+	if err != nil {
+		log.Printf("Warning: failed to link scheduled date to curated match: %v", err)
+	}
+
+	log.Printf("Scheduled date %d for users %d and %d with genie %d", scheduledDate.ID, match.User1ID, match.User2ID, genieID)
+	return scheduledDate, nil
+}
+
+// generateGoogleMeetLink generates a Google Meet link (simplified version)
+// In production, this would use the Google Calendar API to create actual meets
+func generateGoogleMeetLink(user1Name, user2Name string, scheduledTime time.Time) string {
+	// For now, generate a placeholder Google Meet link
+	// In production, integrate with Google Calendar API to create real meetings
+	meetID := fmt.Sprintf("datifyy-%d-%s-%s", scheduledTime.Unix(),
+		sanitizeForURL(user1Name), sanitizeForURL(user2Name))
+	return fmt.Sprintf("https://meet.google.com/%s", meetID[:20])
+}
+
+// generateCalendarInviteText generates calendar invite information
+// In production, this would use Google Calendar API to send actual invites
+func generateCalendarInviteText(user1Name, user2Name string, scheduledTime time.Time, durationMinutes int, meetLink string) string {
+	endTime := scheduledTime.Add(time.Duration(durationMinutes) * time.Minute)
+
+	return fmt.Sprintf(`📅 Date Details:
+• When: %s
+• Duration: %d minutes
+• End Time: %s
+• Participants: %s & %s
+• Location: %s
+
+This is your Datifyy curated date! 💝
+`,
+		scheduledTime.Format("Monday, January 2, 2006 at 3:04 PM MST"),
+		durationMinutes,
+		endTime.Format("3:04 PM MST"),
+		user1Name,
+		user2Name,
+		meetLink,
+	)
+}
+
+// sanitizeForURL removes special characters for URL-safe strings
+func sanitizeForURL(s string) string {
+	// Simple implementation - in production use proper URL encoding
+	result := ""
+	for _, r := range s {
+		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') {
+			result += string(r)
+		}
+	}
+	if len(result) > 10 {
+		result = result[:10]
+	}
+	return result
 }
