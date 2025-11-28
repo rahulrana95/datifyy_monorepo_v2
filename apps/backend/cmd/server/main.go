@@ -26,6 +26,8 @@ import (
 	"github.com/datifyy/backend/internal/middleware"
 	"github.com/datifyy/backend/internal/service"
 	"github.com/datifyy/backend/internal/slack"
+	"github.com/datifyy/backend/internal/util/converter"
+	// "github.com/datifyy/backend/internal/util/parser"
 	"github.com/lib/pq"
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc"
@@ -962,10 +964,7 @@ func createAvailabilityHandler(availabilityService *service.AvailabilityService)
 			}
 
 			// Convert to camelCase JSON
-			slots := make([]map[string]interface{}, len(resp.Slots))
-			for i, slot := range resp.Slots {
-				slots[i] = convertSlotToJSON(slot)
-			}
+			slots := converter.AvailabilitySlotsToJSON(resp.Slots)
 
 			jsonResp := map[string]interface{}{
 				"slots":      slots,
