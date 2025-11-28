@@ -21,6 +21,7 @@ import (
 	availabilitypb "github.com/datifyy/backend/gen/availability/v1"
 	commonpb "github.com/datifyy/backend/gen/common/v1"
 	userpb "github.com/datifyy/backend/gen/user/v1"
+	"github.com/datifyy/backend/internal/config"
 	"github.com/datifyy/backend/internal/email"
 	"github.com/datifyy/backend/internal/middleware"
 	"github.com/datifyy/backend/internal/service"
@@ -38,29 +39,17 @@ type Server struct {
 }
 
 func main() {
-	// Get configuration from environment
-	httpPort := os.Getenv("PORT")
-	if httpPort == "" {
-		httpPort = "8080"
+	// Load configuration
+	cfg := config.Load()
+	if err := cfg.Validate(); err != nil {
+		log.Fatalf("Invalid configuration: %v", err)
 	}
 
-	grpcPort := os.Getenv("GRPC_PORT")
-	if grpcPort == "" {
-		grpcPort = "9090"
-	}
-
-	dbURL := os.Getenv("DATABASE_URL")
-	if dbURL == "" {
-		dbURL = "postgres://devuser:devpass@localhost:5432/monorepo_dev?sslmode=disable"
-	}
-
-	redisURL := os.Getenv("REDIS_URL")
-	if redisURL == "" {
-		redisURL = "redis://localhost:6379"
-	}
+	log.Printf("🚀 Starting Datifyy Backend (HTTP: %s, gRPC: %s, Env: %s)",
+		cfg.HTTPPort, cfg.GRPCPort, cfg.Environment)
 
 	// Connect to PostgreSQL
-	db, err := connectPostgres(dbURL)
+	db, err := connectPostgres(cfg.DatabaseURL)
 	if err != nil {
 		log.Printf("Warning: Could not connect to PostgreSQL: %v", err)
 		log.Println("Running without database connection")
@@ -70,7 +59,7 @@ func main() {
 	}
 
 	// Connect to Redis
-	redisClient, err := connectRedis(redisURL)
+	redisClient, err := connectRedis(cfg.RedisURL)
 	if err != nil {
 		log.Printf("Warning: Could not connect to Redis: %v", err)
 		log.Println("Running without Redis connection")
@@ -86,10 +75,10 @@ func main() {
 	}
 
 	// Start gRPC server in a goroutine
-	go startGRPCServer(grpcPort, db, redisClient)
+	go startGRPCServer(cfg.GRPCPort, db, redisClient)
 
 	// Start HTTP server in a goroutine
-	go startHTTPServer(httpPort, httpServer, db, redisClient)
+	go startHTTPServer(cfg, httpServer, db, redisClient)
 
 	// Wait for interrupt signal to gracefully shutdown the servers
 	quit := make(chan os.Signal, 1)
@@ -110,16 +99,8 @@ func startGRPCServer(port string, db *sql.DB, redisClient *redis.Client) {
 	grpcServer := grpc.NewServer()
 
 	// Initialize email client
-	emailAPIKey := os.Getenv("MAILERSEND_API_KEY")
-	emailFrom := os.Getenv("EMAIL_FROM")
-	if emailFrom == "" {
-		emailFrom = "noreply@datifyy.com"
-	}
-	emailFromName := os.Getenv("EMAIL_FROM_NAME")
-	if emailFromName == "" {
-		emailFromName = "Datifyy"
-	}
-	emailClient := email.NewMailerSendClient(emailAPIKey, emailFrom, emailFromName)
+	cfg := config.Load()
+	emailClient := email.NewMailerSendClient(cfg.MailerSendAPIKey, cfg.EmailFrom, cfg.EmailFromName)
 
 	// Register services
 	authService := service.NewAuthService(db, redisClient, emailClient)
@@ -147,7 +128,7 @@ func startGRPCServer(port string, db *sql.DB, redisClient *redis.Client) {
 }
 
 // startHTTPServer starts the HTTP/REST server
-func startHTTPServer(port string, server *Server, db *sql.DB, redisClient *redis.Client) {
+func startHTTPServer(cfg *config.Config, server *Server, db *sql.DB, redisClient *redis.Client) {
 	// Setup routes
 	mux := http.NewServeMux()
 
@@ -159,20 +140,10 @@ func startHTTPServer(port string, server *Server, db *sql.DB, redisClient *redis
 	mux.HandleFunc("/api/test-redis", server.testRedisHandler)
 
 	// Initialize email client
-	emailAPIKey := os.Getenv("MAILERSEND_API_KEY")
-	emailFrom := os.Getenv("EMAIL_FROM")
-	if emailFrom == "" {
-		emailFrom = "noreply@datifyy.com"
-	}
-	emailFromName := os.Getenv("EMAIL_FROM_NAME")
-	if emailFromName == "" {
-		emailFromName = "Datifyy"
-	}
-	emailClient := email.NewMailerSendClient(emailAPIKey, emailFrom, emailFromName)
+	emailClient := email.NewMailerSendClient(cfg.MailerSendAPIKey, cfg.EmailFrom, cfg.EmailFromName)
 
 	// Initialize Slack client
-	slackWebhookURL := os.Getenv("SLACK_WEBHOOK_URL")
-	slackService := slack.NewSlackService(slackWebhookURL)
+	slackService := slack.NewSlackService(cfg.SlackWebhookURL)
 	if slackService.IsEnabled() {
 		log.Println("✓ Slack integration enabled")
 	} else {
@@ -267,8 +238,8 @@ func startHTTPServer(port string, server *Server, db *sql.DB, redisClient *redis
 	handler = enableCORS(handler)
 
 	// Start server
-	log.Printf("🌐 HTTP server listening on port %s", port)
-	if err := http.ListenAndServe(fmt.Sprintf(":%s", port), handler); err != nil {
+	log.Printf("🌐 HTTP server listening on port %s", cfg.HTTPPort)
+	if err := http.ListenAndServe(fmt.Sprintf(":%s", cfg.HTTPPort), handler); err != nil {
 		log.Fatal(err)
 	}
 }
