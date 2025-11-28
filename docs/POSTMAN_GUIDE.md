@@ -113,7 +113,7 @@ The `admin_token` is automatically saved and used for admin endpoints.
 
 ## Collection Overview
 
-The Postman collection includes **34 HTTP REST endpoints** organized in folders:
+The Postman collection includes **45+ HTTP REST endpoints** organized in folders:
 
 ### 1. Health & Diagnostics (5 endpoints)
 - GET Health Check
@@ -136,13 +136,23 @@ The Postman collection includes **34 HTTP REST endpoints** organized in folders:
 - GET Partner Preferences
 - PUT Update Partner Preferences
 
-### 4. Availability (4 endpoints)
+### 4. Love Zone - Date Management (8 endpoints)
+- GET Current User Details
+- GET Date Suggestions
+- POST Respond to Suggestion
+- GET Love Zone Dashboard
+- GET Pending Suggestions
+- GET Upcoming Dates
+- GET Past Dates
+- GET Rejected Suggestions
+
+### 5. Availability (4 endpoints)
 - GET User Availability
 - POST Add Availability
 - PUT Update Availability
 - DELETE Availability
 
-### 5. Admin Operations (15 endpoints)
+### 6. Admin Operations (18+ endpoints)
 - POST Admin Login
 - GET Platform Analytics
 - GET All Users (with filters)

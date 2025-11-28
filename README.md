@@ -5,12 +5,13 @@ A production-ready AI-powered dating platform with React frontend, Go backend, P
 ## 🚀 Features
 
 - **AI-Powered Matching** - Google Gemini 2.5-flash integration for intelligent compatibility analysis
+- **Love Zone Dashboard** - Unified date management interface for users with suggestions, upcoming dates, past dates, and statistics
 - **Comprehensive Admin Dashboard** - User management, analytics, AI-powered date curation
 - **Rate Limiting** - Tiered rate limiting with Redis-backed distributed limits (100-400 req/min)
 - **Slack Integration** - Real-time notifications for user events, admin activities, and system alerts
 - **Full-Stack Development Environment** - React + Go + PostgreSQL + Redis
 - **Hot Reload** - Automatic reload for both frontend (React) and backend (Go with Air)
-- **Type Safety** - Protocol Buffers for API contracts with 100+ endpoints (38 HTTP REST + 66 gRPC)
+- **Type Safety** - Protocol Buffers for API contracts with 121+ endpoints (45+ HTTP REST + 76 gRPC)
 - **Dual API Architecture** - Both HTTP/REST (port 8080) and gRPC (port 9090) servers
 - **Database Ready** - PostgreSQL with 8 migrations and Redis for caching
 - **Testing Support** - Separate test environment with isolated databases
@@ -57,6 +58,7 @@ A production-ready AI-powered dating platform with React frontend, Go backend, P
 5. **Access the applications:**
    - 🌐 Frontend: http://localhost:3000
    - 👤 User Pages: http://localhost:3000/profile, /partner-preferences, /availability
+   - 💝 Love Zone: http://localhost:3000/love-zone (date management dashboard)
    - 🔐 Admin Dashboard: http://localhost:3000/admin
    - 💝 AI Date Curation: http://localhost:3000/admin/curate
    - 🔧 Backend HTTP API: http://localhost:8080
@@ -91,21 +93,25 @@ A production-ready AI-powered dating platform with React frontend, Go backend, P
 │   │   ├── cmd/server/             # Main server entry point
 │   │   │   └── main.go             # HTTP & gRPC server setup (2,500+ lines)
 │   │   ├── internal/               # Private application code
-│   │   │   ├── service/            # Business logic layer
+│   │   │   ├── service/            # Business logic layer (20 files, 10,684 lines)
 │   │   │   │   ├── auth_service.go          # Authentication service
 │   │   │   │   ├── user_service.go          # User profile service
 │   │   │   │   ├── admin_service.go         # Admin operations service
 │   │   │   │   ├── availability_service.go  # User availability management
 │   │   │   │   ├── dates_service.go         # AI-powered date curation
+│   │   │   │   ├── love_zone_service.go     # Love Zone dashboard service
+│   │   │   │   ├── user_preferences_service.go  # User preferences management
+│   │   │   │   ├── utils_user_profile.go    # User profile utilities
 │   │   │   │   └── ai_*.go                  # AI/Gemini integration
 │   │   │   ├── auth/               # JWT, session management
 │   │   │   ├── email/              # Email service (MailerSend)
-│   │   │   └── repository/         # Data access layer (6 repositories)
+│   │   │   └── repository/         # Data access layer (7 repositories, 3,709 lines)
 │   │   │       ├── user_repository.go
-│   │   │       ├── session_repository.go
+│   │   │       ├── user_profile_repository.go
 │   │   │       ├── admin_repository.go
 │   │   │       ├── availability_repository.go
-│   │   │       ├── dates_repository.go
+│   │   │       ├── date_suggestions_repository.go
+│   │   │       ├── scheduled_dates_repository.go
 │   │   │       └── curated_matches_repository.go
 │   │   ├── gen/                    # Generated protobuf files
 │   │   │   ├── auth/v1/            # Auth service definitions
@@ -187,11 +193,11 @@ The backend runs **two servers simultaneously**:
 
 ### API Endpoints
 
-The platform provides **104 endpoints total**:
-- **38 HTTP REST endpoints** (port 8080) - JSON-based API for web/mobile clients
-- **66 gRPC RPCs** (port 9090) - High-performance typed API
+The platform provides **121+ endpoints total**:
+- **45+ HTTP REST endpoints** (port 8080) - JSON-based API for web/mobile clients
+- **76 gRPC RPCs** (port 9090) - High-performance typed API
 
-#### HTTP REST Endpoints (38 Total)
+#### HTTP REST Endpoints (45+ Total)
 
 **Health & Diagnostics (5)**
 - `GET /health` - Basic health check
@@ -214,13 +220,23 @@ The platform provides **104 endpoints total**:
 - `GET /api/v1/user/preferences/partner` - Get partner preferences
 - `PUT /api/v1/user/preferences/partner` - Update partner preferences
 
+**Love Zone - Date Management (8)**
+- `GET /api/v1/user/me` - Get current user details
+- `GET /api/v1/user/suggestions` - Get date suggestions
+- `POST /api/v1/user/suggestions/:id` - Respond to date suggestion
+- `GET /api/v1/user/love-zone/dashboard` - Love Zone dashboard with statistics
+- `GET /api/v1/user/love-zone/suggestions` - Pending date suggestions
+- `GET /api/v1/user/love-zone/upcoming` - Upcoming scheduled dates
+- `GET /api/v1/user/love-zone/past` - Past dates
+- `GET /api/v1/user/love-zone/rejected` - Rejected suggestions
+
 **Availability (4)**
 - `GET /api/v1/availability` - Get user's availability
 - `POST /api/v1/availability` - Add availability slot
 - `PUT /api/v1/availability/:id` - Update availability slot
 - `DELETE /api/v1/availability/:id` - Delete availability slot
 
-**Admin Operations (15)**
+**Admin Operations (18+)**
 - `POST /api/v1/admin/login` - Admin login
 - `GET /api/v1/admin/analytics` - Platform analytics
 - `GET /api/v1/admin/users` - List all users with filters
@@ -243,7 +259,7 @@ The platform provides **104 endpoints total**:
 - `POST /api/v1/slack/notification` - Send specialized notification (user_event/admin_activity/system_alert/ai_match)
 - `GET/POST /api/v1/slack/test` - Test Slack integration status
 
-#### gRPC Services (66 RPCs)
+#### gRPC Services (76 RPCs)
 
 All gRPC services available at `localhost:9090`:
 
@@ -255,14 +271,15 @@ All gRPC services available at `localhost:9090`:
 - Device Management: `RegisterDevice`, `UpdateDevice`, `UnregisterDevice`, `GetUserDevices`
 - Profile: `GetProfile`, `UpdateProfile`, `DeleteAccount`
 
-**UserService (15 RPCs)**
+**UserService (22 RPCs)**
 - Profile: `GetMyProfile`, `GetUserProfile`, `UpdateProfile`, `DeleteAccount`
 - Photos: `UploadProfilePhoto`, `DeleteProfilePhoto`
 - Preferences: `GetPartnerPreferences`, `UpdatePartnerPreferences`, `GetUserPreferences`, `UpdateUserPreferences`
 - Discovery: `SearchUsers`
 - Interactions: `BlockUser`, `UnblockUser`, `ListBlockedUsers`, `ReportUser`
+- Love Zone: `GetLoveZoneDashboard`, `GetLoveZoneSuggestions`, `GetUpcomingDates`, `GetPastDates`, `GetRejectedSuggestions`, `GetLoveZoneStatistics`
 
-**AdminService (40 RPCs)**
+**AdminService (25 RPCs)**
 - Authentication: `AdminLogin`, `AdminLogout`, `GetAdminProfile`, `UpdateAdminProfile`
 - User Management: `GetAllUsers`, `GetUserById`, `UpdateUserStatus`, `DeleteUser`, `SearchUsers`
 - Verification: `ManuallyVerifyUser`, `GetVerificationRequests`, `ApproveVerification`, `RejectVerification`
@@ -272,21 +289,16 @@ All gRPC services available at `localhost:9090`:
 - Date Curation: `GetCurationCandidates`, `CurateDates`
 - And more...
 
-**AvailabilityService (8 RPCs)**
+**AvailabilityService (3 RPCs)**
 - `GetAvailability` - Get user's availability slots
-- `AddAvailability` - Add new availability slot
-- `UpdateAvailability` - Update existing slot
+- `SubmitAvailability` - Submit availability slots (bulk)
 - `DeleteAvailability` - Remove availability slot
-- `GetAvailableUsers` - Find users available on specific dates
-- `BulkAddAvailability` - Add multiple slots at once
-- `GetUpcomingAvailability` - Get user's upcoming slots
-- `ClearPastAvailability` - Remove expired slots
 
-**DatesService (2 RPCs)**
+**DatesService (included in AdminService)**
 - `GetCurationCandidates` - Get users available for AI-powered matching
 - `CurateDates` - Analyze compatibility using Google Gemini AI
 
-See [GRPC_TESTING.md](./docs/GRPC_TESTING.md) for testing gRPC endpoints and [BACKEND_ARCHITECTURE.md](./docs/BACKEND_ARCHITECTURE.md) for detailed service documentation with all 100 endpoints.
+See [GRPC_TESTING.md](./docs/GRPC_TESTING.md) for testing gRPC endpoints and [BACKEND_ARCHITECTURE.md](./docs/BACKEND_ARCHITECTURE.md) for detailed service documentation with all 121+ endpoints.
 
 ## 🎯 Key Features
 
@@ -322,6 +334,12 @@ Comprehensive admin panel with:
 - **Profile Management**: Complete profile with photos, preferences, and details
 - **Partner Preferences**: Detailed partner preference settings
 - **Availability Management**: Manage date availability with calendar integration
+- **Love Zone Dashboard**: Unified date management interface
+  - View pending date suggestions with AI compatibility scores
+  - Track upcoming scheduled dates with location details
+  - Review past date experiences
+  - Manage rejected suggestions
+  - Real-time statistics (total suggestions, pending, scheduled, completed)
 - **Account Verification**: Multi-level verification (email, Aadhar, work email)
 
 ## 🗄️ Database & Cache

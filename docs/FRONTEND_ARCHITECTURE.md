@@ -26,6 +26,7 @@ The Datifyy frontend is a modern React application built with TypeScript, Chakra
 
 ### Key Features
 
+- **Love Zone Dashboard** - Unified date management interface for users
 - **AI-Powered Date Curation Admin UI** - Intelligent matching interface for admins
 - **Comprehensive Admin Dashboard** - User management, analytics, verification
 - **User Profile Management** - Complete profile creation and editing
@@ -77,7 +78,7 @@ apps/frontend/src/
 ├── App.tsx                      # Root component with routing
 ├── index.tsx                    # Application entry point
 │
-├── pages/                       # Page components (17 total)
+├── pages/                       # Page components (18 total)
 │   ├── LandingPage/            # Public landing page
 │   │   ├── LandingPage.tsx
 │   │   └── components/         # Landing page sections
@@ -100,6 +101,10 @@ apps/frontend/src/
 │   │
 │   ├── AvailabilityPage/       # Date availability management
 │   │   ├── AvailabilityPage.tsx
+│   │   └── index.ts
+│   │
+│   ├── LoveZonePage/           # Love Zone - Date management dashboard
+│   │   ├── LoveZonePage.tsx    # User dates dashboard with suggestions, upcoming, past dates
 │   │   └── index.ts
 │   │
 │   ├── ThemePreview/           # Component library showcase
@@ -127,8 +132,10 @@ apps/frontend/src/
 │       │   └── AdminProfile.tsx
 │       ├── Admins/
 │       │   └── AdminManagement.tsx
-│       └── Genie/
-│           └── AdminGenie.tsx
+│       ├── Genie/
+│       │   └── AdminGenie.tsx
+│       └── Dashboard/
+│           └── AdminDashboard.tsx
 │
 ├── components/                  # Shared components
 │   ├── auth/                   # Authentication components
