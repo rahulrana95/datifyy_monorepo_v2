@@ -100,7 +100,7 @@ func cleanupTestData(t *testing.T, email string) {
 	ctx := context.Background()
 
 	// Delete user and related data (cascades)
-	_, err := testDB.ExecContext(ctx, "DELETE FROM users WHERE email = $1", email)
+	_, err := testDB.ExecContext(ctx, "DELETE FROM datifyy_v2_users WHERE email = $1", email)
 	if err != nil {
 		t.Logf("Warning: failed to cleanup test user: %v", err)
 	}
@@ -181,7 +181,7 @@ func TestRegisterWithEmail_Success(t *testing.T) {
 	var userID int
 	var emailVerified bool
 	err = testDB.QueryRowContext(ctx,
-		"SELECT id, email_verified FROM users WHERE email = $1",
+		"SELECT id, email_verified FROM datifyy_v2_users WHERE email = $1",
 		testEmail,
 	).Scan(&userID, &emailVerified)
 
@@ -196,7 +196,7 @@ func TestRegisterWithEmail_Success(t *testing.T) {
 	// Verify profile was created
 	var profileID int
 	err = testDB.QueryRowContext(ctx,
-		"SELECT id FROM user_profiles WHERE user_id = $1",
+		"SELECT id FROM datifyy_v2_user_profiles WHERE user_id = $1",
 		userID,
 	).Scan(&profileID)
 
@@ -207,7 +207,7 @@ func TestRegisterWithEmail_Success(t *testing.T) {
 	// Verify partner preferences were created
 	var preferencesID int
 	err = testDB.QueryRowContext(ctx,
-		"SELECT id FROM partner_preferences WHERE user_id = $1",
+		"SELECT id FROM datifyy_v2_partner_preferences WHERE user_id = $1",
 		userID,
 	).Scan(&preferencesID)
 
@@ -218,7 +218,7 @@ func TestRegisterWithEmail_Success(t *testing.T) {
 	// Verify session was created
 	var sessionID string
 	err = testDB.QueryRowContext(ctx,
-		"SELECT id FROM sessions WHERE user_id = $1 AND is_active = true",
+		"SELECT id FROM datifyy_v2_sessions WHERE user_id = $1 AND is_active = true",
 		userID,
 	).Scan(&sessionID)
 

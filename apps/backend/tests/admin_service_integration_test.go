@@ -47,7 +47,7 @@ func setupAdminServiceTest(t *testing.T) (*sql.DB, *service.AdminService, func()
 	cleanup := func() {
 		// Cleanup test data
 		db.Exec("DELETE FROM admin_users WHERE email LIKE 'test_admin_%@test.com'")
-		db.Exec("DELETE FROM users WHERE email LIKE 'test_user_%@test.com'")
+		db.Exec("DELETE FROM datifyy_v2_users WHERE email LIKE 'test_user_%@test.com'")
 		db.Close()
 		redisClient.Close()
 	}
@@ -76,7 +76,7 @@ func createTestUserForAdmin(t *testing.T, db *sql.DB, email, name, gender string
 
 	var userID int
 	err = db.QueryRow(`
-		INSERT INTO users (email, name, password_hash, gender, account_status, email_verified)
+		INSERT INTO datifyy_v2_users (email, name, password_hash, gender, account_status, email_verified)
 		VALUES ($1, $2, $3, $4, 'ACTIVE', true)
 		RETURNING id
 	`, email, name, passwordHash, gender).Scan(&userID)
@@ -373,11 +373,11 @@ func TestAdminService_BulkUserAction_Activate_Integration(t *testing.T) {
 
 	// Verify users are activated
 	var status1, status2 string
-	err = db.QueryRow("SELECT account_status FROM users WHERE id = $1", user1ID).Scan(&status1)
+	err = db.QueryRow("SELECT account_status FROM datifyy_v2_users WHERE id = $1", user1ID).Scan(&status1)
 	require.NoError(t, err)
 	assert.Equal(t, "ACTIVE", status1)
 
-	err = db.QueryRow("SELECT account_status FROM users WHERE id = $2", user2ID).Scan(&status2)
+	err = db.QueryRow("SELECT account_status FROM datifyy_v2_users WHERE id = $2", user2ID).Scan(&status2)
 	require.NoError(t, err)
 	assert.Equal(t, "ACTIVE", status2)
 }
@@ -409,7 +409,7 @@ func TestAdminService_BulkUserAction_Verify_Integration(t *testing.T) {
 
 	// Verify user is verified
 	var emailVerified bool
-	err = db.QueryRow("SELECT email_verified FROM users WHERE id = $1", user1ID).Scan(&emailVerified)
+	err = db.QueryRow("SELECT email_verified FROM datifyy_v2_users WHERE id = $1", user1ID).Scan(&emailVerified)
 	require.NoError(t, err)
 	assert.True(t, emailVerified)
 }
@@ -427,7 +427,7 @@ func createTestUserForCuration(t *testing.T, db *sql.DB, email, name, gender str
 	// Create user
 	var userID int
 	err := db.QueryRowContext(ctx, `
-		INSERT INTO users (email, name, password_hash, gender, date_of_birth, account_status, email_verified)
+		INSERT INTO datifyy_v2_users (email, name, password_hash, gender, date_of_birth, account_status, email_verified)
 		VALUES ($1, $2, $3, $4, $5, 'ACTIVE', true)
 		RETURNING id
 	`, email, name, "hashedpassword", gender, dob).Scan(&userID)
@@ -495,10 +495,10 @@ func TestAdminService_GetCurationCandidates(t *testing.T) {
 	ctx := context.Background()
 
 	// Cleanup any existing test data first
-	db.Exec("DELETE FROM availability_slots WHERE user_id IN (SELECT id FROM users WHERE email LIKE 'test_admin_curation_%@test.com')")
-	db.Exec("DELETE FROM partner_preferences WHERE user_id IN (SELECT id FROM users WHERE email LIKE 'test_admin_curation_%@test.com')")
-	db.Exec("DELETE FROM user_profiles WHERE user_id IN (SELECT id FROM users WHERE email LIKE 'test_admin_curation_%@test.com')")
-	db.Exec("DELETE FROM users WHERE email LIKE 'test_admin_curation_%@test.com'")
+	db.Exec("DELETE FROM availability_slots WHERE user_id IN (SELECT id FROM datifyy_v2_users WHERE email LIKE 'test_admin_curation_%@test.com')")
+	db.Exec("DELETE FROM partner_preferences WHERE user_id IN (SELECT id FROM datifyy_v2_users WHERE email LIKE 'test_admin_curation_%@test.com')")
+	db.Exec("DELETE FROM user_profiles WHERE user_id IN (SELECT id FROM datifyy_v2_users WHERE email LIKE 'test_admin_curation_%@test.com')")
+	db.Exec("DELETE FROM datifyy_v2_users WHERE email LIKE 'test_admin_curation_%@test.com'")
 
 	// Create test users with availability tomorrow
 	user1ID := createTestUserForCuration(t, db, "test_admin_curation_1@test.com", "Alice", "FEMALE", 28, true)
@@ -544,7 +544,7 @@ func TestAdminService_GetCurationCandidates(t *testing.T) {
 	db.Exec("DELETE FROM availability_slots WHERE user_id IN ($1, $2)", user1ID, user2ID)
 	db.Exec("DELETE FROM partner_preferences WHERE user_id IN ($1, $2, $3)", user1ID, user2ID)
 	db.Exec("DELETE FROM user_profiles WHERE user_id IN ($1, $2, $3)", user1ID, user2ID)
-	db.Exec("DELETE FROM users WHERE id IN ($1, $2, $3)", user1ID, user2ID)
+	db.Exec("DELETE FROM datifyy_v2_users WHERE id IN ($1, $2, $3)", user1ID, user2ID)
 }
 
 func TestAdminService_CurateDates(t *testing.T) {
@@ -559,11 +559,11 @@ func TestAdminService_CurateDates(t *testing.T) {
 	ctx := context.Background()
 
 	// Cleanup any existing test data first
-	db.Exec("DELETE FROM availability_slots WHERE user_id IN (SELECT id FROM users WHERE email LIKE 'test_admin_curate_%@test.com')")
-	db.Exec("DELETE FROM curated_matches WHERE user1_id IN (SELECT id FROM users WHERE email LIKE 'test_admin_curate_%@test.com') OR user2_id IN (SELECT id FROM users WHERE email LIKE 'test_admin_curate_%@test.com')")
-	db.Exec("DELETE FROM partner_preferences WHERE user_id IN (SELECT id FROM users WHERE email LIKE 'test_admin_curate_%@test.com')")
-	db.Exec("DELETE FROM user_profiles WHERE user_id IN (SELECT id FROM users WHERE email LIKE 'test_admin_curate_%@test.com')")
-	db.Exec("DELETE FROM users WHERE email LIKE 'test_admin_curate_%@test.com'")
+	db.Exec("DELETE FROM availability_slots WHERE user_id IN (SELECT id FROM datifyy_v2_users WHERE email LIKE 'test_admin_curate_%@test.com')")
+	db.Exec("DELETE FROM curated_matches WHERE user1_id IN (SELECT id FROM datifyy_v2_users WHERE email LIKE 'test_admin_curate_%@test.com') OR user2_id IN (SELECT id FROM datifyy_v2_users WHERE email LIKE 'test_admin_curate_%@test.com')")
+	db.Exec("DELETE FROM partner_preferences WHERE user_id IN (SELECT id FROM datifyy_v2_users WHERE email LIKE 'test_admin_curate_%@test.com')")
+	db.Exec("DELETE FROM user_profiles WHERE user_id IN (SELECT id FROM datifyy_v2_users WHERE email LIKE 'test_admin_curate_%@test.com')")
+	db.Exec("DELETE FROM datifyy_v2_users WHERE email LIKE 'test_admin_curate_%@test.com'")
 
 	// Create test users
 	user1ID := createTestUserForCuration(t, db, "test_admin_curate_1@test.com", "Alice", "FEMALE", 28, true)
@@ -618,7 +618,7 @@ func TestAdminService_CurateDates(t *testing.T) {
 	db.Exec("DELETE FROM availability_slots WHERE user_id IN ($1, $2, $3)", user1ID, user2ID, user3ID)
 	db.Exec("DELETE FROM partner_preferences WHERE user_id IN ($1, $2, $3)", user1ID, user2ID, user3ID)
 	db.Exec("DELETE FROM user_profiles WHERE user_id IN ($1, $2, $3)", user1ID, user2ID, user3ID)
-	db.Exec("DELETE FROM users WHERE id IN ($1, $2, $3)", user1ID, user2ID, user3ID)
+	db.Exec("DELETE FROM datifyy_v2_users WHERE id IN ($1, $2, $3)", user1ID, user2ID, user3ID)
 }
 
 func TestAdminService_CurateDates_InvalidInput(t *testing.T) {
