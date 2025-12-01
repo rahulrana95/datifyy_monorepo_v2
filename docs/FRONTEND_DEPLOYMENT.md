@@ -90,6 +90,21 @@ git push origin main
    - Wait 2-3 minutes for build to complete
    - Get your deployment URL: `https://your-app.vercel.app`
 
+### Important: Proto Files Note
+
+**ALREADY RESOLVED**: The generated protobuf files (`apps/frontend/src/gen/`) are now committed to the repository. You don't need to do anything special - Vercel will use these files during build.
+
+If you modify `.proto` files in the future, regenerate and commit:
+```bash
+# Generate proto files locally
+make generate
+
+# Commit the updated gen files
+git add apps/frontend/src/gen/
+git commit -m "Update generated proto files"
+git push
+```
+
 ### Step 3: Deploy to Vercel (CLI - Alternative)
 
 ```bash
