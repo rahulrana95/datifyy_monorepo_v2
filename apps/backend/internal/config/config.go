@@ -2,7 +2,10 @@ package config
 
 import (
 	"fmt"
+	"log"
 	"os"
+
+	"github.com/joho/godotenv"
 )
 
 // Config holds all application configuration
@@ -33,7 +36,12 @@ type Config struct {
 }
 
 // Load reads configuration from environment variables
+// It will attempt to load .env files in this order:
+// 1. .env.production (if ENV=production or --env=production flag)
+// 2. .env (default fallback)
 func Load() *Config {
+	loadEnvFile()
+
 	return &Config{
 		// Server
 		HTTPPort: getEnv("PORT", "8080"),
@@ -91,4 +99,43 @@ func getEnv(key, defaultValue string) string {
 		return value
 	}
 	return defaultValue
+}
+
+// loadEnvFile loads the appropriate .env file based on environment
+func loadEnvFile() {
+	env := os.Getenv("ENV")
+
+	// Priority order:
+	// 1. .env.production (if ENV=production) - check both current dir and parent dir
+	// 2. .env (default)
+
+	var envFiles []string
+	if env == "production" {
+		envFiles = []string{
+			".env.production",
+			"../.env.production",           // Check parent directory (monorepo root)
+			"../../.env.production",         // Check two levels up (for nested structures)
+		}
+	} else {
+		envFiles = []string{
+			".env",
+			"../.env",
+			"../../.env",
+		}
+	}
+
+	// Try to load the environment-specific file from multiple locations
+	loaded := false
+	for _, envFile := range envFiles {
+		if err := godotenv.Load(envFile); err == nil {
+			log.Printf("Loaded configuration from %s", envFile)
+			loaded = true
+			break
+		}
+	}
+
+	if !loaded {
+		// It's okay if no file exists (e.g., in Docker/production with env vars set directly)
+		log.Printf("No .env file loaded (using system environment variables)")
+	}
 }
