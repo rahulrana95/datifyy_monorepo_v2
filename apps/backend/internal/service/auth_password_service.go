@@ -77,7 +77,7 @@ func (s *AuthService) ChangePassword(
 
 	// Update password in database
 	query := `
-		UPDATE users
+		UPDATE datifyy_v2_users
 		SET password_hash = $1, updated_at = $2
 		WHERE id = $3
 	`
@@ -92,7 +92,7 @@ func (s *AuthService) ChangePassword(
 		currentSessionID := fmt.Sprintf("sess_%d_%d", userID, timestamp)
 
 		revokeQuery := `
-			UPDATE sessions
+			UPDATE datifyy_v2_sessions
 			SET is_active = false
 			WHERE user_id = $1 AND id != $2 AND is_active = true
 		`
@@ -145,7 +145,7 @@ func (s *AuthService) RequestPasswordReset(
 	expiresAt := time.Now().Add(1 * time.Hour)
 
 	query := `
-		UPDATE users
+		UPDATE datifyy_v2_users
 		SET password_reset_token = $1, password_reset_token_expires_at = $2
 		WHERE id = $3
 	`
@@ -201,7 +201,7 @@ func (s *AuthService) ConfirmPasswordReset(
 
 	query := `
 		SELECT id, email, password_reset_token, password_reset_token_expires_at
-		FROM users
+		FROM datifyy_v2_users
 		WHERE password_reset_token = $1
 	`
 
@@ -235,7 +235,7 @@ func (s *AuthService) ConfirmPasswordReset(
 
 	// Update password and clear reset token
 	updateQuery := `
-		UPDATE users
+		UPDATE datifyy_v2_users
 		SET password_hash = $1,
 		    password_reset_token = NULL,
 		    password_reset_token_expires_at = NULL,
@@ -250,7 +250,7 @@ func (s *AuthService) ConfirmPasswordReset(
 
 	// Revoke all sessions for security
 	revokeQuery := `
-		UPDATE sessions
+		UPDATE datifyy_v2_sessions
 		SET is_active = false
 		WHERE user_id = $1 AND is_active = true
 	`

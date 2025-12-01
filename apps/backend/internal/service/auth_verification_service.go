@@ -44,7 +44,7 @@ func (s *AuthService) SendEmailVerification(
 	expiresAt := time.Now().Add(24 * time.Hour) // 24 hour expiration
 
 	query := `
-		UPDATE users
+		UPDATE datifyy_v2_users
 		SET verification_token = $1, verification_token_expires_at = $2
 		WHERE id = $3
 	`
@@ -185,7 +185,7 @@ func (s *AuthService) ResendVerificationCode(
 	expiresAt := time.Now().Add(24 * time.Hour) // 24 hour expiration
 
 	query := `
-		UPDATE users
+		UPDATE datifyy_v2_users
 		SET verification_token = $1, verification_token_expires_at = $2
 		WHERE id = $3
 	`

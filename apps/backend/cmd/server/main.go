@@ -1836,7 +1836,7 @@ func createAdminCurateDatesHandler(adminService *service.AdminService, db *sql.D
 
 		var preferredGendersJSON []byte
 		err = db.QueryRowContext(r.Context(),
-			`SELECT looking_for_gender FROM partner_preferences WHERE user_id = $1`,
+			`SELECT looking_for_gender FROM datifyy_v2_partner_preferences WHERE user_id = $1`,
 			userID,
 		).Scan(&preferredGendersJSON)
 
@@ -1864,7 +1864,7 @@ func createAdminCurateDatesHandler(adminService *service.AdminService, db *sql.D
 		// Build query to find matching users with availability
 		query := `
 			SELECT DISTINCT u.id
-			FROM users u
+			FROM datifyy_v2_users u
 			INNER JOIN availability_slots a ON u.id = a.user_id
 			WHERE u.id != $1
 			  AND u.account_status = 'ACTIVE'

@@ -51,16 +51,16 @@ func TestLoginWithEmail_Success(t *testing.T) {
 		now, now,
 	)
 
-	mock.ExpectQuery("SELECT (.+) FROM users WHERE email").
+	mock.ExpectQuery("SELECT (.+) FROM datifyy_v2_users WHERE email").
 		WithArgs(email).
 		WillReturnRows(rows)
 
 	// Mock session insert
-	mock.ExpectExec("INSERT INTO sessions").
+	mock.ExpectExec("INSERT INTO datifyy_v2_sessions").
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
 	// Mock UpdateLastLogin (only takes userID as argument)
-	mock.ExpectExec("UPDATE users SET last_login_at").
+	mock.ExpectExec("UPDATE datifyy_v2_users SET last_login_at").
 		WithArgs(1).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
@@ -159,7 +159,7 @@ func TestLoginWithEmail_UserNotFound(t *testing.T) {
 	email := "nonexistent@example.com"
 
 	// Mock user not found
-	mock.ExpectQuery("SELECT (.+) FROM users WHERE email").
+	mock.ExpectQuery("SELECT (.+) FROM datifyy_v2_users WHERE email").
 		WithArgs(email).
 		WillReturnError(sql.ErrNoRows)
 
@@ -208,7 +208,7 @@ func TestLoginWithEmail_WrongPassword(t *testing.T) {
 		now, now,
 	)
 
-	mock.ExpectQuery("SELECT (.+) FROM users WHERE email").
+	mock.ExpectQuery("SELECT (.+) FROM datifyy_v2_users WHERE email").
 		WithArgs(email).
 		WillReturnRows(rows)
 
@@ -256,7 +256,7 @@ func TestLoginWithEmail_SuspendedAccount(t *testing.T) {
 		now, now,
 	)
 
-	mock.ExpectQuery("SELECT (.+) FROM users WHERE email").
+	mock.ExpectQuery("SELECT (.+) FROM datifyy_v2_users WHERE email").
 		WithArgs(email).
 		WillReturnRows(rows)
 
@@ -297,7 +297,7 @@ func TestRefreshToken_Success(t *testing.T) {
 	sessionRows := sqlmock.NewRows([]string{"id", "user_id", "expires_at", "is_active", "last_active_at"}).
 		AddRow(sessionID, userID, expiresAt, true, now)
 
-	mock.ExpectQuery("SELECT (.+) FROM sessions WHERE").
+	mock.ExpectQuery("SELECT (.+) FROM datifyy_v2_sessions WHERE").
 		WithArgs(sessionID, userID).
 		WillReturnRows(sessionRows)
 
@@ -318,12 +318,12 @@ func TestRefreshToken_Success(t *testing.T) {
 		now, now,
 	)
 
-	mock.ExpectQuery("SELECT (.+) FROM users WHERE id").
+	mock.ExpectQuery("SELECT (.+) FROM datifyy_v2_users WHERE id").
 		WithArgs(userID).
 		WillReturnRows(userRows)
 
 	// Mock session activity update
-	mock.ExpectExec("UPDATE sessions SET last_active_at").
+	mock.ExpectExec("UPDATE datifyy_v2_sessions SET last_active_at").
 		WithArgs(sessionID).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
@@ -393,7 +393,7 @@ func TestRefreshToken_SessionNotFound(t *testing.T) {
 	sessionID := fmt.Sprintf("sess_%d_%d", userID, timestamp)
 
 	// Mock session query - return no rows
-	mock.ExpectQuery("SELECT (.+) FROM sessions WHERE").
+	mock.ExpectQuery("SELECT (.+) FROM datifyy_v2_sessions WHERE").
 		WithArgs(sessionID, userID).
 		WillReturnError(sql.ErrNoRows)
 
@@ -427,7 +427,7 @@ func TestRefreshToken_SessionRevoked(t *testing.T) {
 	sessionRows := sqlmock.NewRows([]string{"id", "user_id", "expires_at", "is_active", "last_active_at"}).
 		AddRow(sessionID, userID, expiresAt, false, now)
 
-	mock.ExpectQuery("SELECT (.+) FROM sessions WHERE").
+	mock.ExpectQuery("SELECT (.+) FROM datifyy_v2_sessions WHERE").
 		WithArgs(sessionID, userID).
 		WillReturnRows(sessionRows)
 
@@ -461,7 +461,7 @@ func TestRefreshToken_SessionExpired(t *testing.T) {
 	sessionRows := sqlmock.NewRows([]string{"id", "user_id", "expires_at", "is_active", "last_active_at"}).
 		AddRow(sessionID, userID, expiresAt, true, now)
 
-	mock.ExpectQuery("SELECT (.+) FROM sessions WHERE").
+	mock.ExpectQuery("SELECT (.+) FROM datifyy_v2_sessions WHERE").
 		WithArgs(sessionID, userID).
 		WillReturnRows(sessionRows)
 
@@ -495,7 +495,7 @@ func TestRefreshToken_SuspendedAccount(t *testing.T) {
 	sessionRows := sqlmock.NewRows([]string{"id", "user_id", "expires_at", "is_active", "last_active_at"}).
 		AddRow(sessionID, userID, expiresAt, true, now)
 
-	mock.ExpectQuery("SELECT (.+) FROM sessions WHERE").
+	mock.ExpectQuery("SELECT (.+) FROM datifyy_v2_sessions WHERE").
 		WithArgs(sessionID, userID).
 		WillReturnRows(sessionRows)
 
@@ -516,7 +516,7 @@ func TestRefreshToken_SuspendedAccount(t *testing.T) {
 		now, now,
 	)
 
-	mock.ExpectQuery("SELECT (.+) FROM users WHERE id").
+	mock.ExpectQuery("SELECT (.+) FROM datifyy_v2_users WHERE id").
 		WithArgs(userID).
 		WillReturnRows(userRows)
 
@@ -549,7 +549,7 @@ func TestRevokeToken_Success(t *testing.T) {
 	sessionID := fmt.Sprintf("sess_%d_%d", userID, timestamp)
 
 	// Mock session revocation update
-	mock.ExpectExec("UPDATE sessions SET is_active = false").
+	mock.ExpectExec("UPDATE datifyy_v2_sessions SET is_active = false").
 		WithArgs(sessionID, userID).
 		WillReturnResult(sqlmock.NewResult(0, 1)) // 1 row affected
 
@@ -619,7 +619,7 @@ func TestRevokeToken_SessionNotFound(t *testing.T) {
 	sessionID := fmt.Sprintf("sess_%d_%d", userID, timestamp)
 
 	// Mock session revocation update that affects 0 rows (session not found)
-	mock.ExpectExec("UPDATE sessions SET is_active = false").
+	mock.ExpectExec("UPDATE datifyy_v2_sessions SET is_active = false").
 		WithArgs(sessionID, userID).
 		WillReturnResult(sqlmock.NewResult(0, 0)) // 0 rows affected
 
@@ -649,7 +649,7 @@ func TestRevokeToken_DatabaseError(t *testing.T) {
 	sessionID := fmt.Sprintf("sess_%d_%d", userID, timestamp)
 
 	// Mock database error
-	mock.ExpectExec("UPDATE sessions SET is_active = false").
+	mock.ExpectExec("UPDATE datifyy_v2_sessions SET is_active = false").
 		WithArgs(sessionID, userID).
 		WillReturnError(fmt.Errorf("database connection error"))
 

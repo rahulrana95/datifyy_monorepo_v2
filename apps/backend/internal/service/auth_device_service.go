@@ -49,7 +49,7 @@ func (s *AuthService) ListDevices(
 			MAX(last_active_at) as last_active,
 			MAX(created_at) as first_seen,
 			BOOL_OR(is_active) as has_active_sessions
-		FROM sessions
+		FROM datifyy_v2_sessions
 		WHERE user_id = $1
 		GROUP BY device_id
 		ORDER BY MAX(last_active_at) DESC
@@ -96,7 +96,7 @@ func (s *AuthService) ListDevices(
 	var totalCount int32
 	countQuery := `
 		SELECT COUNT(DISTINCT COALESCE(device_id, 'unknown'))
-		FROM sessions
+		FROM datifyy_v2_sessions
 		WHERE user_id = $1
 	`
 	err = s.db.QueryRowContext(ctx, countQuery, userID).Scan(&totalCount)
@@ -156,7 +156,7 @@ func (s *AuthService) TrustDevice(
 	var sessionCount int
 	checkQuery := `
 		SELECT COUNT(*)
-		FROM sessions
+		FROM datifyy_v2_sessions
 		WHERE user_id = $1 AND device_id = $2
 	`
 	err = s.db.QueryRowContext(ctx, checkQuery, userID, req.DeviceId).Scan(&sessionCount)
@@ -200,7 +200,7 @@ func (s *AuthService) RevokeDevice(
 
 	// Revoke all sessions for this device
 	query := `
-		UPDATE sessions
+		UPDATE datifyy_v2_sessions
 		SET is_active = false
 		WHERE user_id = $1 AND device_id = $2 AND is_active = true
 	`

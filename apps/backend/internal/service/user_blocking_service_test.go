@@ -156,7 +156,7 @@ func TestListBlockedUsers_Success(t *testing.T) {
 		now, now,
 	)
 
-	mock.ExpectQuery("SELECT (.+) FROM users WHERE id").
+	mock.ExpectQuery("SELECT (.+) FROM datifyy_v2_users WHERE id").
 		WithArgs(2).
 		WillReturnRows(userRows2)
 
@@ -177,7 +177,7 @@ func TestListBlockedUsers_Success(t *testing.T) {
 		[]byte("[]"), 0, true, false,
 	)
 
-	mock.ExpectQuery("SELECT (.+) FROM user_profiles WHERE user_id").
+	mock.ExpectQuery("SELECT (.+) FROM datifyy_v2_user_profiles WHERE user_id").
 		WithArgs(2).
 		WillReturnRows(profileRows2)
 
@@ -202,7 +202,7 @@ func TestListBlockedUsers_Success(t *testing.T) {
 		now, now,
 	)
 
-	mock.ExpectQuery("SELECT (.+) FROM users WHERE id").
+	mock.ExpectQuery("SELECT (.+) FROM datifyy_v2_users WHERE id").
 		WithArgs(3).
 		WillReturnRows(userRows3)
 
@@ -223,7 +223,7 @@ func TestListBlockedUsers_Success(t *testing.T) {
 		[]byte("[]"), 0, true, false,
 	)
 
-	mock.ExpectQuery("SELECT (.+) FROM user_profiles WHERE user_id").
+	mock.ExpectQuery("SELECT (.+) FROM datifyy_v2_user_profiles WHERE user_id").
 		WithArgs(3).
 		WillReturnRows(profileRows3)
 

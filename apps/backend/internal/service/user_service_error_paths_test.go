@@ -38,11 +38,11 @@ func TestGetUserProfile_ProfileNotFound(t *testing.T) {
 		now, now,
 	)
 
-	mock.ExpectQuery("SELECT (.+) FROM users WHERE id").
+	mock.ExpectQuery("SELECT (.+) FROM datifyy_v2_users WHERE id").
 		WithArgs(1).
 		WillReturnRows(userRows)
 
-	mock.ExpectQuery("SELECT (.+) FROM user_profiles WHERE user_id").
+	mock.ExpectQuery("SELECT (.+) FROM datifyy_v2_user_profiles WHERE user_id").
 		WithArgs(1).
 		WillReturnError(sql.ErrNoRows)
 
@@ -81,11 +81,11 @@ func TestGetMyProfile_ProfileNotFound(t *testing.T) {
 		now, now,
 	)
 
-	mock.ExpectQuery("SELECT (.+) FROM users WHERE id").
+	mock.ExpectQuery("SELECT (.+) FROM datifyy_v2_users WHERE id").
 		WithArgs(1).
 		WillReturnRows(userRows)
 
-	mock.ExpectQuery("SELECT (.+) FROM user_profiles WHERE user_id").
+	mock.ExpectQuery("SELECT (.+) FROM datifyy_v2_user_profiles WHERE user_id").
 		WithArgs(1).
 		WillReturnError(sql.ErrNoRows)
 
@@ -145,7 +145,7 @@ func TestListBlockedUsers_GetUserError(t *testing.T) {
 		WillReturnRows(blockRows)
 
 	// Mock get user with error
-	mock.ExpectQuery("SELECT (.+) FROM users WHERE id").
+	mock.ExpectQuery("SELECT (.+) FROM datifyy_v2_users WHERE id").
 		WithArgs(2).
 		WillReturnError(sql.ErrConnDone)
 
@@ -362,7 +362,7 @@ func TestDeleteAccount_GetUserError(t *testing.T) {
 	ctx := context.WithValue(context.Background(), "userID", 1)
 
 	// Mock get user with error
-	mock.ExpectQuery("SELECT (.+) FROM users WHERE id").
+	mock.ExpectQuery("SELECT (.+) FROM datifyy_v2_users WHERE id").
 		WithArgs(1).
 		WillReturnError(sql.ErrConnDone)
 
@@ -401,12 +401,12 @@ func TestDeleteAccount_UpdateStatusError(t *testing.T) {
 		now, now,
 	)
 
-	mock.ExpectQuery("SELECT (.+) FROM users WHERE id").
+	mock.ExpectQuery("SELECT (.+) FROM datifyy_v2_users WHERE id").
 		WithArgs(1).
 		WillReturnRows(userRows)
 
 	// Mock update account status with error
-	mock.ExpectExec("UPDATE users SET account_status").
+	mock.ExpectExec("UPDATE datifyy_v2_users SET account_status").
 		WillReturnError(sql.ErrConnDone)
 
 	req := &userpb.DeleteAccountRequest{

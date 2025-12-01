@@ -49,7 +49,7 @@ func NewDateSuggestionsRepository(db *sql.DB) *DateSuggestionsRepository {
 // Create creates a new date suggestion
 func (r *DateSuggestionsRepository) Create(ctx context.Context, suggestion *DateSuggestion) error {
 	query := `
-		INSERT INTO date_suggestions (
+		INSERT INTO datifyy_v2_date_suggestions (
 			user_id, suggested_user_id, curated_match_id,
 			compatibility_score, reasoning, status
 		) VALUES ($1, $2, $3, $4, $5, $6)
@@ -75,7 +75,7 @@ func (r *DateSuggestionsRepository) GetByID(ctx context.Context, id int) (*DateS
 		SELECT id, user_id, suggested_user_id, curated_match_id,
 			   compatibility_score, reasoning, status, scheduled_date_id,
 			   created_at, updated_at, responded_at
-		FROM date_suggestions
+		FROM datifyy_v2_date_suggestions
 		WHERE id = $1
 	`
 
@@ -106,7 +106,7 @@ func (r *DateSuggestionsRepository) ListByUser(ctx context.Context, userID int, 
 			SELECT id, user_id, suggested_user_id, curated_match_id,
 				   compatibility_score, reasoning, status, scheduled_date_id,
 				   created_at, updated_at, responded_at
-			FROM date_suggestions
+			FROM datifyy_v2_date_suggestions
 			WHERE user_id = $1 AND status = $2
 			ORDER BY created_at DESC
 			LIMIT $3 OFFSET $4
@@ -117,7 +117,7 @@ func (r *DateSuggestionsRepository) ListByUser(ctx context.Context, userID int, 
 			SELECT id, user_id, suggested_user_id, curated_match_id,
 				   compatibility_score, reasoning, status, scheduled_date_id,
 				   created_at, updated_at, responded_at
-			FROM date_suggestions
+			FROM datifyy_v2_date_suggestions
 			WHERE user_id = $1
 			ORDER BY created_at DESC
 			LIMIT $2 OFFSET $3
@@ -151,7 +151,7 @@ func (r *DateSuggestionsRepository) ListByUser(ctx context.Context, userID int, 
 // Accept marks a suggestion as accepted
 func (r *DateSuggestionsRepository) Accept(ctx context.Context, id int) error {
 	now := time.Now()
-	query := `UPDATE date_suggestions SET status = 'accepted', responded_at = $1 WHERE id = $2`
+	query := `UPDATE datifyy_v2_date_suggestions SET status = 'accepted', responded_at = $1 WHERE id = $2`
 	_, err := r.db.ExecContext(ctx, query, now, id)
 	if err != nil {
 		return fmt.Errorf("failed to accept suggestion: %w", err)
@@ -162,7 +162,7 @@ func (r *DateSuggestionsRepository) Accept(ctx context.Context, id int) error {
 // Reject marks a suggestion as rejected
 func (r *DateSuggestionsRepository) Reject(ctx context.Context, id int) error {
 	now := time.Now()
-	query := `UPDATE date_suggestions SET status = 'rejected', responded_at = $1 WHERE id = $2`
+	query := `UPDATE datifyy_v2_date_suggestions SET status = 'rejected', responded_at = $1 WHERE id = $2`
 	_, err := r.db.ExecContext(ctx, query, now, id)
 	if err != nil {
 		return fmt.Errorf("failed to reject suggestion: %w", err)
@@ -229,7 +229,7 @@ func (r *DateSuggestionsRepository) GetRejectionsBetweenUsers(ctx context.Contex
 // CountByUserStatus counts date suggestions by status for a user
 func (r *DateSuggestionsRepository) CountByUserStatus(ctx context.Context, userID int, status string) (int, error) {
 	var count int
-	query := `SELECT COUNT(*) FROM date_suggestions WHERE user_id = $1 AND status = $2`
+	query := `SELECT COUNT(*) FROM datifyy_v2_date_suggestions WHERE user_id = $1 AND status = $2`
 	err := r.db.QueryRowContext(ctx, query, userID, status).Scan(&count)
 	if err != nil {
 		return 0, fmt.Errorf("failed to count suggestions by status: %w", err)
@@ -240,7 +240,7 @@ func (r *DateSuggestionsRepository) CountByUserStatus(ctx context.Context, userI
 // CountByUser counts total date suggestions for a user
 func (r *DateSuggestionsRepository) CountByUser(ctx context.Context, userID int) (int, error) {
 	var count int
-	query := `SELECT COUNT(*) FROM date_suggestions WHERE user_id = $1`
+	query := `SELECT COUNT(*) FROM datifyy_v2_date_suggestions WHERE user_id = $1`
 	err := r.db.QueryRowContext(ctx, query, userID).Scan(&count)
 	if err != nil {
 		return 0, fmt.Errorf("failed to count suggestions: %w", err)

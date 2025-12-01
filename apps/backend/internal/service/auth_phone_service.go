@@ -28,7 +28,7 @@ func (s *AuthService) RegisterWithPhone(
 
 	// Check if phone number already exists
 	var existingUserID int
-	checkQuery := `SELECT id FROM users WHERE phone_number = $1`
+	checkQuery := `SELECT id FROM datifyy_v2_users WHERE phone_number = $1`
 	err := s.db.QueryRowContext(ctx, checkQuery, req.PhoneNumber).Scan(&existingUserID)
 	if err == nil {
 		return nil, fmt.Errorf("phone number already registered")
@@ -75,7 +75,7 @@ func (s *AuthService) RequestPhoneOTP(
 	// Check if user exists with this phone number
 	var userID int
 	var phoneVerified bool
-	checkQuery := `SELECT id, phone_verified FROM users WHERE phone_number = $1`
+	checkQuery := `SELECT id, phone_verified FROM datifyy_v2_users WHERE phone_number = $1`
 	err := s.db.QueryRowContext(ctx, checkQuery, req.PhoneNumber).Scan(&userID, &phoneVerified)
 	if err != nil {
 		// For security, don't reveal if phone exists
@@ -137,7 +137,7 @@ func (s *AuthService) LoginWithPhone(
 	var name string
 	var phoneVerified bool
 	var accountStatus string
-	query := `SELECT id, email, name, phone_verified, account_status FROM users WHERE phone_number = $1`
+	query := `SELECT id, email, name, phone_verified, account_status FROM datifyy_v2_users WHERE phone_number = $1`
 	err := s.db.QueryRowContext(ctx, query, req.Credentials.PhoneNumber).Scan(&userID, &email, &name, &phoneVerified, &accountStatus)
 	if err != nil {
 		return nil, fmt.Errorf("invalid phone number or OTP")
@@ -199,7 +199,7 @@ func (s *AuthService) SendPhoneVerification(
 	// TODO: Add GetByPhoneNumber to repository
 	var userID int
 	var phoneVerified bool
-	query := `SELECT id, phone_verified FROM users WHERE phone_number = $1`
+	query := `SELECT id, phone_verified FROM datifyy_v2_users WHERE phone_number = $1`
 	err := s.db.QueryRowContext(ctx, query, req.PhoneNumber).Scan(&userID, &phoneVerified)
 	if err != nil {
 		return nil, fmt.Errorf("user not found with phone number: %s", req.PhoneNumber)
@@ -259,7 +259,7 @@ func (s *AuthService) VerifyPhone(
 	// TODO: Add GetByPhoneNumber to repository
 	var userID int
 	var phoneVerified bool
-	query := `SELECT id, phone_verified FROM users WHERE phone_number = $1`
+	query := `SELECT id, phone_verified FROM datifyy_v2_users WHERE phone_number = $1`
 	err := s.db.QueryRowContext(ctx, query, req.Verification.Identifier).Scan(&userID, &phoneVerified)
 	if err != nil {
 		return &authpb.VerifyPhoneResponse{
@@ -292,7 +292,7 @@ func (s *AuthService) VerifyPhone(
 
 	// Mark phone as verified
 	// TODO: Add VerifyPhone to repository
-	updateQuery := `UPDATE users SET phone_verified = true WHERE id = $1`
+	updateQuery := `UPDATE datifyy_v2_users SET phone_verified = true WHERE id = $1`
 	_, err = s.db.ExecContext(ctx, updateQuery, user.ID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to verify phone: %w", err)

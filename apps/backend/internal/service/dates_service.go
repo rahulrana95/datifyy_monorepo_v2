@@ -106,7 +106,7 @@ func (s *DatesService) GetCandidatesForCuration(ctx context.Context) ([]*Candida
 			u.email_verified,
 			COUNT(avail.id) as available_slots_count,
 			MIN(avail.start_time) as next_available_date
-		FROM users u
+		FROM datifyy_v2_users u
 		LEFT JOIN user_profiles up ON u.id = up.user_id
 		LEFT JOIN availability_slots avail ON u.id = avail.user_id
 		WHERE u.account_status = 'ACTIVE'

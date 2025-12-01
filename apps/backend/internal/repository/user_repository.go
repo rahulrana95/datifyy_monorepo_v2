@@ -61,7 +61,7 @@ func (r *UserRepository) Create(ctx context.Context, input CreateUserInput) (*Us
 	// Check if email already exists
 	var exists bool
 	err := r.db.QueryRowContext(ctx,
-		"SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)",
+		"SELECT EXISTS(SELECT 1 FROM datifyy_v2_users WHERE email = $1)",
 		input.Email,
 	).Scan(&exists)
 
@@ -75,7 +75,7 @@ func (r *UserRepository) Create(ctx context.Context, input CreateUserInput) (*Us
 
 	// Insert user
 	query := `
-		INSERT INTO users (
+		INSERT INTO datifyy_v2_users (
 			email, name, password_hash, email_verified, account_status,
 			verification_token, verification_token_expires_at, created_at, updated_at
 		) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
@@ -111,7 +111,7 @@ func (r *UserRepository) Create(ctx context.Context, input CreateUserInput) (*Us
 
 	// Create empty profile for user
 	_, err = r.db.ExecContext(ctx,
-		"INSERT INTO user_profiles (user_id) VALUES ($1)",
+		"INSERT INTO datifyy_v2_user_profiles (user_id) VALUES ($1)",
 		user.ID,
 	)
 	if err != nil {
@@ -120,7 +120,7 @@ func (r *UserRepository) Create(ctx context.Context, input CreateUserInput) (*Us
 
 	// Create default partner preferences
 	_, err = r.db.ExecContext(ctx,
-		"INSERT INTO partner_preferences (user_id) VALUES ($1)",
+		"INSERT INTO datifyy_v2_partner_preferences (user_id) VALUES ($1)",
 		user.ID,
 	)
 	if err != nil {
@@ -139,7 +139,7 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*User, e
 		       password_reset_token, password_reset_token_expires_at,
 		       last_login_at, photo_url, date_of_birth, gender,
 		       created_at, updated_at
-		FROM users
+		FROM datifyy_v2_users
 		WHERE email = $1
 	`
 
@@ -185,7 +185,7 @@ func (r *UserRepository) GetByID(ctx context.Context, id int) (*User, error) {
 		       password_reset_token, password_reset_token_expires_at,
 		       last_login_at, photo_url, date_of_birth, gender,
 		       created_at, updated_at
-		FROM users
+		FROM datifyy_v2_users
 		WHERE id = $1
 	`
 
@@ -225,7 +225,7 @@ func (r *UserRepository) GetByID(ctx context.Context, id int) (*User, error) {
 // UpdateLastLogin updates the user's last login timestamp
 func (r *UserRepository) UpdateLastLogin(ctx context.Context, userID int) error {
 	_, err := r.db.ExecContext(ctx,
-		"UPDATE users SET last_login_at = NOW() WHERE id = $1",
+		"UPDATE datifyy_v2_users SET last_login_at = NOW() WHERE id = $1",
 		userID,
 	)
 
@@ -239,7 +239,7 @@ func (r *UserRepository) UpdateLastLogin(ctx context.Context, userID int) error 
 // VerifyEmail marks the user's email as verified
 func (r *UserRepository) VerifyEmail(ctx context.Context, userID int) error {
 	_, err := r.db.ExecContext(ctx,
-		`UPDATE users
+		`UPDATE datifyy_v2_users
 		 SET email_verified = true,
 		     account_status = 'ACTIVE',
 		     verification_token = NULL,
@@ -258,7 +258,7 @@ func (r *UserRepository) VerifyEmail(ctx context.Context, userID int) error {
 // UpdateAccountStatus updates the user's account status
 func (r *UserRepository) UpdateAccountStatus(ctx context.Context, userID int, status string) error {
 	_, err := r.db.ExecContext(ctx,
-		"UPDATE users SET account_status = $1 WHERE id = $2",
+		"UPDATE datifyy_v2_users SET account_status = $1 WHERE id = $2",
 		status, userID,
 	)
 
@@ -275,7 +275,7 @@ func (r *UserRepository) UpdateBasicInfo(ctx context.Context, userID int, update
 		return nil
 	}
 
-	query := "UPDATE users SET "
+	query := "UPDATE datifyy_v2_users SET "
 	args := []interface{}{}
 	argPos := 1
 

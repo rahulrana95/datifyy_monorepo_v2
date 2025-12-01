@@ -34,7 +34,7 @@ func TestValidateToken_Success(t *testing.T) {
 	sessionRows := sqlmock.NewRows([]string{"is_active", "expires_at"}).
 		AddRow(true, sessionExpiresAt)
 
-	mock.ExpectQuery("SELECT is_active, expires_at FROM sessions WHERE").
+	mock.ExpectQuery("SELECT is_active, expires_at FROM datifyy_v2_sessions WHERE").
 		WithArgs(sessionID, userID).
 		WillReturnRows(sessionRows)
 
@@ -55,7 +55,7 @@ func TestValidateToken_Success(t *testing.T) {
 		now, now,
 	)
 
-	mock.ExpectQuery("SELECT (.+) FROM users WHERE id").
+	mock.ExpectQuery("SELECT (.+) FROM datifyy_v2_users WHERE id").
 		WithArgs(userID).
 		WillReturnRows(userRows)
 
@@ -152,7 +152,7 @@ func TestValidateToken_SessionNotFound(t *testing.T) {
 	sessionID := fmt.Sprintf("sess_%d_%d", userID, timestamp)
 
 	// Mock session query - no rows returned
-	mock.ExpectQuery("SELECT is_active, expires_at FROM sessions WHERE").
+	mock.ExpectQuery("SELECT is_active, expires_at FROM datifyy_v2_sessions WHERE").
 		WithArgs(sessionID, userID).
 		WillReturnError(sql.ErrNoRows)
 
@@ -187,7 +187,7 @@ func TestValidateToken_SessionInactive(t *testing.T) {
 	sessionRows := sqlmock.NewRows([]string{"is_active", "expires_at"}).
 		AddRow(false, sessionExpiresAt)
 
-	mock.ExpectQuery("SELECT is_active, expires_at FROM sessions WHERE").
+	mock.ExpectQuery("SELECT is_active, expires_at FROM datifyy_v2_sessions WHERE").
 		WithArgs(sessionID, userID).
 		WillReturnRows(sessionRows)
 
@@ -222,7 +222,7 @@ func TestValidateToken_SessionExpired(t *testing.T) {
 	sessionRows := sqlmock.NewRows([]string{"is_active", "expires_at"}).
 		AddRow(true, sessionExpiresAt)
 
-	mock.ExpectQuery("SELECT is_active, expires_at FROM sessions WHERE").
+	mock.ExpectQuery("SELECT is_active, expires_at FROM datifyy_v2_sessions WHERE").
 		WithArgs(sessionID, userID).
 		WillReturnRows(sessionRows)
 
@@ -257,7 +257,7 @@ func TestValidateToken_SuspendedAccount(t *testing.T) {
 	sessionRows := sqlmock.NewRows([]string{"is_active", "expires_at"}).
 		AddRow(true, sessionExpiresAt)
 
-	mock.ExpectQuery("SELECT is_active, expires_at FROM sessions WHERE").
+	mock.ExpectQuery("SELECT is_active, expires_at FROM datifyy_v2_sessions WHERE").
 		WithArgs(sessionID, userID).
 		WillReturnRows(sessionRows)
 
@@ -278,7 +278,7 @@ func TestValidateToken_SuspendedAccount(t *testing.T) {
 		now, now,
 	)
 
-	mock.ExpectQuery("SELECT (.+) FROM users WHERE id").
+	mock.ExpectQuery("SELECT (.+) FROM datifyy_v2_users WHERE id").
 		WithArgs(userID).
 		WillReturnRows(userRows)
 

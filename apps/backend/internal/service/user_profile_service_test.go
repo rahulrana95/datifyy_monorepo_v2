@@ -44,7 +44,7 @@ func TestGetUserProfile_Success(t *testing.T) {
 		now, now,
 	)
 
-	mock.ExpectQuery("SELECT (.+) FROM users WHERE id").
+	mock.ExpectQuery("SELECT (.+) FROM datifyy_v2_users WHERE id").
 		WithArgs(1).
 		WillReturnRows(userRows)
 
@@ -65,7 +65,7 @@ func TestGetUserProfile_Success(t *testing.T) {
 		[]byte("[]"), 75, true, false,
 	)
 
-	mock.ExpectQuery("SELECT (.+) FROM user_profiles WHERE user_id").
+	mock.ExpectQuery("SELECT (.+) FROM datifyy_v2_user_profiles WHERE user_id").
 		WithArgs(1).
 		WillReturnRows(profileRows)
 
@@ -93,7 +93,7 @@ func TestGetUserProfile_Success(t *testing.T) {
 		[]byte("[]"), []byte("[]"), false, []byte("[]"),
 	)
 
-	mock.ExpectQuery("SELECT (.+) FROM partner_preferences WHERE user_id").
+	mock.ExpectQuery("SELECT (.+) FROM datifyy_v2_partner_preferences WHERE user_id").
 		WithArgs(1).
 		WillReturnRows(prefRows)
 
@@ -159,7 +159,7 @@ func TestGetUserProfile_UserNotFound(t *testing.T) {
 
 	ctx := context.Background()
 
-	mock.ExpectQuery("SELECT (.+) FROM users WHERE id").
+	mock.ExpectQuery("SELECT (.+) FROM datifyy_v2_users WHERE id").
 		WithArgs(1).
 		WillReturnError(sql.ErrNoRows)
 
@@ -198,7 +198,7 @@ func TestGetMyProfile_Success(t *testing.T) {
 		now, now,
 	)
 
-	mock.ExpectQuery("SELECT (.+) FROM users WHERE id").
+	mock.ExpectQuery("SELECT (.+) FROM datifyy_v2_users WHERE id").
 		WithArgs(1).
 		WillReturnRows(userRows)
 
@@ -219,7 +219,7 @@ func TestGetMyProfile_Success(t *testing.T) {
 		[]byte("[]"), 75, true, false,
 	)
 
-	mock.ExpectQuery("SELECT (.+) FROM user_profiles WHERE user_id").
+	mock.ExpectQuery("SELECT (.+) FROM datifyy_v2_user_profiles WHERE user_id").
 		WithArgs(1).
 		WillReturnRows(profileRows)
 
@@ -245,7 +245,7 @@ func TestGetMyProfile_Success(t *testing.T) {
 		[]byte("[]"), []byte("[]"), false, []byte("[]"),
 	)
 
-	mock.ExpectQuery("SELECT (.+) FROM partner_preferences WHERE user_id").
+	mock.ExpectQuery("SELECT (.+) FROM datifyy_v2_partner_preferences WHERE user_id").
 		WithArgs(1).
 		WillReturnRows(partnerPrefRows)
 
@@ -302,7 +302,7 @@ func TestGetMyProfile_UserNotFound(t *testing.T) {
 
 	ctx := context.WithValue(context.Background(), "userID", 999)
 
-	mock.ExpectQuery("SELECT (.+) FROM users WHERE id").
+	mock.ExpectQuery("SELECT (.+) FROM datifyy_v2_users WHERE id").
 		WithArgs(999).
 		WillReturnError(sql.ErrNoRows)
 
@@ -325,7 +325,7 @@ func TestUpdateProfile_Success(t *testing.T) {
 	now := time.Now()
 
 	// Mock profile update
-	mock.ExpectExec("UPDATE user_profiles SET").
+	mock.ExpectExec("UPDATE datifyy_v2_user_profiles SET").
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
 	// Mock getting updated profile
@@ -344,7 +344,7 @@ func TestUpdateProfile_Success(t *testing.T) {
 		now, now,
 	)
 
-	mock.ExpectQuery("SELECT (.+) FROM users WHERE id").
+	mock.ExpectQuery("SELECT (.+) FROM datifyy_v2_users WHERE id").
 		WillReturnRows(userRows)
 
 	profileRows := sqlmock.NewRows([]string{
@@ -363,13 +363,13 @@ func TestUpdateProfile_Success(t *testing.T) {
 		[]byte("[]"), 80, true, false,
 	)
 
-	mock.ExpectQuery("SELECT (.+) FROM user_profiles WHERE user_id").
+	mock.ExpectQuery("SELECT (.+) FROM datifyy_v2_user_profiles WHERE user_id").
 		WillReturnRows(profileRows)
 
 	mock.ExpectQuery("SELECT (.+) FROM user_photos WHERE user_id").
 		WillReturnRows(sqlmock.NewRows([]string{"id", "user_id", "photo_id", "url", "thumbnail_url", "display_order", "is_primary", "caption", "uploaded_at"}))
 
-	mock.ExpectQuery("SELECT (.+) FROM partner_preferences WHERE user_id").
+	mock.ExpectQuery("SELECT (.+) FROM datifyy_v2_partner_preferences WHERE user_id").
 		WillReturnError(sql.ErrNoRows)
 
 	mock.ExpectQuery("SELECT (.+) FROM user_preferences WHERE user_id").
@@ -428,7 +428,7 @@ func TestUpdateProfile_AllProfileFields(t *testing.T) {
 	now := time.Now()
 
 	// Mock profile update with all fields
-	mock.ExpectExec("UPDATE user_profiles SET").
+	mock.ExpectExec("UPDATE datifyy_v2_user_profiles SET").
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
 	// Mock getting updated profile
@@ -447,7 +447,7 @@ func TestUpdateProfile_AllProfileFields(t *testing.T) {
 		now, now,
 	)
 
-	mock.ExpectQuery("SELECT (.+) FROM users WHERE id").
+	mock.ExpectQuery("SELECT (.+) FROM datifyy_v2_users WHERE id").
 		WillReturnRows(userRows)
 
 	profileRows := sqlmock.NewRows([]string{
@@ -466,13 +466,13 @@ func TestUpdateProfile_AllProfileFields(t *testing.T) {
 		[]byte("[]"), 80, true, false,
 	)
 
-	mock.ExpectQuery("SELECT (.+) FROM user_profiles WHERE user_id").
+	mock.ExpectQuery("SELECT (.+) FROM datifyy_v2_user_profiles WHERE user_id").
 		WillReturnRows(profileRows)
 
 	mock.ExpectQuery("SELECT (.+) FROM user_photos WHERE user_id").
 		WillReturnRows(sqlmock.NewRows([]string{"id", "user_id", "photo_id", "url", "thumbnail_url", "display_order", "is_primary", "caption", "uploaded_at"}))
 
-	mock.ExpectQuery("SELECT (.+) FROM partner_preferences WHERE user_id").
+	mock.ExpectQuery("SELECT (.+) FROM datifyy_v2_partner_preferences WHERE user_id").
 		WillReturnError(sql.ErrNoRows)
 
 	mock.ExpectQuery("SELECT (.+) FROM user_preferences WHERE user_id").
@@ -518,7 +518,7 @@ func TestUpdateProfile_AllLifestyleFields(t *testing.T) {
 	now := time.Now()
 
 	// Mock profile update
-	mock.ExpectExec("UPDATE user_profiles SET").
+	mock.ExpectExec("UPDATE datifyy_v2_user_profiles SET").
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
 	// Mock getting updated profile
@@ -537,7 +537,7 @@ func TestUpdateProfile_AllLifestyleFields(t *testing.T) {
 		now, now,
 	)
 
-	mock.ExpectQuery("SELECT (.+) FROM users WHERE id").
+	mock.ExpectQuery("SELECT (.+) FROM datifyy_v2_users WHERE id").
 		WillReturnRows(userRows)
 
 	profileRows := sqlmock.NewRows([]string{
@@ -556,13 +556,13 @@ func TestUpdateProfile_AllLifestyleFields(t *testing.T) {
 		[]byte("[]"), 75, true, false,
 	)
 
-	mock.ExpectQuery("SELECT (.+) FROM user_profiles WHERE user_id").
+	mock.ExpectQuery("SELECT (.+) FROM datifyy_v2_user_profiles WHERE user_id").
 		WillReturnRows(profileRows)
 
 	mock.ExpectQuery("SELECT (.+) FROM user_photos WHERE user_id").
 		WillReturnRows(sqlmock.NewRows([]string{"id", "user_id", "photo_id", "url", "thumbnail_url", "display_order", "is_primary", "caption", "uploaded_at"}))
 
-	mock.ExpectQuery("SELECT (.+) FROM partner_preferences WHERE user_id").
+	mock.ExpectQuery("SELECT (.+) FROM datifyy_v2_partner_preferences WHERE user_id").
 		WillReturnError(sql.ErrNoRows)
 
 	mock.ExpectQuery("SELECT (.+) FROM user_preferences WHERE user_id").
@@ -629,7 +629,7 @@ func TestUpdateProfile_DatabaseError(t *testing.T) {
 	ctx := context.WithValue(context.Background(), "userID", 1)
 
 	// Mock profile update with error
-	mock.ExpectExec("UPDATE user_profiles SET").
+	mock.ExpectExec("UPDATE datifyy_v2_user_profiles SET").
 		WillReturnError(sql.ErrConnDone)
 
 	req := &userpb.UpdateProfileRequest{
@@ -671,12 +671,12 @@ func TestDeleteAccount_Success(t *testing.T) {
 		now, now,
 	)
 
-	mock.ExpectQuery("SELECT (.+) FROM users WHERE id").
+	mock.ExpectQuery("SELECT (.+) FROM datifyy_v2_users WHERE id").
 		WithArgs(1).
 		WillReturnRows(userRows)
 
 	// Mock update account status
-	mock.ExpectExec("UPDATE users SET account_status").
+	mock.ExpectExec("UPDATE datifyy_v2_users SET account_status").
 		WithArgs("DELETED", 1).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
@@ -736,7 +736,7 @@ func TestDeleteAccount_IncorrectPassword(t *testing.T) {
 		now, now,
 	)
 
-	mock.ExpectQuery("SELECT (.+) FROM users WHERE id").
+	mock.ExpectQuery("SELECT (.+) FROM datifyy_v2_users WHERE id").
 		WithArgs(1).
 		WillReturnRows(userRows)
 

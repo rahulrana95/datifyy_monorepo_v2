@@ -87,7 +87,7 @@ func (r *AdminRepository) GetAdminByEmail(ctx context.Context, email string) (*A
 	query := `
 		SELECT id, user_id, email, name, password_hash, role, is_genie, is_active,
 		       last_login_at, created_at, updated_at, created_by
-		FROM admin_users
+		FROM datifyy_v2_admin_users
 		WHERE email = $1 AND is_active = TRUE
 	`
 
@@ -112,7 +112,7 @@ func (r *AdminRepository) GetAdminByID(ctx context.Context, id int) (*AdminUser,
 	query := `
 		SELECT id, user_id, email, name, password_hash, role, is_genie, is_active,
 		       last_login_at, created_at, updated_at, created_by
-		FROM admin_users
+		FROM datifyy_v2_admin_users
 		WHERE id = $1
 	`
 
@@ -135,7 +135,7 @@ func (r *AdminRepository) GetAdminByID(ctx context.Context, id int) (*AdminUser,
 // CreateAdmin creates a new admin user
 func (r *AdminRepository) CreateAdmin(ctx context.Context, email, name, passwordHash, role string, isGenie bool, createdBy int) (*AdminUser, error) {
 	query := `
-		INSERT INTO admin_users (email, name, password_hash, role, is_genie, created_by)
+		INSERT INTO datifyy_v2_admin_users (email, name, password_hash, role, is_genie, created_by)
 		VALUES ($1, $2, $3, $4, $5, $6)
 		RETURNING id, user_id, email, name, password_hash, role, is_genie, is_active,
 		          last_login_at, created_at, updated_at, created_by
@@ -164,7 +164,7 @@ func (r *AdminRepository) CreateAdmin(ctx context.Context, email, name, password
 
 // UpdateLastLogin updates the admin's last login time
 func (r *AdminRepository) UpdateLastLogin(ctx context.Context, adminID int) error {
-	query := `UPDATE admin_users SET last_login_at = CURRENT_TIMESTAMP WHERE id = $1`
+	query := `UPDATE datifyy_v2_admin_users SET last_login_at = CURRENT_TIMESTAMP WHERE id = $1`
 	_, err := r.db.ExecContext(ctx, query, adminID)
 	return err
 }
@@ -217,7 +217,7 @@ func (r *AdminRepository) GetAllUsers(ctx context.Context, page, pageSize int, s
 	}
 
 	// Get total count
-	countQuery := fmt.Sprintf(`SELECT COUNT(*) FROM users u WHERE %s`, whereClause)
+	countQuery := fmt.Sprintf(`SELECT COUNT(*) FROM datifyy_v2_users u WHERE %s`, whereClause)
 	var totalCount int
 	err := r.db.QueryRowContext(ctx, countQuery, args...).Scan(&totalCount)
 	if err != nil {
@@ -236,8 +236,8 @@ func (r *AdminRepository) GetAllUsers(ctx context.Context, page, pageSize int, s
 		       u.gender, u.account_status, u.email_verified, u.phone_verified,
 		       u.created_at, u.last_login_at,
 		       (SELECT COUNT(*) FROM user_photos WHERE user_id = u.id) as photo_count,
-		       (SELECT COUNT(*) FROM availability_slots WHERE user_id = u.id) as availability_count
-		FROM users u
+		       (SELECT COUNT(*) FROM datifyy_v2_availability_slots WHERE user_id = u.id) as availability_count
+		FROM datifyy_v2_users u
 		WHERE %s
 		ORDER BY %s %s
 		LIMIT $%d OFFSET $%d
@@ -291,7 +291,7 @@ func (r *AdminRepository) SearchUsers(ctx context.Context, query string, page, p
 	whereClause := strings.Join(conditions, " OR ")
 
 	// Get total count
-	countQuery := fmt.Sprintf(`SELECT COUNT(*) FROM users u WHERE %s`, whereClause)
+	countQuery := fmt.Sprintf(`SELECT COUNT(*) FROM datifyy_v2_users u WHERE %s`, whereClause)
 	var totalCount int
 	err := r.db.QueryRowContext(ctx, countQuery, searchQuery).Scan(&totalCount)
 	if err != nil {
@@ -305,8 +305,8 @@ func (r *AdminRepository) SearchUsers(ctx context.Context, query string, page, p
 		       u.gender, u.account_status, u.email_verified, u.phone_verified,
 		       u.created_at, u.last_login_at,
 		       (SELECT COUNT(*) FROM user_photos WHERE user_id = u.id) as photo_count,
-		       (SELECT COUNT(*) FROM availability_slots WHERE user_id = u.id) as availability_count
-		FROM users u
+		       (SELECT COUNT(*) FROM datifyy_v2_availability_slots WHERE user_id = u.id) as availability_count
+		FROM datifyy_v2_users u
 		WHERE %s
 		ORDER BY u.created_at DESC
 		LIMIT $2 OFFSET $3
@@ -341,7 +341,7 @@ func (r *AdminRepository) GetUserByID(ctx context.Context, userID int) (*User, e
 		SELECT id, email, name, password_hash, phone_number, email_verified, phone_verified,
 		       account_status, verification_token, password_reset_token, last_login_at,
 		       photo_url, date_of_birth, gender, created_at, updated_at
-		FROM users
+		FROM datifyy_v2_users
 		WHERE id = $1
 	`
 
@@ -370,7 +370,7 @@ func (r *AdminRepository) GetUserByID(ctx context.Context, userID int) (*User, e
 func (r *AdminRepository) GetOppositeSexUsers(ctx context.Context, userID int, limit int) ([]UserWithDetails, error) {
 	// First get the user's gender
 	var userGender sql.NullString
-	err := r.db.QueryRowContext(ctx, "SELECT gender FROM users WHERE id = $1", userID).Scan(&userGender)
+	err := r.db.QueryRowContext(ctx, "SELECT gender FROM datifyy_v2_users WHERE id = $1", userID).Scan(&userGender)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user gender: %w", err)
 	}
@@ -387,8 +387,8 @@ func (r *AdminRepository) GetOppositeSexUsers(ctx context.Context, userID int, l
 		       u.gender, u.account_status, u.email_verified, u.phone_verified,
 		       u.created_at, u.last_login_at,
 		       (SELECT COUNT(*) FROM user_photos WHERE user_id = u.id) as photo_count,
-		       (SELECT COUNT(*) FROM availability_slots WHERE user_id = u.id) as availability_count
-		FROM users u
+		       (SELECT COUNT(*) FROM datifyy_v2_availability_slots WHERE user_id = u.id) as availability_count
+		FROM datifyy_v2_users u
 		INNER JOIN availability_slots a ON a.user_id = u.id
 		WHERE u.gender = $1
 		  AND u.account_status = 'ACTIVE'
@@ -428,7 +428,7 @@ func (r *AdminRepository) GetOppositeSexUsers(ctx context.Context, userID int, l
 // CreateScheduledDate creates a new scheduled date
 func (r *AdminRepository) CreateScheduledDate(ctx context.Context, date *ScheduledDate) (*ScheduledDate, error) {
 	query := `
-		INSERT INTO scheduled_dates (
+		INSERT INTO datifyy_v2_scheduled_dates (
 			user1_id, user2_id, genie_id, scheduled_time, duration_minutes,
 			date_type, place_name, address, city, state, country, zipcode,
 			latitude, longitude, notes
@@ -456,7 +456,7 @@ func (r *AdminRepository) GetScheduledDateByID(ctx context.Context, dateID int) 
 		       status, date_type, place_name, address, city, state, country, zipcode,
 		       latitude, longitude, notes, admin_notes, created_at, updated_at,
 		       confirmed_at, completed_at, cancelled_at
-		FROM scheduled_dates
+		FROM datifyy_v2_scheduled_dates
 		WHERE id = $1
 	`
 
@@ -491,7 +491,7 @@ func (r *AdminRepository) GetGenieDates(ctx context.Context, genieID int, status
 	}
 
 	// Get total count
-	countQuery := fmt.Sprintf(`SELECT COUNT(*) FROM scheduled_dates WHERE %s`, whereClause)
+	countQuery := fmt.Sprintf(`SELECT COUNT(*) FROM datifyy_v2_scheduled_dates WHERE %s`, whereClause)
 	var totalCount int
 	err := r.db.QueryRowContext(ctx, countQuery, args...).Scan(&totalCount)
 	if err != nil {
@@ -510,7 +510,7 @@ func (r *AdminRepository) GetGenieDates(ctx context.Context, genieID int, status
 		       status, date_type, place_name, address, city, state, country, zipcode,
 		       latitude, longitude, notes, admin_notes, created_at, updated_at,
 		       confirmed_at, completed_at, cancelled_at
-		FROM scheduled_dates
+		FROM datifyy_v2_scheduled_dates
 		WHERE %s
 		ORDER BY scheduled_time ASC
 		LIMIT $%d OFFSET $%d
@@ -554,7 +554,7 @@ func (r *AdminRepository) UpdateDateStatus(ctx context.Context, dateID int, stat
 	}
 
 	query := fmt.Sprintf(`
-		UPDATE scheduled_dates
+		UPDATE datifyy_v2_scheduled_dates
 		SET status = $1, admin_notes = COALESCE($2, admin_notes)%s
 		WHERE id = $3
 		RETURNING id, user1_id, user2_id, genie_id, scheduled_time, duration_minutes,
@@ -584,7 +584,7 @@ func (r *AdminRepository) UpdateDateStatus(ctx context.Context, dateID int, stat
 func (r *AdminRepository) GetUserAvailability(ctx context.Context, userID int) ([]AvailabilitySlot, error) {
 	query := `
 		SELECT id, user_id, start_time, end_time, date_type, notes, created_at, updated_at
-		FROM availability_slots
+		FROM datifyy_v2_availability_slots
 		WHERE user_id = $1 AND start_time > NOW()
 		ORDER BY start_time ASC
 	`
@@ -622,7 +622,7 @@ func (r *AdminRepository) GetUserDates(ctx context.Context, userID int, upcoming
 		       status, date_type, place_name, address, city, state, country, zipcode,
 		       latitude, longitude, notes, admin_notes, created_at, updated_at,
 		       confirmed_at, completed_at, cancelled_at
-		FROM scheduled_dates
+		FROM datifyy_v2_scheduled_dates
 		WHERE (user1_id = $1 OR user2_id = $1) AND scheduled_time %s NOW()
 		ORDER BY scheduled_time %s
 		LIMIT 20
@@ -696,14 +696,14 @@ func (r *AdminRepository) GetPlatformStats(ctx context.Context) (*PlatformStats,
 	stats := &PlatformStats{}
 
 	// Get total users
-	err := r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM users").Scan(&stats.TotalUsers)
+	err := r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM datifyy_v2_users").Scan(&stats.TotalUsers)
 	if err != nil {
 		return nil, fmt.Errorf("failed to count total users: %w", err)
 	}
 
 	// Get active users (logged in within last 30 days)
 	err = r.db.QueryRowContext(ctx, `
-		SELECT COUNT(*) FROM users
+		SELECT COUNT(*) FROM datifyy_v2_users
 		WHERE last_login_at > NOW() - INTERVAL '30 days'
 	`).Scan(&stats.ActiveUsers)
 	if err != nil {
@@ -712,7 +712,7 @@ func (r *AdminRepository) GetPlatformStats(ctx context.Context) (*PlatformStats,
 
 	// Get verified users
 	err = r.db.QueryRowContext(ctx, `
-		SELECT COUNT(*) FROM users
+		SELECT COUNT(*) FROM datifyy_v2_users
 		WHERE email_verified = TRUE
 	`).Scan(&stats.VerifiedUsers)
 	if err != nil {
@@ -721,7 +721,7 @@ func (r *AdminRepository) GetPlatformStats(ctx context.Context) (*PlatformStats,
 
 	// Get available for dating (users with future availability slots)
 	err = r.db.QueryRowContext(ctx, `
-		SELECT COUNT(DISTINCT user_id) FROM availability_slots
+		SELECT COUNT(DISTINCT user_id) FROM datifyy_v2_availability_slots
 		WHERE start_time > NOW()
 	`).Scan(&stats.AvailableForDating)
 	if err != nil {
@@ -729,14 +729,14 @@ func (r *AdminRepository) GetPlatformStats(ctx context.Context) (*PlatformStats,
 	}
 
 	// Get total dates scheduled
-	err = r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM scheduled_dates").Scan(&stats.TotalDatesScheduled)
+	err = r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM datifyy_v2_scheduled_dates").Scan(&stats.TotalDatesScheduled)
 	if err != nil {
 		return nil, fmt.Errorf("failed to count scheduled dates: %w", err)
 	}
 
 	// Get total dates completed
 	err = r.db.QueryRowContext(ctx, `
-		SELECT COUNT(*) FROM scheduled_dates
+		SELECT COUNT(*) FROM datifyy_v2_scheduled_dates
 		WHERE status = 'completed'
 	`).Scan(&stats.TotalDatesCompleted)
 	if err != nil {
@@ -745,7 +745,7 @@ func (r *AdminRepository) GetPlatformStats(ctx context.Context) (*PlatformStats,
 
 	// Get today's signups
 	err = r.db.QueryRowContext(ctx, `
-		SELECT COUNT(*) FROM users
+		SELECT COUNT(*) FROM datifyy_v2_users
 		WHERE DATE(created_at) = CURRENT_DATE
 	`).Scan(&stats.TodaySignups)
 	if err != nil {
@@ -754,7 +754,7 @@ func (r *AdminRepository) GetPlatformStats(ctx context.Context) (*PlatformStats,
 
 	// Get this week's signups
 	err = r.db.QueryRowContext(ctx, `
-		SELECT COUNT(*) FROM users
+		SELECT COUNT(*) FROM datifyy_v2_users
 		WHERE created_at >= DATE_TRUNC('week', CURRENT_DATE)
 	`).Scan(&stats.ThisWeekSignups)
 	if err != nil {
@@ -763,7 +763,7 @@ func (r *AdminRepository) GetPlatformStats(ctx context.Context) (*PlatformStats,
 
 	// Get this month's signups
 	err = r.db.QueryRowContext(ctx, `
-		SELECT COUNT(*) FROM users
+		SELECT COUNT(*) FROM datifyy_v2_users
 		WHERE created_at >= DATE_TRUNC('month', CURRENT_DATE)
 	`).Scan(&stats.ThisMonthSignups)
 	if err != nil {
@@ -802,7 +802,7 @@ func (r *AdminRepository) GetUserGrowth(ctx context.Context, period string, star
 			TO_CHAR(%s, '%s') as label,
 			COUNT(*) as value,
 			EXTRACT(EPOCH FROM %s)::bigint as timestamp
-		FROM users
+		FROM datifyy_v2_users
 		WHERE created_at >= $1 AND created_at <= $2
 		GROUP BY %s
 		ORDER BY %s ASC
@@ -857,7 +857,7 @@ func (r *AdminRepository) GetActiveUsers(ctx context.Context, period string, sta
 			TO_CHAR(%s, '%s') as label,
 			COUNT(DISTINCT id) as value,
 			EXTRACT(EPOCH FROM %s)::bigint as timestamp
-		FROM users
+		FROM datifyy_v2_users
 		WHERE last_login_at >= $1 AND last_login_at <= $2
 		GROUP BY %s
 		ORDER BY %s ASC
@@ -907,7 +907,7 @@ func (r *AdminRepository) GetDemographics(ctx context.Context, metricType string
 					ELSE '55+'
 				END as category,
 				COUNT(*) as count
-			FROM users
+			FROM datifyy_v2_users
 			WHERE date_of_birth IS NOT NULL
 			GROUP BY category
 			ORDER BY category
@@ -921,7 +921,7 @@ func (r *AdminRepository) GetDemographics(ctx context.Context, metricType string
 			SELECT
 				COALESCE(%s, 'Unknown') as category,
 				COUNT(*) as count
-			FROM users
+			FROM datifyy_v2_users
 			GROUP BY %s
 			ORDER BY count DESC
 		`, column, column)
@@ -967,7 +967,7 @@ func (r *AdminRepository) GetLocationStats(ctx context.Context, level, parentLoc
 				COALESCE(up.country, 'Unknown') as location_name,
 				COALESCE(up.country, '') as location_code,
 				COUNT(*) as user_count
-			FROM users u
+			FROM datifyy_v2_users u
 			LEFT JOIN user_profiles up ON u.id = up.user_id
 			GROUP BY up.country
 			ORDER BY user_count DESC
@@ -980,7 +980,7 @@ func (r *AdminRepository) GetLocationStats(ctx context.Context, level, parentLoc
 					COALESCE(up.state, 'Unknown') as location_name,
 					COALESCE(up.state, '') as location_code,
 					COUNT(*) as user_count
-				FROM users u
+				FROM datifyy_v2_users u
 				LEFT JOIN user_profiles up ON u.id = up.user_id
 				WHERE up.country = '%s'
 				GROUP BY up.state
@@ -994,7 +994,7 @@ func (r *AdminRepository) GetLocationStats(ctx context.Context, level, parentLoc
 				COALESCE(up.city, 'Unknown') as location_name,
 				COALESCE(up.city, '') as location_code,
 				COUNT(*) as user_count
-			FROM users u
+			FROM datifyy_v2_users u
 			LEFT JOIN user_profiles up ON u.id = up.user_id
 			GROUP BY up.city
 			ORDER BY user_count DESC
@@ -1006,7 +1006,7 @@ func (r *AdminRepository) GetLocationStats(ctx context.Context, level, parentLoc
 					COALESCE(up.city, 'Unknown') as location_name,
 					COALESCE(up.city, '') as location_code,
 					COUNT(*) as user_count
-				FROM users u
+				FROM datifyy_v2_users u
 				LEFT JOIN user_profiles up ON u.id = up.user_id
 				WHERE up.state = '%s' OR up.country = '%s'
 				GROUP BY up.city
@@ -1051,7 +1051,7 @@ func (r *AdminRepository) GetAvailabilityStats(ctx context.Context) (int64, int6
 	var availableUsers int64
 	err := r.db.QueryRowContext(ctx, `
 		SELECT COUNT(DISTINCT user_id)
-		FROM availability_slots
+		FROM datifyy_v2_availability_slots
 		WHERE start_time > NOW()
 	`).Scan(&availableUsers)
 	if err != nil {
@@ -1059,7 +1059,7 @@ func (r *AdminRepository) GetAvailabilityStats(ctx context.Context) (int64, int6
 	}
 
 	var totalUsers int64
-	err = r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM users").Scan(&totalUsers)
+	err = r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM datifyy_v2_users").Scan(&totalUsers)
 	if err != nil {
 		return 0, 0, fmt.Errorf("failed to count total users: %w", err)
 	}
@@ -1076,7 +1076,7 @@ func (r *AdminRepository) GetAvailabilityStats(ctx context.Context) (int64, int6
 func (r *AdminRepository) GetAllAdmins(ctx context.Context, page, pageSize int) ([]AdminUser, int, error) {
 	// Get total count
 	var totalCount int
-	err := r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM admin_users").Scan(&totalCount)
+	err := r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM datifyy_v2_admin_users").Scan(&totalCount)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to count admins: %w", err)
 	}
@@ -1086,7 +1086,7 @@ func (r *AdminRepository) GetAllAdmins(ctx context.Context, page, pageSize int) 
 	query := `
 		SELECT id, user_id, email, name, password_hash, role, is_genie, is_active,
 		       last_login_at, created_at, updated_at, created_by
-		FROM admin_users
+		FROM datifyy_v2_admin_users
 		ORDER BY created_at DESC
 		LIMIT $1 OFFSET $2
 	`
@@ -1117,7 +1117,7 @@ func (r *AdminRepository) GetAllAdmins(ctx context.Context, page, pageSize int) 
 // UpdateAdmin updates an admin user's details
 func (r *AdminRepository) UpdateAdmin(ctx context.Context, adminID int, name, email, role string) (*AdminUser, error) {
 	query := `
-		UPDATE admin_users
+		UPDATE datifyy_v2_admin_users
 		SET name = $1, email = $2, role = $3, updated_at = CURRENT_TIMESTAMP
 		WHERE id = $4
 		RETURNING id, user_id, email, name, password_hash, role, is_genie, is_active,
@@ -1145,7 +1145,7 @@ func (r *AdminRepository) UpdateAdmin(ctx context.Context, adminID int, name, em
 
 // DeleteAdmin soft deletes an admin user
 func (r *AdminRepository) DeleteAdmin(ctx context.Context, adminID int) error {
-	query := `UPDATE admin_users SET is_active = FALSE WHERE id = $1`
+	query := `UPDATE datifyy_v2_admin_users SET is_active = FALSE WHERE id = $1`
 	result, err := r.db.ExecContext(ctx, query, adminID)
 	if err != nil {
 		return fmt.Errorf("failed to delete admin: %w", err)
@@ -1166,7 +1166,7 @@ func (r *AdminRepository) DeleteAdmin(ctx context.Context, adminID int) error {
 // UpdateAdminProfile updates an admin's profile (name and email only)
 func (r *AdminRepository) UpdateAdminProfile(ctx context.Context, adminID int, name, email string) (*AdminUser, error) {
 	query := `
-		UPDATE admin_users
+		UPDATE datifyy_v2_admin_users
 		SET name = $1, email = $2, updated_at = CURRENT_TIMESTAMP
 		WHERE id = $3
 		RETURNING id, user_id, email, name, password_hash, role, is_genie, is_active,
@@ -1221,15 +1221,15 @@ func (r *AdminRepository) BulkUserAction(ctx context.Context, userIDs []int, act
 	var query string
 	switch action {
 	case "activate":
-		query = `UPDATE users SET account_status = 'ACTIVE' WHERE id = $1`
+		query = `UPDATE datifyy_v2_users SET account_status = 'ACTIVE' WHERE id = $1`
 	case "suspend":
-		query = `UPDATE users SET account_status = 'SUSPENDED' WHERE id = $1`
+		query = `UPDATE datifyy_v2_users SET account_status = 'SUSPENDED' WHERE id = $1`
 	case "delete":
-		query = `UPDATE users SET account_status = 'DELETED' WHERE id = $1`
+		query = `UPDATE datifyy_v2_users SET account_status = 'DELETED' WHERE id = $1`
 	case "verify":
-		query = `UPDATE users SET email_verified = TRUE WHERE id = $1`
+		query = `UPDATE datifyy_v2_users SET email_verified = TRUE WHERE id = $1`
 	case "unverify":
-		query = `UPDATE users SET email_verified = FALSE WHERE id = $1`
+		query = `UPDATE datifyy_v2_users SET email_verified = FALSE WHERE id = $1`
 	default:
 		return nil, fmt.Errorf("invalid action: %s", action)
 	}

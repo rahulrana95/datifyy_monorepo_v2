@@ -60,7 +60,7 @@ func TestGetPartnerPreferences_Success(t *testing.T) {
 		[]byte("[]"), []byte("[]"), []byte("[]"),
 	)
 
-	mock.ExpectQuery("SELECT (.+) FROM partner_preferences WHERE user_id").
+	mock.ExpectQuery("SELECT (.+) FROM datifyy_v2_partner_preferences WHERE user_id").
 		WillReturnRows(prefRows)
 
 	req := &userpb.GetPartnerPreferencesRequest{}
@@ -84,7 +84,7 @@ func TestUpdatePartnerPreferences_Success(t *testing.T) {
 	ctx := context.WithValue(context.Background(), "userID", 1)
 
 	// Mock UPSERT (INSERT ... ON CONFLICT)
-	mock.ExpectExec("INSERT INTO partner_preferences").
+	mock.ExpectExec("INSERT INTO datifyy_v2_partner_preferences").
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
 	// Mock get updated preferences with all columns
@@ -130,7 +130,7 @@ func TestUpdatePartnerPreferences_Success(t *testing.T) {
 		[]byte("[]"), []byte("[]"), []byte("[]"),
 	)
 
-	mock.ExpectQuery("SELECT (.+) FROM partner_preferences WHERE user_id").
+	mock.ExpectQuery("SELECT (.+) FROM datifyy_v2_partner_preferences WHERE user_id").
 		WillReturnRows(prefRows)
 
 	req := &userpb.UpdatePartnerPreferencesRequest{
@@ -350,7 +350,7 @@ func TestGetPartnerPreferences_DatabaseError(t *testing.T) {
 	ctx := context.WithValue(context.Background(), "userID", 1)
 
 	// Mock partner preferences query with error
-	mock.ExpectQuery("SELECT (.+) FROM partner_preferences WHERE user_id").
+	mock.ExpectQuery("SELECT (.+) FROM datifyy_v2_partner_preferences WHERE user_id").
 		WillReturnError(sql.ErrConnDone)
 
 	req := &userpb.GetPartnerPreferencesRequest{}
@@ -369,7 +369,7 @@ func TestUpdatePartnerPreferences_DatabaseError(t *testing.T) {
 	ctx := context.WithValue(context.Background(), "userID", 1)
 
 	// Mock UPSERT with error
-	mock.ExpectExec("INSERT INTO partner_preferences").
+	mock.ExpectExec("INSERT INTO datifyy_v2_partner_preferences").
 		WillReturnError(sql.ErrConnDone)
 
 	req := &userpb.UpdatePartnerPreferencesRequest{

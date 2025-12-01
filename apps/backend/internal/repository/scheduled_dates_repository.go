@@ -19,7 +19,7 @@ func NewScheduledDatesRepository(db *sql.DB) *ScheduledDatesRepository {
 // Create creates a new scheduled date
 func (r *ScheduledDatesRepository) Create(ctx context.Context, date *ScheduledDate) error {
 	query := `
-		INSERT INTO scheduled_dates (
+		INSERT INTO datifyy_v2_scheduled_dates (
 			user1_id, user2_id, genie_id, scheduled_time, duration_minutes,
 			status, date_type, notes, admin_notes
 		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
@@ -46,7 +46,7 @@ func (r *ScheduledDatesRepository) GetByID(ctx context.Context, id int) (*Schedu
 			   status, date_type, place_name, address, city, state, country, zipcode,
 			   latitude, longitude, notes, admin_notes, created_at, updated_at,
 			   confirmed_at, completed_at, cancelled_at
-		FROM scheduled_dates
+		FROM datifyy_v2_scheduled_dates
 		WHERE id = $1
 	`
 
@@ -70,7 +70,7 @@ func (r *ScheduledDatesRepository) GetByID(ctx context.Context, id int) (*Schedu
 
 // UpdateStatus updates the status of a scheduled date
 func (r *ScheduledDatesRepository) UpdateStatus(ctx context.Context, id int, status string) error {
-	query := `UPDATE scheduled_dates SET status = $1 WHERE id = $2`
+	query := `UPDATE datifyy_v2_scheduled_dates SET status = $1 WHERE id = $2`
 	_, err := r.db.ExecContext(ctx, query, status, id)
 	if err != nil {
 		return fmt.Errorf("failed to update scheduled date status: %w", err)
@@ -85,7 +85,7 @@ func (r *ScheduledDatesRepository) ListByUserUpcoming(ctx context.Context, userI
 			   status, date_type, place_name, address, city, state, country, zipcode,
 			   latitude, longitude, notes, admin_notes, created_at, updated_at,
 			   confirmed_at, completed_at, cancelled_at
-		FROM scheduled_dates
+		FROM datifyy_v2_scheduled_dates
 		WHERE (user1_id = $1 OR user2_id = $1)
 		  AND scheduled_time > NOW()
 		  AND status IN ('scheduled', 'confirmed')
@@ -124,7 +124,7 @@ func (r *ScheduledDatesRepository) ListByUserPast(ctx context.Context, userID in
 			   status, date_type, place_name, address, city, state, country, zipcode,
 			   latitude, longitude, notes, admin_notes, created_at, updated_at,
 			   confirmed_at, completed_at, cancelled_at
-		FROM scheduled_dates
+		FROM datifyy_v2_scheduled_dates
 		WHERE (user1_id = $1 OR user2_id = $1)
 		  AND (
 			status = 'completed'
@@ -165,7 +165,7 @@ func (r *ScheduledDatesRepository) CountByUserUpcoming(ctx context.Context, user
 	var count int
 	query := `
 		SELECT COUNT(*)
-		FROM scheduled_dates
+		FROM datifyy_v2_scheduled_dates
 		WHERE (user1_id = $1 OR user2_id = $1)
 		  AND scheduled_time > NOW()
 		  AND status IN ('scheduled', 'confirmed')
@@ -182,7 +182,7 @@ func (r *ScheduledDatesRepository) CountByUserPast(ctx context.Context, userID i
 	var count int
 	query := `
 		SELECT COUNT(*)
-		FROM scheduled_dates
+		FROM datifyy_v2_scheduled_dates
 		WHERE (user1_id = $1 OR user2_id = $1)
 		  AND (
 			status = 'completed'
@@ -203,7 +203,7 @@ func (r *ScheduledDatesRepository) CountByUserStatus(ctx context.Context, userID
 	var count int
 	query := `
 		SELECT COUNT(*)
-		FROM scheduled_dates
+		FROM datifyy_v2_scheduled_dates
 		WHERE (user1_id = $1 OR user2_id = $1)
 		  AND status = $2
 	`
@@ -219,7 +219,7 @@ func (r *ScheduledDatesRepository) CountByUser(ctx context.Context, userID int) 
 	var count int
 	query := `
 		SELECT COUNT(*)
-		FROM scheduled_dates
+		FROM datifyy_v2_scheduled_dates
 		WHERE user1_id = $1 OR user2_id = $1
 	`
 	err := r.db.QueryRowContext(ctx, query, userID).Scan(&count)

@@ -385,11 +385,11 @@ func TestBulkUserAction_Activate(t *testing.T) {
 	userIDs := []int{1, 2, 3}
 
 	mock.ExpectBegin()
-	mock.ExpectExec(regexp.QuoteMeta("UPDATE users SET account_status = 'ACTIVE'")).
+	mock.ExpectExec(regexp.QuoteMeta("UPDATE datifyy_v2_users SET account_status = 'ACTIVE'")).
 		WithArgs(1).WillReturnResult(sqlmock.NewResult(0, 1))
-	mock.ExpectExec(regexp.QuoteMeta("UPDATE users SET account_status = 'ACTIVE'")).
+	mock.ExpectExec(regexp.QuoteMeta("UPDATE datifyy_v2_users SET account_status = 'ACTIVE'")).
 		WithArgs(2).WillReturnResult(sqlmock.NewResult(0, 1))
-	mock.ExpectExec(regexp.QuoteMeta("UPDATE users SET account_status = 'ACTIVE'")).
+	mock.ExpectExec(regexp.QuoteMeta("UPDATE datifyy_v2_users SET account_status = 'ACTIVE'")).
 		WithArgs(3).WillReturnResult(sqlmock.NewResult(0, 1))
 	mock.ExpectCommit()
 
@@ -409,9 +409,9 @@ func TestBulkUserAction_Suspend(t *testing.T) {
 	userIDs := []int{1, 2}
 
 	mock.ExpectBegin()
-	mock.ExpectExec(regexp.QuoteMeta("UPDATE users SET account_status = 'SUSPENDED'")).
+	mock.ExpectExec(regexp.QuoteMeta("UPDATE datifyy_v2_users SET account_status = 'SUSPENDED'")).
 		WithArgs(1).WillReturnResult(sqlmock.NewResult(0, 1))
-	mock.ExpectExec(regexp.QuoteMeta("UPDATE users SET account_status = 'SUSPENDED'")).
+	mock.ExpectExec(regexp.QuoteMeta("UPDATE datifyy_v2_users SET account_status = 'SUSPENDED'")).
 		WithArgs(2).WillReturnResult(sqlmock.NewResult(0, 1))
 	mock.ExpectCommit()
 
@@ -430,11 +430,11 @@ func TestBulkUserAction_PartialFailure(t *testing.T) {
 	userIDs := []int{1, 2, 3}
 
 	mock.ExpectBegin()
-	mock.ExpectExec(regexp.QuoteMeta("UPDATE users SET account_status = 'DELETED'")).
+	mock.ExpectExec(regexp.QuoteMeta("UPDATE datifyy_v2_users SET account_status = 'DELETED'")).
 		WithArgs(1).WillReturnResult(sqlmock.NewResult(0, 1))
-	mock.ExpectExec(regexp.QuoteMeta("UPDATE users SET account_status = 'DELETED'")).
+	mock.ExpectExec(regexp.QuoteMeta("UPDATE datifyy_v2_users SET account_status = 'DELETED'")).
 		WithArgs(2).WillReturnError(sql.ErrConnDone)
-	mock.ExpectExec(regexp.QuoteMeta("UPDATE users SET account_status = 'DELETED'")).
+	mock.ExpectExec(regexp.QuoteMeta("UPDATE datifyy_v2_users SET account_status = 'DELETED'")).
 		WithArgs(3).WillReturnResult(sqlmock.NewResult(0, 1))
 	mock.ExpectCommit()
 

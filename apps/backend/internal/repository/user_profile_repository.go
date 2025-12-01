@@ -215,7 +215,7 @@ func (r *UserProfileRepository) GetProfileByUserID(ctx context.Context, userID i
 		       religion, religion_importance, political_view, pets, children,
 		       personality_type, communication_style, love_language, sleep_schedule,
 		       prompts, completion_percentage, is_public, is_verified
-		FROM user_profiles
+		FROM datifyy_v2_user_profiles
 		WHERE user_id = $1
 	`
 
@@ -251,7 +251,7 @@ func (r *UserProfileRepository) UpdateProfile(ctx context.Context, userID int, u
 	}
 
 	// Build dynamic UPDATE query
-	query := "UPDATE user_profiles SET "
+	query := "UPDATE datifyy_v2_user_profiles SET "
 	args := []interface{}{}
 	argPos := 1
 
@@ -297,7 +297,7 @@ func (r *UserProfileRepository) GetPartnerPreferences(ctx context.Context, userI
 		       interest_preferences, min_shared_interests,
 		       verified_only, max_days_inactive, photos_required, min_profile_completion,
 		       deal_breakers, must_haves, custom_dealbreakers
-		FROM partner_preferences
+		FROM datifyy_v2_partner_preferences
 		WHERE user_id = $1
 	`
 
@@ -364,7 +364,7 @@ func (r *UserProfileRepository) UpdatePartnerPreferences(ctx context.Context, us
 	}
 
 	query := fmt.Sprintf(`
-		INSERT INTO partner_preferences (%s, created_at, updated_at)
+		INSERT INTO datifyy_v2_partner_preferences (%s, created_at, updated_at)
 		VALUES (%s, NOW(), NOW())
 		ON CONFLICT (user_id) DO UPDATE SET
 			%s,

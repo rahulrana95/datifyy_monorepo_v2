@@ -41,7 +41,7 @@ func NewCuratedMatchesRepository(db *sql.DB) *CuratedMatchesRepository {
 // Create creates a new curated match
 func (r *CuratedMatchesRepository) Create(ctx context.Context, match *CuratedMatch) error {
 	query := `
-		INSERT INTO curated_matches (
+		INSERT INTO datifyy_v2_curated_matches (
 			user1_id, user2_id, compatibility_score, is_match,
 			reasoning, matched_aspects, mismatched_aspects,
 			ai_provider, ai_model, status, created_by_admin
@@ -70,7 +70,7 @@ func (r *CuratedMatchesRepository) GetByID(ctx context.Context, id int) (*Curate
 			   reasoning, matched_aspects, mismatched_aspects,
 			   ai_provider, ai_model, status, created_by_admin,
 			   scheduled_date_id, created_at, updated_at
-		FROM curated_matches
+		FROM datifyy_v2_curated_matches
 		WHERE id = $1
 	`
 
@@ -99,7 +99,7 @@ func (r *CuratedMatchesRepository) GetByUserPair(ctx context.Context, user1ID, u
 			   reasoning, matched_aspects, mismatched_aspects,
 			   ai_provider, ai_model, status, created_by_admin,
 			   scheduled_date_id, created_at, updated_at
-		FROM curated_matches
+		FROM datifyy_v2_curated_matches
 		WHERE (user1_id = $1 AND user2_id = $2) OR (user1_id = $2 AND user2_id = $1)
 	`
 
@@ -128,7 +128,7 @@ func (r *CuratedMatchesRepository) ListByAdmin(ctx context.Context, adminID int,
 			   reasoning, matched_aspects, mismatched_aspects,
 			   ai_provider, ai_model, status, created_by_admin,
 			   scheduled_date_id, created_at, updated_at
-		FROM curated_matches
+		FROM datifyy_v2_curated_matches
 		WHERE created_by_admin = $1
 		ORDER BY created_at DESC
 		LIMIT $2 OFFSET $3
@@ -160,7 +160,7 @@ func (r *CuratedMatchesRepository) ListByAdmin(ctx context.Context, adminID int,
 
 // UpdateStatus updates the status of a curated match
 func (r *CuratedMatchesRepository) UpdateStatus(ctx context.Context, id int, status string) error {
-	query := `UPDATE curated_matches SET status = $1 WHERE id = $2`
+	query := `UPDATE datifyy_v2_curated_matches SET status = $1 WHERE id = $2`
 	_, err := r.db.ExecContext(ctx, query, status, id)
 	if err != nil {
 		return fmt.Errorf("failed to update curated match status: %w", err)
@@ -170,7 +170,7 @@ func (r *CuratedMatchesRepository) UpdateStatus(ctx context.Context, id int, sta
 
 // LinkScheduledDate links a scheduled date to a curated match
 func (r *CuratedMatchesRepository) LinkScheduledDate(ctx context.Context, matchID, scheduledDateID int) error {
-	query := `UPDATE curated_matches SET scheduled_date_id = $1, status = 'scheduled' WHERE id = $2`
+	query := `UPDATE datifyy_v2_curated_matches SET scheduled_date_id = $1, status = 'scheduled' WHERE id = $2`
 	_, err := r.db.ExecContext(ctx, query, scheduledDateID, matchID)
 	if err != nil {
 		return fmt.Errorf("failed to link scheduled date: %w", err)
@@ -185,7 +185,7 @@ func (r *CuratedMatchesRepository) ListByStatus(ctx context.Context, status stri
 			   reasoning, matched_aspects, mismatched_aspects,
 			   ai_provider, ai_model, status, created_by_admin,
 			   scheduled_date_id, created_at, updated_at
-		FROM curated_matches
+		FROM datifyy_v2_curated_matches
 		WHERE status = $1
 		ORDER BY created_at DESC
 		LIMIT $2 OFFSET $3
@@ -218,7 +218,7 @@ func (r *CuratedMatchesRepository) ListByStatus(ctx context.Context, status stri
 // CountByStatus counts curated matches by status
 func (r *CuratedMatchesRepository) CountByStatus(ctx context.Context, status string) (int, error) {
 	var count int
-	query := `SELECT COUNT(*) FROM curated_matches WHERE status = $1`
+	query := `SELECT COUNT(*) FROM datifyy_v2_curated_matches WHERE status = $1`
 	err := r.db.QueryRowContext(ctx, query, status).Scan(&count)
 	if err != nil {
 		return 0, fmt.Errorf("failed to count curated matches by status: %w", err)

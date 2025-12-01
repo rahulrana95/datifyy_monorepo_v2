@@ -225,7 +225,7 @@ func (s *AuthService) RefreshToken(
 
 	query := `
 		SELECT id, user_id, expires_at, is_active, last_active_at
-		FROM sessions
+		FROM datifyy_v2_sessions
 		WHERE id = $1 AND user_id = $2
 	`
 
@@ -285,7 +285,7 @@ func (s *AuthService) RefreshToken(
 
 	// Update session's last_active_at
 	_, err = s.db.ExecContext(ctx,
-		"UPDATE sessions SET last_active_at = NOW() WHERE id = $1",
+		"UPDATE datifyy_v2_sessions SET last_active_at = NOW() WHERE id = $1",
 		sessionID,
 	)
 
@@ -323,7 +323,7 @@ func (s *AuthService) RevokeToken(
 
 	// Revoke the session in database by setting is_active = false
 	query := `
-		UPDATE sessions
+		UPDATE datifyy_v2_sessions
 		SET is_active = false
 		WHERE id = $1 AND user_id = $2 AND is_active = true
 	`
@@ -400,7 +400,7 @@ func (s *AuthService) ValidateToken(
 	var sessionExpiresAt time.Time
 	query := `
 		SELECT is_active, expires_at
-		FROM sessions
+		FROM datifyy_v2_sessions
 		WHERE id = $1 AND user_id = $2
 	`
 
@@ -483,7 +483,7 @@ func (s *AuthService) Logout(
 
 	// Revoke the session
 	query := `
-		UPDATE sessions
+		UPDATE datifyy_v2_sessions
 		SET is_active = false
 		WHERE id = $1 AND user_id = $2 AND is_active = true
 	`
@@ -670,7 +670,7 @@ func (s *AuthService) createSessionAndTokens(
 	expiresAt := time.Unix(refreshToken.ExpiresAt.Seconds, int64(refreshToken.ExpiresAt.Nanos))
 
 	_, err := s.db.ExecContext(ctx,
-		`INSERT INTO sessions (id, user_id, device_id, expires_at, is_active, last_active_at)
+		`INSERT INTO datifyy_v2_sessions (id, user_id, device_id, expires_at, is_active, last_active_at)
 		 VALUES ($1, $2, $3, $4, true, NOW())`,
 		sessionID,
 		user.ID,

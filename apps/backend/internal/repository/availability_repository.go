@@ -108,7 +108,7 @@ func (r *AvailabilityRepository) Create(ctx context.Context, input CreateSlotInp
 	// Check for duplicate slot
 	var exists bool
 	err := r.db.QueryRowContext(ctx,
-		"SELECT EXISTS(SELECT 1 FROM availability_slots WHERE user_id = $1 AND start_time = $2)",
+		"SELECT EXISTS(SELECT 1 FROM datifyy_v2_availability_slots WHERE user_id = $1 AND start_time = $2)",
 		input.UserID, input.StartTime,
 	).Scan(&exists)
 
@@ -122,7 +122,7 @@ func (r *AvailabilityRepository) Create(ctx context.Context, input CreateSlotInp
 
 	// Insert slot
 	query := `
-		INSERT INTO availability_slots (
+		INSERT INTO datifyy_v2_availability_slots (
 			user_id, start_time, end_time, date_type,
 			place_name, address, city, state, country, zipcode,
 			latitude, longitude, google_place_id, google_maps_url, notes
@@ -185,7 +185,7 @@ func (r *AvailabilityRepository) GetByUserID(ctx context.Context, userID int, fr
 		       place_name, address, city, state, country, zipcode,
 		       latitude, longitude, google_place_id, google_maps_url, notes,
 		       created_at, updated_at
-		FROM availability_slots
+		FROM datifyy_v2_availability_slots
 		WHERE user_id = $1
 	`
 	args := []interface{}{userID}
@@ -247,7 +247,7 @@ func (r *AvailabilityRepository) GetByID(ctx context.Context, slotID int) (*Avai
 		       place_name, address, city, state, country, zipcode,
 		       latitude, longitude, google_place_id, google_maps_url, notes,
 		       created_at, updated_at
-		FROM availability_slots
+		FROM datifyy_v2_availability_slots
 		WHERE id = $1
 	`
 
@@ -286,7 +286,7 @@ func (r *AvailabilityRepository) GetByID(ctx context.Context, slotID int) (*Avai
 // Delete deletes an availability slot
 func (r *AvailabilityRepository) Delete(ctx context.Context, slotID, userID int) error {
 	result, err := r.db.ExecContext(ctx,
-		"DELETE FROM availability_slots WHERE id = $1 AND user_id = $2",
+		"DELETE FROM datifyy_v2_availability_slots WHERE id = $1 AND user_id = $2",
 		slotID, userID,
 	)
 	if err != nil {

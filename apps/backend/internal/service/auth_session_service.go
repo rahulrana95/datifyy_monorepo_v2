@@ -44,7 +44,7 @@ func (s *AuthService) GetCurrentSession(
 
 	query := `
 		SELECT id, user_id, device_id, expires_at, is_active, last_active_at, created_at
-		FROM sessions
+		FROM datifyy_v2_sessions
 		WHERE id = $1 AND user_id = $2
 	`
 
@@ -114,7 +114,7 @@ func (s *AuthService) ListSessions(
 	// Query sessions from database
 	query := `
 		SELECT id, user_id, device_id, expires_at, is_active, last_active_at, created_at
-		FROM sessions
+		FROM datifyy_v2_sessions
 		WHERE user_id = $1 AND is_active = true
 		ORDER BY last_active_at DESC
 		LIMIT $2 OFFSET $3
@@ -167,7 +167,7 @@ func (s *AuthService) ListSessions(
 
 	// Get total count
 	var totalCount int64
-	countQuery := `SELECT COUNT(*) FROM sessions WHERE user_id = $1 AND is_active = true`
+	countQuery := `SELECT COUNT(*) FROM datifyy_v2_sessions WHERE user_id = $1 AND is_active = true`
 	err = s.db.QueryRowContext(ctx, countQuery, userID).Scan(&totalCount)
 	if err != nil {
 		return nil, fmt.Errorf("failed to count sessions: %w", err)
@@ -210,7 +210,7 @@ func (s *AuthService) RevokeSession(
 
 	// Revoke the session (must belong to the current user)
 	query := `
-		UPDATE sessions
+		UPDATE datifyy_v2_sessions
 		SET is_active = false
 		WHERE id = $1 AND user_id = $2 AND is_active = true
 	`
@@ -268,7 +268,7 @@ func (s *AuthService) RevokeAllSessions(
 
 	// Revoke all sessions except current
 	query := `
-		UPDATE sessions
+		UPDATE datifyy_v2_sessions
 		SET is_active = false
 		WHERE user_id = $1 AND id != $2 AND is_active = true
 	`
@@ -320,7 +320,7 @@ func (s *AuthService) LogoutAll(
 
 	// Revoke ALL sessions for this user (including current)
 	query := `
-		UPDATE sessions
+		UPDATE datifyy_v2_sessions
 		SET is_active = false
 		WHERE user_id = $1 AND is_active = true
 	`
