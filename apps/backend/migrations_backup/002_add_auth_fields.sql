@@ -1,9 +1,9 @@
--- Migration: Add authentication and profile fields to datifyy_v2_users table
--- This extends the basic datifyy_v2_users table with fields needed for authentication,
+-- Migration: Add authentication and profile fields to users table
+-- This extends the basic users table with fields needed for authentication,
 -- verification, and user profiles
 
 -- Add authentication fields
-ALTER TABLE datifyy_v2_users
+ALTER TABLE users
 ADD COLUMN IF NOT EXISTS password_hash VARCHAR(255),
 ADD COLUMN IF NOT EXISTS phone_number VARCHAR(20) UNIQUE,
 ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT FALSE,
@@ -16,15 +16,15 @@ ADD COLUMN IF NOT EXISTS password_reset_token_expires_at TIMESTAMP,
 ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMP;
 
 -- Add profile fields (basic)
-ALTER TABLE datifyy_v2_users
+ALTER TABLE users
 ADD COLUMN IF NOT EXISTS photo_url TEXT,
 ADD COLUMN IF NOT EXISTS date_of_birth DATE,
 ADD COLUMN IF NOT EXISTS gender VARCHAR(50);
 
--- Create datifyy_v2_user_profiles table for extended profile data
-CREATE TABLE IF NOT EXISTS datifyy_v2_user_profiles (
+-- Create user_profiles table for extended profile data
+CREATE TABLE IF NOT EXISTS user_profiles (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER UNIQUE REFERENCES datifyy_v2_users(id) ON DELETE CASCADE,
+    user_id INTEGER UNIQUE REFERENCES users(id) ON DELETE CASCADE,
 
     -- Profile details
     bio TEXT,
@@ -67,10 +67,10 @@ CREATE TABLE IF NOT EXISTS datifyy_v2_user_profiles (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create datifyy_v2_partner_preferences table
-CREATE TABLE IF NOT EXISTS datifyy_v2_partner_preferences (
+-- Create partner_preferences table
+CREATE TABLE IF NOT EXISTS partner_preferences (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER UNIQUE REFERENCES datifyy_v2_users(id) ON DELETE CASCADE,
+    user_id INTEGER UNIQUE REFERENCES users(id) ON DELETE CASCADE,
 
     -- Preference fields
     looking_for_gender JSONB DEFAULT '[]'::jsonb,
@@ -95,10 +95,10 @@ CREATE TABLE IF NOT EXISTS datifyy_v2_partner_preferences (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create datifyy_v2_user_photos table
-CREATE TABLE IF NOT EXISTS datifyy_v2_user_photos (
+-- Create user_photos table
+CREATE TABLE IF NOT EXISTS user_photos (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES datifyy_v2_users(id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
     photo_id VARCHAR(255) UNIQUE NOT NULL,
     url TEXT NOT NULL,
     thumbnail_url TEXT,
@@ -108,10 +108,10 @@ CREATE TABLE IF NOT EXISTS datifyy_v2_user_photos (
     uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create datifyy_v2_devices table for device management
-CREATE TABLE IF NOT EXISTS datifyy_v2_devices (
+-- Create devices table for device management
+CREATE TABLE IF NOT EXISTS devices (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES datifyy_v2_users(id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
     device_id VARCHAR(255) UNIQUE NOT NULL,
     device_name VARCHAR(255),
     platform VARCHAR(50),
@@ -127,10 +127,10 @@ CREATE TABLE IF NOT EXISTS datifyy_v2_devices (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create datifyy_v2_verification_codes table
-CREATE TABLE IF NOT EXISTS datifyy_v2_verification_codes (
+-- Create verification_codes table
+CREATE TABLE IF NOT EXISTS verification_codes (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES datifyy_v2_users(id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
     code VARCHAR(10) NOT NULL,
     type VARCHAR(50) NOT NULL, -- EMAIL, PHONE, PASSWORD_RESET
     expires_at TIMESTAMP NOT NULL,
@@ -138,8 +138,8 @@ CREATE TABLE IF NOT EXISTS datifyy_v2_verification_codes (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Update datifyy_v2_sessions table to include more metadata
-ALTER TABLE datifyy_v2_sessions
+-- Update sessions table to include more metadata
+ALTER TABLE sessions
 ADD COLUMN IF NOT EXISTS device_id VARCHAR(255),
 ADD COLUMN IF NOT EXISTS ip_address VARCHAR(50),
 ADD COLUMN IF NOT EXISTS location JSONB,
@@ -148,36 +148,36 @@ ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE,
 ADD COLUMN IF NOT EXISTS last_active_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
 
 -- Create indexes for performance
-CREATE INDEX IF NOT EXISTS idx_datifyy_v2_users_phone_number ON datifyy_v2_users(phone_number);
-CREATE INDEX IF NOT EXISTS idx_datifyy_v2_users_account_status ON datifyy_v2_users(account_status);
-CREATE INDEX IF NOT EXISTS idx_datifyy_v2_users_email_verified ON datifyy_v2_users(email_verified);
-CREATE INDEX IF NOT EXISTS idx_datifyy_v2_user_profiles_user_id ON datifyy_v2_user_profiles(user_id);
-CREATE INDEX IF NOT EXISTS idx_datifyy_v2_partner_preferences_user_id ON datifyy_v2_partner_preferences(user_id);
-CREATE INDEX IF NOT EXISTS idx_datifyy_v2_user_photos_user_id ON datifyy_v2_user_photos(user_id);
-CREATE INDEX IF NOT EXISTS idx_datifyy_v2_devices_user_id ON datifyy_v2_devices(user_id);
-CREATE INDEX IF NOT EXISTS idx_datifyy_v2_devices_device_id ON datifyy_v2_devices(device_id);
-CREATE INDEX IF NOT EXISTS idx_datifyy_v2_verification_codes_user_id ON datifyy_v2_verification_codes(user_id);
-CREATE INDEX IF NOT EXISTS idx_datifyy_v2_verification_codes_code ON datifyy_v2_verification_codes(code);
-CREATE INDEX IF NOT EXISTS idx_datifyy_v2_sessions_device_id ON datifyy_v2_sessions(device_id);
+CREATE INDEX IF NOT EXISTS idx_users_phone_number ON users(phone_number);
+CREATE INDEX IF NOT EXISTS idx_users_account_status ON users(account_status);
+CREATE INDEX IF NOT EXISTS idx_users_email_verified ON users(email_verified);
+CREATE INDEX IF NOT EXISTS idx_user_profiles_user_id ON user_profiles(user_id);
+CREATE INDEX IF NOT EXISTS idx_partner_preferences_user_id ON partner_preferences(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_photos_user_id ON user_photos(user_id);
+CREATE INDEX IF NOT EXISTS idx_devices_user_id ON devices(user_id);
+CREATE INDEX IF NOT EXISTS idx_devices_device_id ON devices(device_id);
+CREATE INDEX IF NOT EXISTS idx_verification_codes_user_id ON verification_codes(user_id);
+CREATE INDEX IF NOT EXISTS idx_verification_codes_code ON verification_codes(code);
+CREATE INDEX IF NOT EXISTS idx_sessions_device_id ON sessions(device_id);
 
 -- Create triggers for updated_at
-CREATE TRIGGER update_datifyy_v2_user_profiles_updated_at BEFORE UPDATE
-    ON datifyy_v2_user_profiles FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_user_profiles_updated_at BEFORE UPDATE
+    ON user_profiles FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_datifyy_v2_partner_preferences_updated_at BEFORE UPDATE
-    ON datifyy_v2_partner_preferences FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_partner_preferences_updated_at BEFORE UPDATE
+    ON partner_preferences FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Add constraints (ensure only one primary photo per user)
 -- Using a unique partial index instead of EXCLUDE constraint
-CREATE UNIQUE INDEX idx_datifyy_v2_user_photos_primary_per_user
-ON datifyy_v2_user_photos (user_id)
+CREATE UNIQUE INDEX idx_user_photos_primary_per_user
+ON user_photos (user_id)
 WHERE is_primary = true;
 
 -- Add check constraints
-ALTER TABLE datifyy_v2_users
+ALTER TABLE users
 ADD CONSTRAINT check_account_status
 CHECK (account_status IN ('PENDING', 'ACTIVE', 'SUSPENDED', 'BANNED', 'DELETED'));
 
-ALTER TABLE datifyy_v2_users
+ALTER TABLE users
 ADD CONSTRAINT check_email_format
 CHECK (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$');

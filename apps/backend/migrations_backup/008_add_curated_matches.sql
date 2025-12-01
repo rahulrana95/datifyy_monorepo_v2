@@ -4,10 +4,10 @@
 -- =============================================================================
 -- Curated Matches Table (AI Compatibility Analysis Results)
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS datifyy_v2_curated_matches (
+CREATE TABLE IF NOT EXISTS curated_matches (
     id SERIAL PRIMARY KEY,
-    user1_id INTEGER NOT NULL REFERENCES datifyy_v2_users(id) ON DELETE CASCADE,
-    user2_id INTEGER NOT NULL REFERENCES datifyy_v2_users(id) ON DELETE CASCADE,
+    user1_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    user2_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     compatibility_score DECIMAL(5, 2) NOT NULL, -- 0.00 to 100.00
     is_match BOOLEAN NOT NULL DEFAULT FALSE, -- TRUE if score >= 60
     reasoning TEXT,
@@ -22,10 +22,10 @@ CREATE TABLE IF NOT EXISTS datifyy_v2_curated_matches (
     status VARCHAR(50) NOT NULL DEFAULT 'pending', -- pending, approved, rejected, scheduled
 
     -- Admin who created this match
-    created_by_admin INTEGER REFERENCES datifyy_v2_admin_users(id),
+    created_by_admin INTEGER REFERENCES admin_users(id),
 
     -- Scheduled date reference (if date created)
-    scheduled_date_id INTEGER REFERENCES datifyy_v2_scheduled_dates(id) ON DELETE SET NULL,
+    scheduled_date_id INTEGER REFERENCES scheduled_dates(id) ON DELETE SET NULL,
 
     -- Tracking
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -39,20 +39,20 @@ CREATE TABLE IF NOT EXISTS datifyy_v2_curated_matches (
 );
 
 -- Indexes for curated matches
-CREATE INDEX IF NOT EXISTS idx_datifyy_v2_curated_matches_user1 ON datifyy_v2_curated_matches(user1_id);
-CREATE INDEX IF NOT EXISTS idx_datifyy_v2_curated_matches_user2 ON datifyy_v2_curated_matches(user2_id);
-CREATE INDEX IF NOT EXISTS idx_datifyy_v2_curated_matches_score ON datifyy_v2_curated_matches(compatibility_score DESC);
-CREATE INDEX IF NOT EXISTS idx_datifyy_v2_curated_matches_status ON datifyy_v2_curated_matches(status);
-CREATE INDEX IF NOT EXISTS idx_datifyy_v2_curated_matches_created_by ON datifyy_v2_curated_matches(created_by_admin);
+CREATE INDEX IF NOT EXISTS idx_curated_matches_user1 ON curated_matches(user1_id);
+CREATE INDEX IF NOT EXISTS idx_curated_matches_user2 ON curated_matches(user2_id);
+CREATE INDEX IF NOT EXISTS idx_curated_matches_score ON curated_matches(compatibility_score DESC);
+CREATE INDEX IF NOT EXISTS idx_curated_matches_status ON curated_matches(status);
+CREATE INDEX IF NOT EXISTS idx_curated_matches_created_by ON curated_matches(created_by_admin);
 
 -- =============================================================================
 -- Date Suggestions Table (Datifyy AI Suggestions to Users)
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS datifyy_v2_date_suggestions (
+CREATE TABLE IF NOT EXISTS date_suggestions (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL REFERENCES datifyy_v2_users(id) ON DELETE CASCADE,
-    suggested_user_id INTEGER NOT NULL REFERENCES datifyy_v2_users(id) ON DELETE CASCADE,
-    curated_match_id INTEGER REFERENCES datifyy_v2_curated_matches(id) ON DELETE SET NULL,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    suggested_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    curated_match_id INTEGER REFERENCES curated_matches(id) ON DELETE SET NULL,
 
     -- Suggestion metadata
     compatibility_score DECIMAL(5, 2) NOT NULL,
@@ -62,7 +62,7 @@ CREATE TABLE IF NOT EXISTS datifyy_v2_date_suggestions (
     status VARCHAR(50) NOT NULL DEFAULT 'pending', -- pending, accepted, rejected
 
     -- If accepted, reference to scheduled date
-    scheduled_date_id INTEGER REFERENCES datifyy_v2_scheduled_dates(id) ON DELETE SET NULL,
+    scheduled_date_id INTEGER REFERENCES scheduled_dates(id) ON DELETE SET NULL,
 
     -- Tracking
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -74,10 +74,10 @@ CREATE TABLE IF NOT EXISTS datifyy_v2_date_suggestions (
 );
 
 -- Indexes for date suggestions
-CREATE INDEX IF NOT EXISTS idx_datifyy_v2_date_suggestions_user ON datifyy_v2_date_suggestions(user_id);
-CREATE INDEX IF NOT EXISTS idx_datifyy_v2_date_suggestions_suggested_user ON datifyy_v2_date_suggestions(suggested_user_id);
-CREATE INDEX IF NOT EXISTS idx_datifyy_v2_date_suggestions_status ON datifyy_v2_date_suggestions(status);
-CREATE INDEX IF NOT EXISTS idx_datifyy_v2_date_suggestions_user_status ON datifyy_v2_date_suggestions(user_id, status);
+CREATE INDEX IF NOT EXISTS idx_date_suggestions_user ON date_suggestions(user_id);
+CREATE INDEX IF NOT EXISTS idx_date_suggestions_suggested_user ON date_suggestions(suggested_user_id);
+CREATE INDEX IF NOT EXISTS idx_date_suggestions_status ON date_suggestions(status);
+CREATE INDEX IF NOT EXISTS idx_date_suggestions_user_status ON date_suggestions(user_id, status);
 
 -- =============================================================================
 -- Rejection Reasons Enum Type
@@ -99,12 +99,12 @@ END $$;
 -- =============================================================================
 -- Date Rejections Table
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS datifyy_v2_date_rejections (
+CREATE TABLE IF NOT EXISTS date_rejections (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL REFERENCES datifyy_v2_users(id) ON DELETE CASCADE,
-    rejected_user_id INTEGER NOT NULL REFERENCES datifyy_v2_users(id) ON DELETE CASCADE,
-    suggestion_id INTEGER REFERENCES datifyy_v2_date_suggestions(id) ON DELETE SET NULL,
-    scheduled_date_id INTEGER REFERENCES datifyy_v2_scheduled_dates(id) ON DELETE SET NULL,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    rejected_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    suggestion_id INTEGER REFERENCES date_suggestions(id) ON DELETE SET NULL,
+    scheduled_date_id INTEGER REFERENCES scheduled_dates(id) ON DELETE SET NULL,
 
     -- Rejection reasons (can have multiple)
     reasons rejection_reason_type[] NOT NULL,
@@ -124,22 +124,22 @@ CREATE TABLE IF NOT EXISTS datifyy_v2_date_rejections (
 );
 
 -- Indexes for date rejections
-CREATE INDEX IF NOT EXISTS idx_datifyy_v2_date_rejections_user ON datifyy_v2_date_rejections(user_id);
-CREATE INDEX IF NOT EXISTS idx_datifyy_v2_date_rejections_rejected_user ON datifyy_v2_date_rejections(rejected_user_id);
-CREATE INDEX IF NOT EXISTS idx_datifyy_v2_date_rejections_suggestion ON datifyy_v2_date_rejections(suggestion_id);
-CREATE INDEX IF NOT EXISTS idx_datifyy_v2_date_rejections_scheduled_date ON datifyy_v2_date_rejections(scheduled_date_id);
+CREATE INDEX IF NOT EXISTS idx_date_rejections_user ON date_rejections(user_id);
+CREATE INDEX IF NOT EXISTS idx_date_rejections_rejected_user ON date_rejections(rejected_user_id);
+CREATE INDEX IF NOT EXISTS idx_date_rejections_suggestion ON date_rejections(suggestion_id);
+CREATE INDEX IF NOT EXISTS idx_date_rejections_scheduled_date ON date_rejections(scheduled_date_id);
 
 -- =============================================================================
 -- Update Triggers
 -- =============================================================================
-DROP TRIGGER IF EXISTS update_datifyy_v2_curated_matches_updated_at ON datifyy_v2_curated_matches;
-CREATE TRIGGER update_datifyy_v2_curated_matches_updated_at
-    BEFORE UPDATE ON datifyy_v2_curated_matches
+DROP TRIGGER IF EXISTS update_curated_matches_updated_at ON curated_matches;
+CREATE TRIGGER update_curated_matches_updated_at
+    BEFORE UPDATE ON curated_matches
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
-DROP TRIGGER IF EXISTS update_datifyy_v2_date_suggestions_updated_at ON datifyy_v2_date_suggestions;
-CREATE TRIGGER update_datifyy_v2_date_suggestions_updated_at
-    BEFORE UPDATE ON datifyy_v2_date_suggestions
+DROP TRIGGER IF EXISTS update_date_suggestions_updated_at ON date_suggestions;
+CREATE TRIGGER update_date_suggestions_updated_at
+    BEFORE UPDATE ON date_suggestions
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();

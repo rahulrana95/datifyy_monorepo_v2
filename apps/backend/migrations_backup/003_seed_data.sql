@@ -4,7 +4,7 @@
 -- Insert test users (passwords are hashed for "Test123!@#")
 -- Note: In production, never commit real password hashes
 
-INSERT INTO datifyy_v2_users (email, name, password_hash, email_verified, account_status, date_of_birth, gender, photo_url, created_at, updated_at)
+INSERT INTO users (email, name, password_hash, email_verified, account_status, date_of_birth, gender, photo_url, created_at, updated_at)
 VALUES
     -- User 1: John Doe (Software Engineer, 28, Male)
     ('john.doe@example.com', 'John Doe', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYIxKTZnu', true, 'ACTIVE', '1995-06-15', 'MALE', 'https://i.pravatar.cc/300?img=12', NOW() - INTERVAL '30 days', NOW()),
@@ -50,14 +50,14 @@ DECLARE
     user_id_5 INTEGER;
 BEGIN
     -- Get user IDs
-    SELECT id INTO user_id_1 FROM datifyy_v2_users WHERE email = 'john.doe@example.com';
-    SELECT id INTO user_id_2 FROM datifyy_v2_users WHERE email = 'sarah.johnson@example.com';
-    SELECT id INTO user_id_3 FROM datifyy_v2_users WHERE email = 'rahul.sharma@example.com';
-    SELECT id INTO user_id_4 FROM datifyy_v2_users WHERE email = 'priya.patel@example.com';
-    SELECT id INTO user_id_5 FROM datifyy_v2_users WHERE email = 'michael.chen@example.com';
+    SELECT id INTO user_id_1 FROM users WHERE email = 'john.doe@example.com';
+    SELECT id INTO user_id_2 FROM users WHERE email = 'sarah.johnson@example.com';
+    SELECT id INTO user_id_3 FROM users WHERE email = 'rahul.sharma@example.com';
+    SELECT id INTO user_id_4 FROM users WHERE email = 'priya.patel@example.com';
+    SELECT id INTO user_id_5 FROM users WHERE email = 'michael.chen@example.com';
 
     -- Insert user profiles
-    INSERT INTO datifyy_v2_user_profiles (user_id, bio, occupation, company, education, height, location, interests, languages, relationship_goals, drinking, smoking, workout, dietary_preference, religion, pets, children, completion_percentage)
+    INSERT INTO user_profiles (user_id, bio, occupation, company, education, height, location, interests, languages, relationship_goals, drinking, smoking, workout, dietary_preference, religion, pets, children, completion_percentage)
     VALUES
         (user_id_1, 'Software engineer who loves hiking and trying new restaurants. Looking for someone to explore the world with!',
          '[{"category": 1, "label": "Software Engineer"}]'::jsonb, 'Tech Corp',
@@ -101,7 +101,7 @@ BEGIN
     ON CONFLICT (user_id) DO NOTHING;
 
     -- Insert partner preferences
-    INSERT INTO datifyy_v2_partner_preferences (user_id, looking_for_gender, age_range_min, age_range_max, distance_preference, relationship_goals, verified_only)
+    INSERT INTO partner_preferences (user_id, looking_for_gender, age_range_min, age_range_max, distance_preference, relationship_goals, verified_only)
     VALUES
         (user_id_1, '[2]'::jsonb, 24, 32, 50, '[1, 2]'::jsonb, false),
         (user_id_2, '[1]'::jsonb, 26, 35, 40, '[1]'::jsonb, true),
@@ -111,7 +111,7 @@ BEGIN
     ON CONFLICT (user_id) DO NOTHING;
 
     -- Insert sample photos for some users
-    INSERT INTO datifyy_v2_user_photos (user_id, photo_id, url, thumbnail_url, display_order, is_primary)
+    INSERT INTO user_photos (user_id, photo_id, url, thumbnail_url, display_order, is_primary)
     VALUES
         (user_id_1, 'photo_1_1', 'https://i.pravatar.cc/600?img=12', 'https://i.pravatar.cc/150?img=12', 1, true),
         (user_id_1, 'photo_1_2', 'https://i.pravatar.cc/600?img=13', 'https://i.pravatar.cc/150?img=13', 2, false),
@@ -122,14 +122,14 @@ BEGIN
 END $$;
 
 -- Add some sample sessions
-INSERT INTO datifyy_v2_sessions (id, user_id, expires_at, is_active, last_active_at)
+INSERT INTO sessions (id, user_id, expires_at, is_active, last_active_at)
 SELECT
     'sess_' || id || '_' || EXTRACT(EPOCH FROM NOW())::bigint,
     id,
     NOW() + INTERVAL '7 days',
     true,
     NOW()
-FROM datifyy_v2_users
+FROM users
 WHERE account_status = 'ACTIVE'
 LIMIT 5
 ON CONFLICT (id) DO NOTHING;

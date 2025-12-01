@@ -8,10 +8,10 @@ EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;
 
--- Create availability_slots table
-CREATE TABLE IF NOT EXISTS availability_slots (
+-- Create datifyy_v2_availability_slots table
+CREATE TABLE IF NOT EXISTS datifyy_v2_availability_slots (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES datifyy_v2_users(id) ON DELETE CASCADE,
     start_time BIGINT NOT NULL,  -- Unix timestamp
     end_time BIGINT NOT NULL,    -- Unix timestamp
     date_type date_type NOT NULL DEFAULT 'online',
@@ -44,13 +44,13 @@ CREATE TABLE IF NOT EXISTS availability_slots (
 );
 
 -- Create indexes for efficient querying
-CREATE INDEX IF NOT EXISTS idx_availability_slots_user_id ON availability_slots(user_id);
-CREATE INDEX IF NOT EXISTS idx_availability_slots_start_time ON availability_slots(start_time);
-CREATE INDEX IF NOT EXISTS idx_availability_slots_user_start ON availability_slots(user_id, start_time);
-CREATE INDEX IF NOT EXISTS idx_availability_slots_date_type ON availability_slots(date_type);
+CREATE INDEX IF NOT EXISTS idx_datifyy_v2_availability_slots_user_id ON datifyy_v2_availability_slots(user_id);
+CREATE INDEX IF NOT EXISTS idx_datifyy_v2_availability_slots_start_time ON datifyy_v2_availability_slots(start_time);
+CREATE INDEX IF NOT EXISTS idx_datifyy_v2_availability_slots_user_start ON datifyy_v2_availability_slots(user_id, start_time);
+CREATE INDEX IF NOT EXISTS idx_datifyy_v2_availability_slots_date_type ON datifyy_v2_availability_slots(date_type);
 
 -- Add trigger to update updated_at timestamp
-CREATE OR REPLACE FUNCTION update_availability_slots_updated_at()
+CREATE OR REPLACE FUNCTION update_datifyy_v2_availability_slots_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
     NEW.updated_at = CURRENT_TIMESTAMP;
@@ -58,14 +58,14 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS trigger_update_availability_slots_updated_at ON availability_slots;
-CREATE TRIGGER trigger_update_availability_slots_updated_at
-    BEFORE UPDATE ON availability_slots
+DROP TRIGGER IF EXISTS trigger_update_datifyy_v2_availability_slots_updated_at ON datifyy_v2_availability_slots;
+CREATE TRIGGER trigger_update_datifyy_v2_availability_slots_updated_at
+    BEFORE UPDATE ON datifyy_v2_availability_slots
     FOR EACH ROW
-    EXECUTE FUNCTION update_availability_slots_updated_at();
+    EXECUTE FUNCTION update_datifyy_v2_availability_slots_updated_at();
 
 -- Comment on table
-COMMENT ON TABLE availability_slots IS 'Stores user availability slots for dates';
-COMMENT ON COLUMN availability_slots.start_time IS 'Start time as Unix timestamp in seconds';
-COMMENT ON COLUMN availability_slots.end_time IS 'End time as Unix timestamp in seconds (must be exactly 1 hour after start_time)';
-COMMENT ON COLUMN availability_slots.date_type IS 'Type of date: online (virtual), offline (in-person), or offline_event';
+COMMENT ON TABLE datifyy_v2_availability_slots IS 'Stores user availability slots for dates';
+COMMENT ON COLUMN datifyy_v2_availability_slots.start_time IS 'Start time as Unix timestamp in seconds';
+COMMENT ON COLUMN datifyy_v2_availability_slots.end_time IS 'End time as Unix timestamp in seconds (must be exactly 1 hour after start_time)';
+COMMENT ON COLUMN datifyy_v2_availability_slots.date_type IS 'Type of date: online (virtual), offline (in-person), or offline_event';
