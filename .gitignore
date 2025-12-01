@@ -8,7 +8,8 @@ node_modules/
 /apps/frontend/dist/
 /apps/backend/tmp/
 /apps/backend/bin/
-/apps/backend/gen/
+# Note: Backend gen files are committed for Render deployment
+# /apps/backend/gen/
 # Note: Frontend gen files are committed for Vercel deployment
 # /apps/frontend/src/gen/
 
