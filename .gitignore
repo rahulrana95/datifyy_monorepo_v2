@@ -60,3 +60,5 @@ go.sum
 # Cache
 .cache/
 .parcel-cache/
+
+render-credentials.txt
