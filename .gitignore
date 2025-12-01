@@ -9,7 +9,8 @@ node_modules/
 /apps/backend/tmp/
 /apps/backend/bin/
 /apps/backend/gen/
-/apps/frontend/src/gen/
+# Note: Frontend gen files are committed for Vercel deployment
+# /apps/frontend/src/gen/
 
 # Test coverage
 /apps/frontend/coverage/
