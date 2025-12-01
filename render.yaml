@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: datifyy-backend
+    runtime: go
+    region: oregon
+    plan: free  # Change to 'starter' for production ($7/month)
+    buildCommand: go build -o bin/server ./cmd/server
+    startCommand: ./bin/server
+    rootDir: apps/backend
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: GRPC_PORT
+        value: 9090
+      - key: ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false  # Set manually in Render Dashboard
+      - key: REDIS_URL
+        sync: false  # Set manually in Render Dashboard
+      - key: GEMINI_API_KEY
+        sync: false  # Set manually in Render Dashboard
+      - key: MAILERSEND_API_KEY
+        sync: false  # Optional - for email functionality
+      - key: SLACK_WEBHOOK_URL
+        sync: false  # Optional - for Slack notifications
+      - key: EMAIL_FROM
+        value: noreply@datifyy.com
+      - key: EMAIL_FROM_NAME
+        value: Datifyy
+    healthCheckPath: /health
