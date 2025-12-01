@@ -1,7 +1,10 @@
 #!/bin/bash
 set -e
 
-echo "📦 Downloading Go dependencies..."
+echo "📦 Tidying Go modules..."
+go mod tidy
+
+echo "📥 Downloading Go dependencies..."
 go mod download
 
 echo "🔨 Building server..."
